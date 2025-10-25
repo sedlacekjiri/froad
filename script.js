@@ -275,8 +275,6 @@ if (visibilityBtn) {
   visibilityBtn.style.display = "none";
 }
 
-// Explore mapa se inicializuje automaticky v explore.js
-
 
   // === LOAD / INIT USER DOC ===
   const userRef = db.collection("users").doc(user.uid);
@@ -1361,11 +1359,7 @@ imageModal.addEventListener("click", (e) => {
 });
 
 
-let exploreMap;
-// initExploreMap removed - mapa se inicializuje v explore.js
-
-
-
+// Explore map now loaded via iframe from explore.html
 
 
     function closeAccessModal() {
@@ -1711,6 +1705,8 @@ if (tab !== "chat" && chatHeader) {
     document.getElementById('chat').style.display = (tab === "chat") ? "flex" : "none";
     document.getElementById('form').style.display = (tab === "chat") ? "flex" : "none";
 
+    // Explore map runs in iframe - no initialization needed here
+
     // ✅ Oprava Leaflet mapy po přepnutí na "People"
 if (tab === "map") {
   const loader = document.getElementById("globalLoader");
@@ -1815,19 +1811,18 @@ if (tab === "map") {
       chatDiv.scrollTop = chatDiv.scrollHeight;
     }
 
-    // Explore mapa je již inicializovaná v explore.js
   });
 });
 
 
-
-// Explore mapa je nyní načtena přímo (explore.js), ne přes iframe
 
 window.addEventListener("load", () => {
   const loader = document.getElementById("globalLoader");
   if (loader) {
     loader.style.display = "none";
   }
+
+  // Explore map loaded in iframe - initialization handled there
 });
 
 const chatHeader = document.getElementById("chatHeader");
