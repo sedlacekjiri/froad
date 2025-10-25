@@ -1,0 +1,3453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <title>Froad Community + Live Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    :root {
+  --bg: #fff;
+  --fg: #0b0b0b;
+  --ring: #e5e7eb;
+  --card: #ffffff;
+  --blue: #2563eb;
+  --green: green;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* === GLOBAL === */
+html, body {
+  height: 100%;
+  font-family: 'Poppins', system-ui, Inter, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  display: flex;
+  flex-direction: column;
+}
+
+/* === HEADER === */
+header {
+  background: var(--card);
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--ring);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+  z-index: 10;
+}
+
+.logo-header {
+  height: 25px;
+  object-fit: contain;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.profile-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  cursor: pointer;
+  background: #fff;
+  transition: transform 0.2s ease;
+}
+.profile-icon:hover { transform: scale(1.05); }
+
+.header-name {
+  font-weight: 600;
+  font-size: 15px;
+  color: #000;
+  margin-left: 6px;
+  user-select: none;
+}
+
+/* === PROFILE EDITOR === */
+#profileEditor {
+  position: fixed;
+  top: 60px;
+  bottom: 70px;
+  left: 0;
+  right: 0;
+  display: none;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 14px;
+  padding: 20px;
+  background: #fff;
+  overflow-y: auto;
+  z-index: 4000;
+  box-sizing: border-box;
+}
+
+/* Nadpis */
+#profileEditor h3 {
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 12px;
+}
+
+/* Avatar upload */
+.avatar-upload {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.avatar-upload img {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  border: 3px solid #e5e5e5;
+  object-fit: cover;
+  margin-bottom: 8px;
+}
+
+/* Upload tlačítka */
+.upload-btn,
+.upload-vehicle-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #fff;
+  color: #333;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: "Poppins", sans-serif;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+  padding: 10px 14px;
+  min-height: 38px;
+}
+.upload-btn:hover,
+.upload-vehicle-btn:hover {
+  background: #f5f5f5;
+}
+
+/* Inputs */
+#profileEditor input[type="text"],
+#profileEditor select,
+#profileEditor textarea {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background: #fff;
+  padding: 10px 12px;
+  font-family: "Poppins", sans-serif;
+  font-size: 14px;
+  margin-bottom: 10px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+}
+#bioInput {
+  min-height: 80px;
+  resize: none;
+}
+
+/* Vehicle preview */
+#vehiclePhotoPreview {
+  display: none;
+  width: 100%;
+  max-height: 200px;
+  border-radius: 10px;
+  margin-bottom: 10px;
+  object-fit: cover;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  transition: all 0.25s ease;
+}
+
+/* Save + Logout */
+.btn-save {
+  background: #161616;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.btn-save:hover { background: #000000; }
+
+.btn-logout {
+  background: #e9e9e9;
+  color: #555;
+  border: 1px solid #d5d5d5;
+  border-radius: 10px;
+  padding: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.btn-logout:hover { background: #dcdcdc; }
+
+
+/* === MAP / EXPLORE === */
+#exploreMap,
+#mapContainer {
+  position: absolute;
+  top: 60px;
+  bottom: 70px;
+  left: 0;
+  right: 0;
+  display: none;
+  z-index: 1;
+}
+#map, #froadMap {
+  width: 100%;
+  height: 100%;
+}
+
+/* === USER DETAIL PANEL (People marker popup replacement) === */
+#userDetailPanel {
+  position: fixed;
+  bottom: -100%;
+  left: 20px;
+  right: 20px;
+  margin: 0;
+  width: calc(100% - 40px);
+  height: 40%;
+  background: #fff;
+  box-shadow: 0 -4px 20px rgba(0,0,0,0.2);
+  transition: bottom 0.3s ease;
+  z-index: 1000;
+  overflow-y: auto;
+  padding: 20px 16px;
+  display: none;
+  margin-bottom: 20px;
+  border-radius: 20px 20px 20px 20px;
+  overflow: hidden;          /* schová scrollbar */
+  overscroll-behavior: none; /* zabraňuje protažení */
+}
+
+#userDetailPanel.active {
+  bottom: var(--footer-btn-height);
+}
+
+#userDetailContent {
+  overflow-y: auto;          /* scroll uvnitř */
+  height: 100%;
+  padding-right: 10px;       /* prostor pro scrollbar */
+  box-sizing: border-box;
+}
+
+/* === PANEL SECTION STYLY === */
+
+.user-section {
+  margin-bottom: 20px;
+}
+
+.user-section h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 6px;
+  border-left: 3px solid #ff5200;
+  padding-left: 8px;
+}
+
+.user-section p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #333;
+  word-wrap: break-word;
+}
+
+#userVehiclePhotoWrapper {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f4f4f4;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  max-height: 250px;
+}
+
+#userVehiclePhoto {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+  object-fit: cover;
+  display: none; /* zobrazí se jen pokud má fotku */
+}
+
+#userVehiclePhoto.show {
+  display: block;
+}
+
+
+/* User markers */
+.user-marker,
+.leaflet-marker-icon.user-icon,
+.leaflet-marker-icon.live-user-marker {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+  background: #ccc;
+  transform: translate(-50%, -100%);
+}
+/* === Pulsující zelený outline pro LIVE uživatele === */
+.leaflet-marker-icon.user-icon.live-outline {
+  box-shadow: 0 0 0 2px #3ddc97, 0 0 8px 2px rgba(61, 220, 151, 0.6);
+  animation: pulseRing 1.8s infinite;
+}
+
+@keyframes pulseRing {
+  0%   { box-shadow: 0 0 0 0 rgba(61, 220, 151, 0.6); }
+  70%  { box-shadow: 0 0 0 10px rgba(61, 220, 151, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(61, 220, 151, 0); }
+}
+
+.user-marker img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.user-marker::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 8px solid transparent;
+  border-top-color: white;
+}
+
+/* Go live */
+#goLiveBtn {
+  padding: 10px 16px;
+  background: var(--green);
+  color: white;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  display: none;
+}
+
+/* Share location floating button */
+.share-location-btn {
+  position: fixed;
+  top: 80px;              /* ✅ nad footerem */
+  left: 50%;
+  transform: translateX(-50%);
+  background: #ffffff;
+  color: #000;
+  border: none;
+  box-shadow: none;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  z-index: 1000;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.share-location-btn .live-icon {
+  width: 18px;
+  height: 18px;
+  position: relative;
+  vertical-align: middle;
+}
+
+
+/* === CHAT === */
+#chat {
+  position: absolute;
+  top: 110px;
+  bottom: calc(var(--footer-btn-height) + 0px); /* ⬅️ bylo +10px */
+  left: 0;
+  right: 0;
+  overflow-y: auto;
+  padding: 16px;
+  padding-bottom: 100px; /* 🧩 přidá prostor pod poslední zprávou */
+  display: none;
+  flex-direction: column;
+  gap: 14px;
+  background: var(--bg);
+  z-index: 1;
+}
+
+
+/* === CHAT === */
+/* === CHAT === */
+.msg {
+  display: flex;
+  align-items: flex-end;
+  margin: 8px 12px;
+  gap: 8px;
+  max-width: 90%;
+}
+
+/* Avatar – vpravo u mých zpráv, vlevo u ostatních */
+.msg .avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+/* Základní styl bubliny */
+.bubble {
+  padding: 10px 14px;
+  border-radius: 14px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  font-size: 14px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+/* Meta – jméno + čas */
+.meta {
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 4px;
+}
+
+/* Ostatní zprávy */
+.msg.other {
+  justify-content: flex-start;
+}
+.msg.other .bubble {
+  background: #f4f4f4;
+  color: #111;
+}
+.msg.other .avatar {
+  order: 0;
+}
+
+/* Moje zprávy */
+.msg.me {
+  justify-content: flex-end;
+  flex-direction: row-reverse;
+}
+.msg.me .bubble {
+  background: #1b1b1b;
+  color: #fff;
+}
+.msg.me .meta {
+  color: rgba(225, 225, 225, 0.9);
+}
+.msg.me .avatar {
+  order: 1;
+}
+
+/* Chat input */
+#form {
+  position: fixed;
+  bottom: var(--footer-btn-height);
+  left: 0;
+  right: 0;
+  display: none;
+  padding: 14px;
+  border-top: 1px solid var(--ring);
+  background: var(--card);
+  gap: 8px;
+  z-index: 4000;
+}
+#form input {
+  flex: 1;
+  padding: 10px 14px;
+  border: 1px solid var(--ring);
+  border-radius: 10px;
+  background: var(--bg);
+  color: var(--fg);
+  font-size: 16px;              /* 🔥 zvětší text i placeholder */
+}
+
+#form input::placeholder {
+  font-size: 14px;              /* 🔥 stejná velikost jako Send */
+  color: #777;                  /* decentní šedá */
+}
+#form button {
+  padding: 10px 16px;
+  border: none;
+  background: #000;
+  color: #fff;
+  font-weight: bold;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* === LOGIN SCREEN === */
+#loginScreen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  flex-direction: row;
+}
+.login-left {
+  flex: 1;
+  background: url('https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68de881d8b749db696f9bd75_f223.jpg') center/cover no-repeat;
+}
+.login-right {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  padding: 40px;
+}
+.login-box {
+  max-width: 400px;
+  width: 100%;
+  padding: 32px;
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  text-align: center;
+}
+.login-box img { width: 60px; margin: 0 auto; }
+.login-box input {
+  padding: 12px 16px;
+  font-size: 15px;
+  border: 1px solid var(--ring);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--fg);
+  outline: none;
+}
+.login-box input:focus { border-color: var(--blue); }
+
+.login-email-btn {
+  padding: 12px 20px;
+  background: #121d12;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 500;
+  border: none;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+.login-email-btn:hover { background: #1a2b1a; }
+
+.toggle-auth {
+  font-size: 14px;
+  text-align: center;
+}
+.toggle-auth a {
+  color: var(--blue);
+  font-weight: 600;
+  text-decoration: none;
+}
+.toggle-auth a:hover { text-decoration: underline; }
+
+.legal-text {
+  font-size: 13px;
+  color: var(--fg);
+  line-height: 1.4;
+}
+.legal-text a {
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+/* === FOOTER === */
+:root {
+  --footer-font-size: 13px;
+  --footer-btn-height: 70px;
+  --active-color: #ff4500;
+  --inactive-color: #000;
+}
+
+#appFooter {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--footer-btn-height);
+  background: #fff;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  z-index: 5000;
+}
+
+.footer-btn {
+  background: none;
+  border: none;
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-family: 'Poppins', sans-serif;
+  font-size: var(--footer-font-size);
+  color: var(--inactive-color);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.footer-btn img {
+  width: 24px;
+  height: 24px;
+  margin-bottom: 4px;
+  transition: all 0.3s ease;
+}
+.footer-btn.active {
+  color: var(--active-color);
+  font-weight: 600;
+}
+.footer-btn span {
+  margin-top: 2px;
+  height: 16px;
+  line-height: 16px;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+/* === RESPONSIVE LOGIN === */
+@media (max-width: 1024px) {
+  #loginScreen {
+    flex-direction: column;
+    background: url('https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68de881d8b749db696f9bd75_f223.jpg') center/cover no-repeat;
+  }
+  .login-left { display: none; }
+  .login-right {
+    background: rgba(255,255,255,0);
+    width: 100%;
+    padding: 32px;
+  }
+  .login-box {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+  }
+}
+
+/* === LEAFLET POPUPS === */
+.leaflet-popup.custom-popup .leaflet-popup-content-wrapper,
+.leaflet-popup-content-wrapper.custom-popup {
+  max-width: 280px !important;
+  background: #fff !important;
+  border-radius: 14px !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25) !important;
+  padding: 10px 14px !important;
+  color: #222;
+}
+.leaflet-popup-tip.custom-popup { background: #fff !important; }
+.custom-popup .popup-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.custom-popup strong {
+  font-size: 15px;
+  font-weight: 600;
+  color: #111;
+}
+.popup-content .gps,
+.popup-content .vehicle {
+  font-size: 13px;
+  color: #555;
+  font-style: italic;
+}
+
+.popup-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.popup-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #eee;
+}
+.popup-bio {
+  font-size: 13px;
+  color: #333;
+  margin: 6px 0;
+  line-height: 1.4;
+}
+.popup-vehicle-photo {
+  width: 100%;
+  height: 300px;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-top: 6px;
+  border: 1px solid #eee;
+}
+.popup-instagram-link {
+  color: #222 !important;
+  text-decoration: none !important;
+  font-weight: 500;
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  transition: color 0.2s ease;
+}
+.popup-instagram-link:hover {
+  color: #555 !important;
+  text-decoration: underline !important;
+}
+
+.popup-vehicle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 13px;
+  color: #444;
+}
+.popup-vehicle-icon {
+  width: 24;
+  height: 24px;
+  flex-shrink: 0;
+}
+.verified-icon {
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  position: relative;
+  margin-right: 4px;
+}
+
+.bubble .meta {
+  font-size: 12px;
+  font-weight: 400; /* tenčí jako předtím */
+  color: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bubble .meta strong {
+  font-weight: 500; /* dřív to bylo lehčí než bold */
+  color: inherit;
+}
+
+.bubble .meta .msg-time {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+
+/* === Panel header layout fix === */
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;              /* mezera mezi fotkou a texty */
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #eee; /* decentní oddělení od zbytku */
+}
+
+.panel-header .popup-avatar {
+  width: 65px;
+  height: 65px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.panel-userinfo {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.panel-userinfo strong {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+  line-height: 1.3;
+  margin-bottom: 2px;
+}
+
+.panel-userinfo .popup-instagram a {
+  color: #444;
+  font-size: 13px;
+  text-decoration: none;
+  line-height: 1.2;
+}
+
+.panel-userinfo .popup-instagram a:hover {
+  text-decoration: underline;
+}
+
+/* === Lepší spacing mezi sekcemi === */
+.user-section {
+  margin-top: 14px;
+  margin-bottom: 24px;
+}
+.user-section h3 {
+  margin-bottom: 8px;
+}
+
+/* Verified icon alignment beside name */
+.panel-name-row {
+  display: flex;
+  align-items: baseline; /* 👈 ZAROVNÁ ikonku k textové základně místo středu */
+  gap: 6px;
+}
+
+.panel-name-row strong {
+  font-size: 16px;
+  font-weight: 600;
+  color: #111;
+}
+
+.mini-popup-inner {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.15);
+  padding: 5px 10px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #111;
+  white-space: nowrap;
+  transform: translateX(-50%); /* ✅ bublina vždy vycentrovaná */
+  position: relative;
+  left: 50%;
+}
+
+.mini-popup-name {
+  font-weight: 600;
+}
+
+.mini-popup-status.live {
+  color: #3ddc97;  /* 🌿 světle pastelová zelená */
+  font-weight: 600;
+}
+
+.mini-popup-status.inactive {
+  color: #8a8a8a;
+}
+
+/* === Visibility Button === */
+.visibility-btn {
+  right: 20px;
+  left: auto;
+  transform: none;
+  background: #ffffff;
+  border: none;
+  box-shadow: none;
+  border-radius: 10px;
+  padding: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.visibility-btn img {
+  width: 20px;
+  height: 20px;
+}
+.visibility-btn:hover {
+  background: #f3f3f3;
+}
+
+#customActionBtn {
+  position: fixed;
+  right: 20px;
+  background: rgb(255, 255, 255);
+  border: none;
+  border-radius: 10px;
+  padding: 13px;
+  cursor: pointer;
+  display: none; /* jen v People sekci */
+  justify-content: center;
+  align-items: center;
+  z-index: 500;
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+#customActionBtn img {
+  width: 16px;
+  height: 16px;
+}
+
+#globalLoader {
+  position: fixed;
+  inset: 0;
+  background: white;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.loader-logo {
+  width: 80px;
+  margin-bottom: 20px;
+}
+
+.loader-spinner {
+  width: 28px;
+  height: 28px;
+  border: 4px solid #000;
+  border-top: 4px solid transparent;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* === CUSTOM ZOOM BUTTONS (styled like Visibility/Layers) === */
+.leaflet-control-zoom {
+  border: none !important;
+  box-shadow: none !important;
+  background: none !important;
+}
+
+.leaflet-control-zoom-in,
+.leaflet-control-zoom-out {
+  background: #ffffff !important;
+  border: none !important;
+  border-radius: 10px !important;
+  width: 40px !important;
+  height: 40px !important;
+  line-height: 40px !important;
+  font-size: 22px !important;
+  font-weight: 600 !important;
+  color: #000 !important;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin: 10px 0 !important;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+}
+
+.leaflet-control-zoom-in:hover,
+.leaflet-control-zoom-out:hover {
+  background: #f3f3f3 !important;
+}
+
+/* Optional – spacing from top & left edge */
+.leaflet-top.leaflet-left {
+  top: 0px !important;
+  left: 10px !important;
+}
+
+.close-profile-btn {
+  color: #000;
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: white;
+  border: none;
+  border-radius: 10px;
+  width: 32px;
+  height: 32px;
+  font-size: 18px;
+  line-height: 32px;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  transition: background 0.2s ease;
+  z-index: 10;
+}
+.close-profile-btn:hover {
+  background: #f5f5f5;
+}
+
+/* === AVATAR COMPONENT === */
+.profile-avatar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+}
+
+.avatar-container img#currentAvatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #eee;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+}
+
+/* Delete ikonka */
+.avatar-delete-btn {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  transform: translate(1%, 1%); /* ⚙️ posun blíž dovnitř – 50 % překrytí */
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #444444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.avatar-delete-btn img {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
+.upload-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 8px;
+  cursor: pointer;
+  background: transparent;
+  transition: background 0.2s ease;
+}
+.upload-icon:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+.upload-icon img {
+  width: 22px;
+  height: 22px;
+  opacity: 0.8;
+}
+.upload-info {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  background: #f9f9f9;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #212121;
+  margin: 8px;
+  font-family: "Poppins", sans-serif;
+}
+.upload-info.error {
+  color: #e74c3c;
+}
+.cancel-upload {
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* === FIX: Upload info bar visible above footer === */
+#uploadInfo {
+  position: fixed;
+  bottom: calc(var(--footer-btn-height) + 70px); /* těsně nad inputem */
+  left: 10px;
+  right: 10px;
+  z-index: 5000; /* nad mapou i chatem */
+  display: none; /* výchozí stav */
+}
+
+/* === Chat image modal === */
+#imageModal {
+  display: none;
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0,0,0,0.85);
+  justify-content: center;
+  align-items: center;
+}
+#imageModal img {
+  max-width: 90%;
+  max-height: 80%;
+  border-radius: 10px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+#closeImageModal {
+  position: absolute;
+  top: 20px;
+  right: 25px;
+  color: white;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+}
+/* === CHAT GROUPS === */
+.chat-groups {
+  position: absolute;
+  top: 60px;
+  bottom: calc(var(--footer-btn-height) + 10px);
+  left: 0;
+  right: 0;
+  display: none;
+  flex-wrap: wrap; /* 🔥 zachová dva sloupce */
+  gap: 14px;
+  justify-content: center;
+  padding: 24px 16px;
+  background: #ffffff;
+  overflow-y: auto;
+  z-index: 1;
+}
+
+.chat-group {
+  flex: 1 1 calc(50% - 14px);
+  min-width: 160px;
+  max-width: 200px;
+  background: linear-gradient(145deg, #262626, #3a3a3a);
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  color: #fff;
+  padding: 16px 14px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+}
+
+.chat-group:hover {
+  background: linear-gradient(145deg, #3b3b3b, #4a4a4a);
+  transform: translateY(-3px);
+}
+
+.chat-group span {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.chat-group .desc {
+  font-size: 12px;
+  font-weight: 500; /* ← musí tam být středník */
+  color: #ccc;
+  opacity: 0.4;
+  line-height: 1.3;
+}
+
+.chat-groups h3 {
+  width: 100%;
+  text-align: center;
+  font-size: 20px;
+  font-weight: 700;
+  color: #111;
+  margin-bottom: 28px;
+  margin-top: 4px;
+  letter-spacing: 0.3px;
+}
+
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  position: sticky;
+  top: 0;
+  background: white;
+  padding: 10px 14px;
+  border-bottom: 1px solid #eee;
+  z-index: 50;
+}
+
+.chat-header .back-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: #000 !important; /* 🖤 zajistí černou barvu */
+}
+.chat-header .back-btn:focus {
+  outline: none;
+}
+
+#chatGroupTitle {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.chat-group[data-group="general"] {
+  border-top: 3px solid #ff8a00;
+}
+
+.chat-avatars {
+  display: flex;
+  margin-top: 10px;
+  gap: 6px;
+}
+
+.chat-avatars img {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+  transition: transform 0.2s ease;
+}
+.chat-avatars img:hover {
+  transform: scale(1.1);
+}
+
+/* === Ranger icon === */
+.ranger-icon {
+  width: 16px;
+  height: 16px;
+  margin-left: 4px;
+  vertical-align: middle;
+  position: relative;
+  top: 1px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 6px;
+  font-size: 12px;
+  background: #f1f1f1;
+  padding: 3px 12px 3px 6px;
+  border-radius: 12px;
+  color: #333;
+}
+
+.verified-badge {
+  background-color: #e0f7ff;
+  color: #007acc;
+}
+
+.ranger-badge {
+  background-color: #e8ffe8;
+  color: #2e7d32;
+}
+
+
+  </style>
+</head>
+<body>
+  <header>
+    <img class="logo-header" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ea50150761950e794dd2bb_logo-black.png" alt="Logo" />
+    <div class="header-right">
+      <span id="headerName" class="header-name"></span>
+      <img id="profileIcon" class="profile-icon fallback" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68e956576523671093377344_account.png" alt="Profile" />
+    </div>
+  </header>
+
+  <div id="mapContainer"><div id="map"></div></div>
+
+  <!-- User detail slide-up panel -->
+<div id="userDetailPanel">
+  <div id="userDetailContent">
+
+    <div class="user-section">
+      <h3>Bio</h3>
+      <p id="userBioText">Loading...</p>
+    </div>
+
+    <div class="user-section">
+      <h3>Vehicle</h3>
+      <p id="userVehicleText">Loading...</p>
+    </div>
+
+    <div class="user-section">
+      <h3>Vehicle photo</h3>
+      <div id="userVehiclePhotoWrapper">
+        <img id="userVehiclePhoto" src="" alt="Vehicle photo" />
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="globalLoader">
+  <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ea50150761950e794dd2bb_logo-black.png" alt="Logo" class="loader-logo"/>
+  <div class="loader-spinner"></div>
+</div>
+
+
+
+  <!-- Floating Share Location Button -->
+<button id="shareLocationBtn" class="share-location-btn">
+  <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed62ac5fa9fb8e0fe1bf96_live.png" alt="Live Icon" class="live-icon" />
+  Share Location
+</button>
+
+<!-- Visibility Toggle Button -->
+<button id="visibilityBtn" class="share-location-btn visibility-btn">
+  <img id="visibilityIcon"
+       src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f6a54a2914de7af9a65d54_blind.png"
+       alt="Visibility Toggle"
+       class="live-icon" />
+</button>
+
+<!-- Satellite Toggle Button -->
+<button id="customActionBtn" class="visibility-btn">
+  <img
+    id="customActionIcon"
+    src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f6ca8e8bd3492108cb48c8_layers.png"
+    alt="Toggle Satellite"
+  />
+</button>
+
+
+
+  <div id="exploreMap" style="display:none;">
+  <iframe
+  id="froadsMap"
+  src="https://sedlacekjiri.github.io/froads-map/hokus-pokus.html"
+  title="F-roads Map"
+  style="
+    position:absolute;
+    top:0; left:0;
+    width:100%; height:100%;
+    border:none;
+    overflow:hidden;
+    touch-action:none;
+  "
+  allow="geolocation"
+  scrolling="no">
+</iframe>
+</div>
+  
+<div id="chatHeader" class="chat-header" style="display:none;">
+  <button id="backToGroupsBtn" class="back-btn">←</button>
+  <span id="chatGroupTitle">General</span>
+</div>
+
+  <div id="chat"></div>
+
+<!-- 🧩 Chat Group Selection -->
+<div id="chatGroups" class="chat-groups">
+  <h3>The Basecamp Chat</h3>
+  
+  <div class="chat-group" data-group="general">
+  <i data-lucide="message-circle"></i>
+  <span>General</span>
+  <div class="desc">Casual chat and off-topic talk with other F-road travelers.</div>
+  <div class="chat-avatars" id="avatars-general"></div>
+</div>
+
+<div class="chat-group" data-group="river">
+  <span>River Crossing</span>
+  <div class="desc">Discuss river levels, crossing safety, and share experiences.</div>
+  <div class="chat-avatars" id="avatars-river"></div>
+</div>
+
+<div class="chat-group" data-group="froads">
+  <span>F-Roads</span>
+  <div class="desc">Updates, adventures, and stories from Iceland’s highlands.</div>
+  <div class="chat-avatars" id="avatars-froads"></div>
+</div>
+
+<div class="chat-group" data-group="weather">
+  <span>Weather Updates</span>
+  <div class="desc">Real-time weather, storms, and wind conditions across Iceland.</div>
+  <div class="chat-avatars" id="avatars-weather"></div>
+</div>
+
+<div class="chat-group" data-group="campsites">
+  <span>Campsites & Spots</span>
+  <div class="desc">Discover and share your favorite campsites and hidden places.</div>
+  <div class="chat-avatars" id="avatars-campsites"></div>
+</div>
+
+<div class="chat-group" data-group="cars">
+  <span>Cars & Gear</span>
+  <div class="desc">4x4 discussions, repairs, tires, and travel gear recommendations.</div>
+  <div class="chat-avatars" id="avatars-cars"></div>
+</div>
+
+<div class="chat-group" data-group="alerts">
+  <span>Road Alerts & Closures</span>
+  <div class="desc">F-road closures, conditions, and maintenance notifications.</div>
+  <div class="chat-avatars" id="avatars-alerts"></div>
+</div>
+
+<div class="chat-group" data-group="photos">
+  <span>Photo Share / Sightings</span>
+  <div class="desc">Share your photos, landscapes, and wildlife moments.</div>
+  <div class="chat-avatars" id="avatars-photos"></div>
+</div>
+
+<div class="chat-group" data-group="help">
+  <span>Help & Rescue</span>
+  <div class="desc">Emergency contacts and real-time assistance discussions.</div>
+  <div class="chat-avatars" id="avatars-help"></div>
+</div>
+
+  <div class="chat-group" data-group="community">
+    <span>Community & Meetups</span>
+    <div class="desc">Connect with other travelers, share tips, and organize meetups.</div>
+    <div class="chat-avatars" id="avatars-community"></div>
+  </div>
+</div>
+</div>
+
+
+<!-- 🖼️ Modal pro zvětšení obrázku -->
+<div id="imageModal">
+  <span id="closeImageModal">&times;</span>
+  <img id="modalImg" src="" alt="Preview">
+</div>
+
+<div id="form" class="chat-input">
+  <label for="imageUpload" class="upload-icon">
+    <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ebd2a7ebb8279bda871914_image.png" alt="Upload" />
+  </label>
+  <input type="file" id="imageUpload" accept="image/*" hidden />
+
+  <input type="text" id="msgInput" placeholder="Write a message…" />
+  <button id="sendBtn">Send</button>
+</div>
+
+<!-- 🧾 Info bar (zobrazí se po výběru fotky) -->
+<div id="uploadInfo" class="upload-info">
+  <span id="uploadText"></span>
+  <span id="cancelUpload" class="cancel-upload">✕</span>
+</div>
+
+  <div id="profileEditor">
+  <button id="closeProfileBtn" class="close-profile-btn">
+  ✕
+</button>
+  <h3>Edit Profile</h3>
+
+  <div class="profile-avatar">
+  <div class="avatar-container">
+    <img id="currentAvatar" src="https://www.gravatar.com/avatar?d=mp" alt="Avatar" />
+    <button id="deleteAvatarBtn" class="avatar-delete-btn">
+      <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f7c2fc94b5677c444a0c31_trash.png" alt="Delete" />
+    </button>
+  </div>
+  <label for="avatarInput" class="upload-btn">+ Upload photo</label>
+  <input type="file" id="avatarInput" accept="image/*" hidden />
+</div>
+
+
+  <label for="displayNameInput">Name</label>
+  <input type="text" id="displayNameInput" placeholder="Your name" />
+
+  <label for="bioInput">Bio</label>
+  <textarea id="bioInput" maxlength="150" placeholder="Short bio (max 150 characters)"></textarea>
+
+  <label for="instagramInput">Instagram Handle</label>
+  <input type="text" id="instagramInput" placeholder="@username" />
+
+  <label for="vehicleSelect">Vehicle type</label>
+<input type="text" id="vehicleSelect" placeholder="Enter your vehicle name" />
+
+  <img id="vehiclePhotoPreview" src="" alt="Vehicle photo preview" style="display:none;">
+
+<label for="vehiclePhoto" class="upload-vehicle-btn">+ Upload Vehicle Photo</label>
+<input type="file" id="vehiclePhoto" accept="image/*" hidden />
+
+  <button id="saveProfileBtn" class="btn btn-save">Save</button>
+  <button id="logoutBtn" class="btn btn-logout">Logout</button>
+</div>
+
+  <div id="accessDeniedModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background:white; padding:32px; border-radius:12px; max-width:360px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+      <h2 style="margin-top:0; font-size:22px;">Access pending</h2>
+      <p style="color:#555; font-size:16px; line-height:1.4;">
+        <br>Your account has been created, but access is pending.<br/>
+        You'll receive an email once you're approved.
+      </p>
+      <button onclick="closeAccessModal()" style="margin-top:20px; padding:10px 20px; background:#000; color:#fff; border:none; border-radius:8px; cursor:pointer;">
+        OK
+      </button>
+    </div>
+  </div>
+
+  <div id="loginScreen">
+    <div class="login-left"></div>
+    <div class="login-right">
+      <div class="login-box">
+        <img id="logoImg" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ea50150761950e794dd2bb_logo-black.png" alt="Logo" />
+        <h2 id="authTitle">Log in</h2>
+        <form id="emailLoginForm" style="display: flex; flex-direction: column; gap: 14px;">
+          <input type="email" id="emailInput" placeholder="Email address *" required />
+          <input type="password" id="passwordInput" placeholder="Password *" required />
+          <a 
+  href="#" 
+  id="forgotPasswordLink" 
+  style="font-size:14px; color:#303030; text-decoration:underline; align-self:flex-start;"
+>
+  Forgot password?
+</a>
+
+          <button type="submit" class="btn login-email-btn">Log in</button>
+        </form>
+        <form id="signupForm" style="display: none; flex-direction: column; gap: 14px;">
+          <input type="text" id="signupFullName" placeholder="Full name *" required />
+          <input type="email" id="signupEmail" placeholder="Email address *" required />
+          <input type="password" id="signupPassword" placeholder="Password *" required />
+          <button type="submit" class="btn login-email-btn">Create account</button>
+        </form>
+
+        <p id="loginError" style="color: red; font-size: 14px; margin: 0;"></p>
+        <p class="toggle-auth" id="toSignup">Don't have an account? <a href="#">Sign up</a></p>
+        <p class="toggle-auth" id="toLogin" style="display: none;">Already have an account? <a href="#">Log in</a></p>
+
+        <p class="legal-text">
+          By continuing to use Froad, you agree to our
+          <a href="/terms" target="_blank">Terms of Service</a> and
+          <a href="/privacy" target="_blank">Privacy Policy</a>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <footer id="appFooter">
+  <!-- Explore ikona -->
+  <button class="footer-btn explore-btn" data-tab="explore">
+    <img class="explore-icon" 
+         src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed640a5b1f7f0d0f842643_map%20(3).png"
+         alt="Explore" />
+    <span>Explore</span>
+  </button>
+
+  <!--Community -->
+  <button class="footer-btn map-btn" data-tab="map">
+    <img class="map-icon"
+         src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68efa731bab109784845d316_people.png"
+         alt="People" />
+    <span>People</span>
+  </button>
+
+  <!-- Chat -->
+  <button class="footer-btn chat-btn" data-tab="chat">
+    <img class="chat-icon"
+         src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed60dbeff425a3e7d0d35e_paper-plane.png"
+         alt="Chat" />
+    <span>Chat</span>
+  </button>
+</footer>
+
+
+
+
+
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script>
+    // Firebase init
+    const config = {
+      apiKey: "AIzaSyDDMNnJgtm-gK9OrVev7qmBRpaA8CAoDiM",
+      authDomain: "froad-7d561.firebaseapp.com",
+      projectId: "froad-7d561",
+      storageBucket: "froad-7d561.firebasestorage.app",
+      messagingSenderId: "1086299585443",
+      appId: "1:1086299585443:web:10bcb67effd6a89c24f816"
+    };
+    firebase.initializeApp(config);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    const storage = firebase.storage(firebase.app(), "gs://froad-7d561.firebasestorage.app"); 
+
+
+    // DOM references
+    const loginScreen = document.getElementById("loginScreen");
+    const logoutBtn = document.getElementById("logoutBtn");
+    const profileIcon = document.getElementById("profileIcon");
+    const profileEditor = document.getElementById("profileEditor");
+    const currentAvatar = document.getElementById("currentAvatar");
+    const avatarInput = document.getElementById("avatarInput");
+    const displayNameInput = document.getElementById("displayNameInput");
+    const saveProfileBtn = document.getElementById("saveProfileBtn");
+    const vehiclePhotoInput = document.getElementById("vehiclePhoto");
+    const vehiclePhotoPreview = document.getElementById("vehiclePhotoPreview");
+
+    // ✅ Avatar preview po výběru fotky
+avatarInput.addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  // Limit velikosti 2 MB
+  if (file.size > 2 * 1024 * 1024) {
+    alert("Profile photo is too large. Please upload a file under 2 MB.");
+    avatarInput.value = ""; // reset input
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    currentAvatar.src = ev.target.result; // zobrazí okamžitě fotku
+  };
+  reader.readAsDataURL(file);
+});
+
+
+    vehiclePhotoInput.addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+
+  // ✅ Limit 2 MB
+  if (file.size > 2 * 1024 * 1024) {
+    alert("Vehicle photo is too large. Please upload a file under 2 MB.");
+    vehiclePhotoInput.value = ""; // reset input
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = ev => {
+    vehiclePhotoPreview.src = ev.target.result;
+    vehiclePhotoPreview.style.display = "block";
+  };
+  reader.readAsDataURL(file);
+});
+
+    const mapContainer = document.getElementById("mapContainer");
+    const mapDiv = document.getElementById("map");
+    const chatDiv = document.getElementById("chat");
+    const formEl = document.getElementById("form");
+    const msgInput = document.getElementById("msgInput");
+    const sendBtn = document.getElementById("sendBtn");
+
+    const emailForm = document.getElementById("emailLoginForm");
+    const emailInput = document.getElementById("emailInput");
+    const passwordInput = document.getElementById("passwordInput");
+    const signupForm = document.getElementById("signupForm");
+    const signupEmail = document.getElementById("signupEmail");
+    const signupPassword = document.getElementById("signupPassword");
+    const toSignup = document.getElementById("toSignup");
+    const toLogin = document.getElementById("toLogin");
+
+    const liveMarkers = {};
+    let liveWatchId = null;
+
+    const authTitle = document.getElementById("authTitle");
+
+
+// === Image upload for chat ===
+const imageInput = document.getElementById("imageUpload");
+const uploadInfo = document.getElementById("uploadInfo");
+const uploadText = document.getElementById("uploadText");
+const cancelUpload = document.getElementById("cancelUpload");
+
+imageInput.addEventListener("change", () => {
+  const files = imageInput.files;
+  if (files.length === 0) {
+    uploadInfo.style.display = "none";
+    return;
+  }
+
+  let totalSize = 0;
+  for (let file of files) totalSize += file.size;
+
+  if (totalSize > 2 * 1024 * 1024) {
+    uploadText.textContent = "❌ File too large (max 2 MB)";
+    uploadInfo.classList.add("error");
+  } else {
+    uploadText.textContent =
+      files.length === 1 ? "1 file uploaded" : `${files.length} files uploaded`;
+    uploadInfo.classList.remove("error");
+  }
+
+  uploadInfo.style.display = "flex";
+});
+
+cancelUpload.addEventListener("click", () => {
+  imageInput.value = "";
+  uploadInfo.style.display = "none";
+});
+
+// Toggle login / signup forms
+toSignup.querySelector("a").addEventListener("click", e => {
+  e.preventDefault();
+  emailForm.style.display = "none";
+  signupForm.style.display = "flex";
+  toSignup.style.display = "none";
+  toLogin.style.display = "block";
+  authTitle.textContent = "Sign Up";
+});
+
+toLogin.querySelector("a").addEventListener("click", e => {
+  e.preventDefault();
+  emailForm.style.display = "flex";
+  signupForm.style.display = "none";
+  toSignup.style.display = "block";
+  toLogin.style.display = "none";
+  authTitle.textContent = "Log In";
+});
+
+    // Email login
+    emailForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+      const errorEl = document.getElementById("loginError");
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+        errorEl.textContent = "";
+      } catch (err) {
+        console.error("Login error:", err);
+        errorEl.textContent = "Incorrect email or password. Try again.";
+      }
+    });
+
+    // Forgot password
+document.getElementById("forgotPasswordLink").addEventListener("click", async (e) => {
+  e.preventDefault();
+  const email = emailInput.value.trim();
+  const errorEl = document.getElementById("loginError");
+
+  if (!email) {
+    errorEl.textContent = "Please enter your email first.";
+    return;
+  }
+
+  try {
+    await auth.sendPasswordResetEmail(email);
+    errorEl.style.color = "green";
+    errorEl.textContent = "Password reset link has been sent to your email.";
+  } catch (err) {
+    console.error("Password reset error:", err);
+    errorEl.style.color = "red";
+    errorEl.textContent = "Couldn't send reset link. Please check your email.";
+  }
+});
+
+
+  // Signup
+signupForm.addEventListener("submit", async e => {
+  e.preventDefault();
+  const fullName = document.getElementById("signupFullName").value.trim();
+  const email = signupEmail.value.trim();
+  const password = signupPassword.value.trim();
+  const errorEl = document.getElementById("loginError");
+
+  if (!fullName) {
+    errorEl.textContent = "Please enter your full name.";
+    return;
+  }
+
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, password);
+    const user = cred.user;
+
+    // Nastav displayName v Auth
+    await user.updateProfile({ displayName: fullName });
+
+    // Vytvoř výchozí profil ve Firestore
+    await db.collection("users").doc(user.uid).set({
+      displayName: fullName,
+      email: email,
+      photoURL: "",
+      bio: "",
+      instagram: "",
+      vehicle: "",
+      vehiclePhotoURL: "",
+      verified: false,
+      ranger: false,
+      access: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    errorEl.textContent = "";
+    showAccessDeniedModal();
+    await auth.signOut();
+  } catch (err) {
+    console.error("Signup error:", err);
+    errorEl.textContent = "Looks like you already have an account! Try logging in.";
+  }
+});
+
+
+    // Auth listener
+auth.onAuthStateChanged(async user => {
+  if (!user) {
+    // ✅ Reset UI při novém přihlášení
+document.getElementById("chat").style.display = "none";
+document.getElementById("form").style.display = "none";
+document.getElementById("chatHeader").style.display = "none";
+document.getElementById("chatGroups").style.display = "none";
+    // Not logged in
+    loginScreen.style.display = "flex";
+    formEl.style.display = "none";
+    chatDiv.style.display = "none";
+    mapContainer.style.display = "none";
+    logoutBtn.style.display = "none";
+    return;
+  }
+
+  // === Výchozí aktivní tab = EXPLORE ===
+document.querySelectorAll('.footer-btn').forEach(b => b.classList.remove('active'));
+const exploreBtn = document.querySelector('.footer-btn.explore-btn');
+if (exploreBtn) {
+  exploreBtn.classList.add('active');
+  const exploreIcon = exploreBtn.querySelector('.explore-icon');
+  if (exploreIcon)
+    exploreIcon.src = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed64a21a1343f06a3152d5_map-focus.png"; // aktivní Explore ikonka
+}
+
+
+// ✅ Reset všech ikon do výchozího stavu
+document.querySelector('.chat-btn .chat-icon').src =
+  "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed60dbeff425a3e7d0d35e_paper-plane.png";
+document.querySelector('.map-btn .map-icon').src =
+  "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68efa731bab109784845d316_people.png";
+
+
+// Zobraz Explore mapu jako výchozí sekci
+document.getElementById('exploreMap').style.display = "block";
+document.getElementById('mapContainer').style.display = "none";
+document.getElementById('chat').style.display = "none";
+document.getElementById('form').style.display = "none";
+
+// ✅ Skryj Share Location tlačítko při načtení (jen People ho má mít)
+const shareBtn = document.getElementById('shareLocationBtn');
+if (shareBtn) {
+  shareBtn.style.display = "none";
+}
+
+// ✅ SKRYJ I VISIBILITY TLAČÍTKO PŘI STARTU
+const visibilityBtn = document.getElementById('visibilityBtn');
+if (visibilityBtn) {
+  visibilityBtn.style.display = "none";
+}
+
+// Inicializace Explore mapy (pokud ještě není)
+if (typeof initExploreMap === "function") {
+  initExploreMap();
+}
+
+
+  // === LOAD / INIT USER DOC ===
+  const userRef = db.collection("users").doc(user.uid);
+const userDoc = await userRef.get();
+
+if (!userDoc.exists) {
+  await userRef.set({
+    displayName: user.displayName || "User",
+    photoURL: "",
+    bio: "",
+    instagram: "",
+    vehicle: "",
+    vehiclePhotoURL: "",
+    verified: false,
+    ranger: false,
+    access: false,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+  console.log("✅ New clean profile created for:", user.uid);
+} else {
+  // 🧹 Reset cizích dat při novém přihlášení (bez access)
+  const existingData = userDoc.data();
+  if (existingData && !existingData.access) {
+    await userRef.set({
+      displayName: user.displayName || "User",
+      bio: "",
+      instagram: "",
+      vehicle: "",
+      vehiclePhotoURL: "",
+      photoURL: "",
+      verified: false,
+      ranger: false,
+    }, { merge: true });
+    console.log("🧼 Reset old profile data for new user:", user.uid);
+  }
+}
+
+// 🧠 Načti znovu čerstvá data po vytvoření (fix na staré hodnoty)
+const refreshedDoc = await userRef.get();
+const userData = refreshedDoc.data() || {};
+
+// 🔄 Aktualizuj Auth profil pro nový účet (aby se jméno zobrazilo i v chatu)
+await user.updateProfile({
+  displayName: "User",
+  photoURL: ""
+});
+
+
+  if (userData.vehiclePhotoURL) {
+  vehiclePhotoPreview.src = userData.vehiclePhotoURL;
+  vehiclePhotoPreview.style.display = "block";
+}
+
+  // ✅ Access kontrola
+  if (!userData.access) {
+    showAccessDeniedModal();
+    await auth.signOut();
+    return;
+  }
+
+// Prefill editor
+const defaultPhoto = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f42acf3f8263cdf39637b0_unknown.jpg";
+
+displayNameInput.value = userData.displayName || "";
+currentAvatar.src = userData.photoURL || defaultPhoto;
+
+const vehicleSelect = document.getElementById("vehicleSelect");
+if (vehicleSelect) vehicleSelect.value = userData.vehicle || "";
+
+const headerName = document.getElementById("headerName");
+if (headerName) {
+  const firstName = (userData.displayName || "User").split(" ")[0];
+  headerName.textContent = firstName;
+}
+
+// === Header user photo ===
+if (profileIcon) {
+  profileIcon.src = userData.photoURL || defaultPhoto;
+}
+
+if (userData.bio) document.getElementById("bioInput").value = userData.bio;
+if (userData.instagram) document.getElementById("instagramInput").value = userData.instagram;
+
+// ✅ Synchronizuj Auth profil s daty z Firestore (např. když se změní jméno)
+if (userData.displayName && user.displayName !== userData.displayName) {
+  await user.updateProfile({ displayName: userData.displayName });
+}
+if (userData.photoURL && user.photoURL !== userData.photoURL) {
+  await user.updateProfile({ photoURL: userData.photoURL });
+}
+
+
+  // Toggle editor
+  if (!profileIcon.hasAttribute("data-listener")) {
+  profileIcon.setAttribute("data-listener", "true");
+  profileIcon.addEventListener("click", () => {
+    profileEditor.style.display =
+      profileEditor.style.display === "flex" ? "none" : "flex";
+  });
+}
+
+  // === Zobrazení hlavní části ===
+  loginScreen.style.display = "none";
+  mapContainer.style.display = "block";
+  chatDiv.style.display = "none";
+  formEl.style.display = "none";
+  logoutBtn.style.display = "inline-block";
+
+  if (user.photoURL) {
+    profileIcon.classList.remove("fallback");
+    profileIcon.src = user.photoURL;
+  } else {
+    profileIcon.classList.add("fallback");
+    profileIcon.textContent = (user.displayName || "U")[0].toUpperCase();
+  }
+
+  initMap();
+  setupLiveLocations();
+  loadMessages();
+  setupGoLiveButton();
+  // ✅ Zkontroluj při loginu / refreshi, jestli má uživatel hidden = true, a uprav ikonku
+try {
+  const liveDoc = await db.collection("liveLocations").doc(user.uid).get();
+  const iconEl = document.getElementById("visibilityIcon");
+
+  if (liveDoc.exists && liveDoc.data().hidden === true) {
+    iconEl.src = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f6a54af63bb9cb97f07730_visibility.png"; // přeškrtnuté oko
+  } else {
+    iconEl.src = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f6a54a2914de7af9a65d54_blind.png"; // otevřené oko
+  }
+} catch (err) {
+  console.error("❌ Error loading hidden state:", err);
+}
+});
+
+// 🧠 Načti poslední avatary z každé skupiny (pouze aktivní ≤24 h)
+async function loadGroupAvatars() {
+  const groups = [
+    "general", "river", "froads", "weather",
+    "campsites", "cars", "alerts", "photos", "help", "community"
+  ];
+
+  const defaultAvatar = "https://www.gravatar.com/avatar?d=mp";
+  const now = Date.now();
+  const cutoff = now - 24 * 60 * 60 * 1000; // 24 hodin v ms
+
+  for (const group of groups) {
+    try {
+      const snap = await db
+        .collection(`messages_${group}`)
+        .orderBy("createdAt", "desc")
+        .limit(20)
+        .get();
+
+      const uniqueUsers = [];
+      const avatars = [];
+
+      snap.forEach(doc => {
+        const data = doc.data();
+        if (
+          data.photoURL &&
+          data.uid &&
+          data.createdAt &&
+          data.createdAt.toMillis() > cutoff &&   // 🧩 jen noví (≤24 h)
+          !uniqueUsers.includes(data.uid)
+        ) {
+          uniqueUsers.push(data.uid);
+          avatars.push(data.photoURL);
+        }
+      });
+
+      const container = document.getElementById(`avatars-${group}`);
+      if (!container) continue;
+      container.innerHTML = "";
+
+      avatars.slice(0, 3).forEach(url => {
+        const img = document.createElement("img");
+        img.src = url || defaultAvatar;
+        container.appendChild(img);
+      });
+
+    } catch (err) {
+      console.warn(`⚠️ Error loading avatars for ${group}:`, err);
+    }
+  }
+}
+
+// 🚀 Spusť po načtení uživatele
+loadGroupAvatars();
+setInterval(loadGroupAvatars, 20000); // refresh každých 20 s
+
+// 🚀 Spusť po načtení uživatele
+loadGroupAvatars();
+
+// 💫 Auto-refresh každých 20 sekund
+setInterval(loadGroupAvatars, 20000);
+
+
+    logoutBtn.onclick = () => {
+  // 🧹 Schovej vše kromě loginu
+  document.getElementById("chat").style.display = "none";
+  document.getElementById("form").style.display = "none";
+  document.getElementById("exploreMap").style.display = "none";
+  document.getElementById("mapContainer").style.display = "none";
+  document.getElementById("chatHeader").style.display = "none";
+  document.getElementById("chatGroups").style.display = "none";
+
+  // 🧼 Zavři editory, panely
+  profileEditor.style.display = "none";
+
+  // Zobraz login screen
+  loginScreen.style.display = "flex";
+
+  auth.signOut();
+};
+
+
+    function showAccessDeniedModal() {
+      document.getElementById("accessDeniedModal").style.display = "flex";
+    }
+    function closeAccessModal() {
+      document.getElementById("accessDeniedModal").style.display = "none";
+    }
+
+    // 🌍 Globální proměnné pro přepínání vrstev
+let map, osmLayer, satelliteLayer, isSatellite = false;
+
+function initMap() {
+  if (!map) {
+    map = L.map(mapDiv).setView([64.1466, -21.9426], 6);
+
+    // 🗺️ Standardní (OpenStreetMap)
+    osmLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 19
+    }).addTo(map); // výchozí vrstva
+
+    // 🛰️ Satelitní (Esri)
+    satelliteLayer = L.tileLayer(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+      {
+        attribution: 'Tiles © Esri — Source: Esri, Maxar, Earthstar Geographics',
+        maxZoom: 19
+      }
+    );
+
+    // 🔧 (nepoužíváme L.control.layers, protože máme vlastní tlačítko)
+  }
+}
+
+// === Satellite Toggle Button ===
+const customActionBtn = document.getElementById("customActionBtn");
+
+if (customActionBtn) {
+  customActionBtn.addEventListener("click", () => {
+    if (!isSatellite) {
+      map.removeLayer(osmLayer);
+      map.addLayer(satelliteLayer);
+      isSatellite = true;
+      console.log("🛰️ Satellite view ON");
+    } else {
+      map.removeLayer(satelliteLayer);
+      map.addLayer(osmLayer);
+      isSatellite = false;
+      console.log("🗺️ Map view ON");
+    }
+
+    // 💫 Krátká animace ikonky
+    const icon = document.getElementById("customActionIcon");
+    icon.style.transition = "transform 0.4s ease";
+    icon.style.transform = "rotate(360deg)";
+    setTimeout(() => (icon.style.transform = "rotate(0deg)"), 400);
+  });
+}
+
+// === Dynamické zarovnání Satellite tlačítka pod Visibility ===
+function positionCustomActionBtn() {
+  const visBtn = document.getElementById("visibilityBtn");
+const customBtn = document.getElementById("customActionBtn");
+
+requestAnimationFrame(() => {
+  positionCustomActionBtn();
+});
+
+  if (!visBtn || !customBtn) return;
+
+  const visHeight = visBtn.offsetHeight;
+  const offset = 10; // vzdálenost mezi tlačítky
+
+  // získej aktuální vzdálenost viditelného tlačítka od spodku okna
+  const visBottom = parseFloat(window.getComputedStyle(visBtn).bottom);
+
+  // 👇 VYPOČÍTÁME pozici tak, aby custom byl POD viditelným tlačítkem
+  const newBottom = visBottom - visHeight - offset;
+
+  customBtn.style.position = "fixed";
+  customBtn.style.right = "20px";
+  customBtn.style.bottom = `${newBottom}px`;
+}
+
+// spustí se po načtení i při změně velikosti okna
+window.addEventListener("load", positionCustomActionBtn);
+window.addEventListener("resize", positionCustomActionBtn);
+
+
+
+
+
+
+    function setupLiveLocations() {
+  db.collection("liveLocations").onSnapshot(snapshot => {
+    snapshot.docChanges().forEach(change => {
+      const uid = change.doc.id;
+      const data = change.doc.data();
+
+      // 🧠 Force local "Live" state if I'm currently sharing
+const isCurrentUser = auth.currentUser && auth.currentUser.uid === uid;
+if (isCurrentUser && liveWatchId !== null) {
+  data.isLive = true;
+  data.lastSeen = firebase.firestore.Timestamp.now(); // sync local time
+}
+
+      // === Pokud marker existuje, ale už není live ===
+      if ((change.type === "modified" && data && data.isLive === false) || change.type === "removed") {
+        if (liveMarkers[uid]) {
+          map.removeLayer(liveMarkers[uid]);
+          delete liveMarkers[uid];
+        }
+        return; // ukončí se pro tento dokument
+      }
+
+      // === Přidání nebo update aktivních markerů ===
+      if (change.type === "added" || change.type === "modified") {
+  const lat = data.lat;
+  const lng = data.lng;
+  const avatarUrl = data.photoURL || "https://www.gravatar.com/avatar?d=mp";
+
+  // 🧩 Auto-refresh dat uživatele v People panelu
+const content = document.getElementById("userDetailContent");
+if (content && auth.currentUser && auth.currentUser.uid === uid) {
+  const bioEl = document.getElementById("userBioText");
+  const vehicleEl = document.getElementById("userVehicleText");
+  const vehicleImg = document.getElementById("userVehiclePhoto");
+
+  if (bioEl) bioEl.textContent = data.bio || "";
+  if (vehicleEl) vehicleEl.textContent = data.vehicle || "";
+  if (vehicleImg) {
+    if (data.vehiclePhotoURL) {
+      vehicleImg.src = data.vehiclePhotoURL;
+      vehicleImg.classList.add("show");
+    } else {
+      vehicleImg.src = "";
+      vehicleImg.classList.remove("show");
+    }
+  }
+}
+
+
+   // ✅ Bez souřadnic nic nevykresluj (a smaž případný starý marker)
+  if (typeof lat !== "number" || typeof lng !== "number") {
+    if (liveMarkers[uid]) {
+      map.removeLayer(liveMarkers[uid]);
+      delete liveMarkers[uid];
+    }
+    return;
+  }
+
+  // 👇 SKRYJ MARKER, pokud má uživatel hidden = true
+  if (data.hidden === true) {
+    if (liveMarkers[uid]) {
+      map.removeLayer(liveMarkers[uid]);
+      delete liveMarkers[uid];
+    }
+    if (window.miniPopups && window.miniPopups[uid]) {
+      map.removeLayer(window.miniPopups[uid]);
+      delete window.miniPopups[uid];
+    }
+    return; // ⛔ Nepokračuj ve vykreslování tohoto uživatele
+  }
+
+  // === Výpočet stavu "Live" nebo "last seen" ===
+  const firstName = (data.displayName || "User").split(" ")[0];
+let statusText = "Live";
+let statusClass = "live";
+
+// 🧠 Lokální priorita pro aktuálního uživatele
+const isCurrentUser = auth.currentUser && auth.currentUser.uid === uid;
+if (isCurrentUser && liveWatchId !== null) {
+  statusText = "Live";
+  statusClass = "live";
+  data.isLive = true; // 🧩 zajistí, že zoom nebo refresh nevrátí "Just now"
+} else if (!data.isLive && data.lastSeen?.toDate) {
+  const diffMs = Date.now() - data.lastSeen.toDate().getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  // 🕒 Automaticky skryj uživatele po 48 hodinách neaktivity
+  if (diffHours >= 48) {
+    // ✅ Odstraň marker z mapy (uživatel starší než 48h)
+    if (liveMarkers[uid]) {
+      map.removeLayer(liveMarkers[uid]);
+      delete liveMarkers[uid];
+    }
+    if (window.miniPopups && window.miniPopups[uid]) {
+      map.removeLayer(window.miniPopups[uid]);
+      delete window.miniPopups[uid];
+    }
+    return; // ⛔ Přeskoč další vykreslování tohoto uživatele
+  }
+
+  // 🔹 Jinak pokračuj normálně – vypočítej čas od poslední aktivity
+  if (diffMins < 1) statusText = "Just now";
+  else if (diffMins < 60) statusText = `${diffMins} min`;
+  else if (diffHours < 24) statusText = `${diffHours} h`;
+  else statusText = `${diffDays} day${diffDays > 1 ? "s" : ""}`;
+
+  statusClass = "inactive";
+}
+
+  // === Ikona uživatele ===
+  const icon = L.icon({
+  iconUrl: avatarUrl,
+  iconSize: [44, 44],
+  iconAnchor: [22, 44],
+  popupAnchor: [0, -46],
+  className: data.isLive ? "user-icon live-outline" : "user-icon"
+});
+
+
+  // === Nový nebo aktualizovaný marker ===
+  if (!liveMarkers[uid]) {
+    const m = L.marker([lat, lng], { icon }).addTo(map);
+
+   // 🧩 Mini-popup (jméno + status) – opravuje Live → Just now bug
+const isCurrentUser = auth.currentUser && auth.currentUser.uid === uid;
+let miniStatusText = statusText;
+let miniStatusClass = statusClass;
+
+// ✅ Pokud je to aktuální uživatel a sdílí, nikdy nepřepiš na "Just now"
+if (isCurrentUser && liveWatchId !== null) {
+  miniStatusText = "Live";
+  miniStatusClass = "live";
+}
+
+const miniPopup = L.divIcon({
+  className: "mini-popup",
+  html: `
+    <div class="mini-popup-inner">
+      <span class="mini-popup-name">${firstName}</span>
+      <span class="mini-popup-status ${miniStatusClass}">${miniStatusText}</span>
+    </div>
+  `,
+  iconSize: [0, 0],
+  iconAnchor: [0, -1],
+});
+
+if (window.miniPopups && window.miniPopups[uid]) {
+  map.removeLayer(window.miniPopups[uid]);
+  delete window.miniPopups[uid];
+}
+
+// === Mini marker (pro bublinu) — vždy viditelný ===
+const miniMarker = L.marker([lat, lng], { icon: miniPopup, interactive: false }).addTo(map);
+if (!window.miniPopups) window.miniPopups = {};
+window.miniPopups[uid] = miniMarker;
+
+
+
+    // === Kliknutí otevře panel ===
+    m.on("click", () => {
+      const panel = document.getElementById("userDetailPanel");
+      const content = document.getElementById("userDetailContent");
+
+      content.innerHTML = `
+        <div class="panel-header">
+          <img class="popup-avatar" src="${data.photoURL || 'https://www.gravatar.com/avatar?d=mp'}" alt="Avatar">
+          <div class="panel-userinfo">
+            <div class="panel-name-row">
+              <strong>${data.displayName || 'Unknown'}</strong>
+              ${data.verified ? '<span class="badge verified-badge"><img class="verified-icon" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ec104bbf6183f2f84c71b7_verified.png" alt="Verified" />Verified</span>' : ''}
+              ${data.ranger ? '<span class="badge ranger-badge"><img class="ranger-icon" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68fba159091b4ac6d4781634_ranger%20(1).png" alt="Ranger" />Ranger</span>' : ''}
+            </div>
+            ${data.instagram ? `<div class="popup-instagram"><a href="https://instagram.com/${data.instagram.replace('@','')}" target="_blank" class="popup-instagram-link">@${data.instagram.replace('@','')}</a></div>` : ''}
+          </div>
+        </div>
+
+        <div class="user-section">
+          <h3>Bio</h3>
+          <p>${data.bio || 'No bio provided.'}</p>
+        </div>
+
+        <div class="user-section">
+          <h3>Vehicle</h3>
+          <p>${data.vehicle || 'No vehicle info.'}</p>
+        </div>
+
+        <div class="user-section">
+          <h3>Vehicle photo</h3>
+          <div id="userVehiclePhotoWrapper">
+            ${data.vehiclePhotoURL
+              ? `<img id="userVehiclePhoto" class="show" src="${data.vehiclePhotoURL}" alt="Vehicle photo" />`
+              : `<div style="background:#f4f4f4; border-radius:12px; height:160px; display:flex; justify-content:center; align-items:center; color:#888;">No vehicle photo</div>`
+            }
+          </div>
+        </div>
+      `;
+
+      panel.style.display = "block";
+      panel.classList.add("active");
+    });
+
+    map.on("click", () => {
+      document.getElementById("userDetailPanel").classList.remove("active");
+    });
+
+    liveMarkers[uid] = m;
+  } else {
+  liveMarkers[uid].setLatLng([lat, lng]);
+  if (window.miniPopups && window.miniPopups[uid]) {
+    window.miniPopups[uid].setLatLng([lat, lng]);
+  }
+}
+}
+    });
+  });
+}
+
+// === 🧩 Sleduj změny v users, aby se People panel aktualizoval ===
+db.collection("users").onSnapshot(snapshot => {
+  snapshot.docChanges().forEach(change => {
+    const uid = change.doc.id;
+    const data = change.doc.data();
+
+    // Pokud má uživatel marker – aktualizuj jeho fotku
+    if (liveMarkers[uid]) {
+      const newPhoto = data.photoURL || "https://www.gravatar.com/avatar?d=mp";
+      const newIcon = L.icon({
+        iconUrl: newPhoto,
+        iconSize: [44, 44],
+        iconAnchor: [22, 44],
+        className: "user-icon live-outline"
+      });
+      liveMarkers[uid].setIcon(newIcon);
+    }
+
+    // Aktualizuj People panel (pokud je otevřený)
+    const panel = document.getElementById("userDetailPanel");
+    if (panel && panel.style.display !== "none" && panel.dataset.uid === uid) {
+      document.getElementById("userBioText").textContent = data.bio || "";
+      document.getElementById("userVehicleText").textContent = data.vehicle || "";
+
+      const vehicleImg = document.getElementById("userVehiclePhoto");
+      if (data.vehiclePhotoURL) {
+        vehicleImg.src = data.vehiclePhotoURL;
+        vehicleImg.classList.add("show");
+      } else {
+        vehicleImg.src = "";
+        vehicleImg.classList.remove("show");
+      }
+    }
+  });
+});
+
+
+    async function startLive() {
+      const user = auth.currentUser;
+      if (!user) return;
+      const userDocRef = db.collection("liveLocations").doc(user.uid);
+      // ✅ Nastav lokální flag ještě před geolokací
+liveWatchId = -1; // placeholder, značí že Live je aktivní, i když GPS ještě neběží
+
+await userDocRef.set({
+  displayName: user.displayName || "",
+  photoURL: user.photoURL || "",
+  isLive: true,
+  lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+}, { merge: true });
+
+// 🔁 Okamžitý refresh, aby bublina ukázala "Live" i po zoomu
+setupLiveLocations();
+
+// ✅ Teprve potom spusť sledování polohy
+liveWatchId = navigator.geolocation.watchPosition(async pos => {
+  if (!pos.coords) {
+    console.warn("No coords returned from geolocation.");
+    return;
+  }
+
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
+
+  try {
+    await userDocRef.set({
+      lat,
+      lng,
+      lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+  } catch (err) {
+    console.error("Failed to update live location:", err);
+  }
+
+}, err => {
+  console.error("Geolocation error:", err);
+}, {
+  enableHighAccuracy: true,
+  maximumAge: 30000,
+  timeout: 20000
+});
+    }
+
+    async function stopLive() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  if (liveWatchId !== null) {
+    navigator.geolocation.clearWatch(liveWatchId);
+    liveWatchId = null;
+  }
+
+  const userDocRef = db.collection("liveLocations").doc(user.uid);
+
+  // ✅ Aktualizace: přepíšeme isLive = false a uložíme timestamp
+  await userDocRef.set({
+    isLive: false,
+    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+  }, { merge: true });
+
+  // ✅ Okamžitě aktualizujeme marker i bublinu v UI
+  if (liveMarkers[user.uid]) {
+    map.removeLayer(liveMarkers[user.uid]);
+    delete liveMarkers[user.uid];
+  }
+  if (window.miniPopups && window.miniPopups[user.uid]) {
+    map.removeLayer(window.miniPopups[user.uid]);
+    delete window.miniPopups[user.uid];
+  }
+}
+
+
+    // === Chat Send Button ===
+// 🧠 Uchovává aktuálně otevřenou chatovou skupinu (výchozí je "general")
+let currentGroup = localStorage.getItem("selectedChatGroup") || "general";
+
+// 🧩 Kliknutí na jednotlivé chat-group karty
+document.querySelectorAll(".chat-group").forEach(btn => {
+  btn.addEventListener("click", () => {
+    const groupId = btn.dataset.group || "general";
+    currentGroup = groupId; // ✅ nastaví správnou skupinu
+    localStorage.setItem("selectedChatGroup", groupId); // uloží pro refresh
+
+    // Změní titulek chatu
+    const chatGroupTitle = document.getElementById("chatGroupTitle");
+    if (chatGroupTitle) {
+      chatGroupTitle.textContent = btn.querySelector("span").textContent;
+    }
+
+    // Načti zprávy pro danou skupinu
+    loadMessages(groupId);
+
+    // Přepni z přehledu skupin do samotného chatu
+    document.getElementById("chatGroups").style.display = "none";
+    document.getElementById("chat").style.display = "flex";
+    document.getElementById("form").style.display = "flex";
+    document.getElementById("chatHeader").style.display = "flex";
+  });
+});
+
+
+// === Chat Send Button ===
+sendBtn.onclick = async () => {
+  const txt = msgInput.value.trim();
+  const file = imageInput.files[0];
+  const user = auth.currentUser;
+  if (!user) {
+    console.warn("⚠️ No user logged in, cannot send message");
+    return;
+  }
+  if (!txt && !file) {
+    console.warn("⚠️ Empty message or file");
+    return;
+  }
+
+  try {
+    let userDoc = await db.collection("users").doc(user.uid).get();
+    let verified = userDoc.exists && userDoc.data().verified === true;
+    let ranger = userDoc.exists && userDoc.data().ranger === true;
+
+    let imageUrl = "";
+    if (file) {
+      if (file.size > 2 * 1024 * 1024) {
+        alert("Image too large. Max 2 MB.");
+        return;
+      }
+      const imgRef = storage.ref(`chatImages/${user.uid}/${Date.now()}_${file.name}`);
+      await imgRef.put(file);
+      imageUrl = await imgRef.getDownloadURL();
+    }
+
+    const userData = userDoc.exists ? userDoc.data() : {};
+
+    // ✅ Ulož do správné kolekce podle skupiny
+    await db.collection(`messages_${currentGroup}`).add({
+      text: txt || "",
+      imageUrl: imageUrl || "",
+      uid: user.uid,
+      displayName: user.displayName || "User",
+      photoURL: user.photoURL || "",
+      verified: userData.verified || false,
+      ranger: userData.ranger || false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // 🧹 Vyčištění polí
+    msgInput.value = "";
+    imageInput.value = "";
+    uploadInfo.style.display = "none";
+    uploadText.textContent = "";
+
+    console.log(`✅ Message sent to messages_${currentGroup}`);
+  } catch (err) {
+    console.error("❌ Error sending message:", err);
+    alert("Failed to send message. Check console for details.");
+  }
+};
+
+
+
+  async function setupGoLiveButton() {
+  const shareBtn = document.getElementById("shareLocationBtn");
+  if (!shareBtn) return;
+
+  // 🩹 FIX: Odeber staré event listenery při opětovném přihlášení
+  const newShareBtn = shareBtn.cloneNode(true);
+  shareBtn.parentNode.replaceChild(newShareBtn, shareBtn);
+
+  // Potom používej `newShareBtn` místo `shareBtn` dál v celé funkci:
+  const btn = newShareBtn;
+
+    // ✅ Zkontroluj stav z Firebase při načtení a podle něj nastav tlačítko
+  const user = auth.currentUser;
+  if (user) {
+    const liveDoc = await db.collection("liveLocations").doc(user.uid).get();
+    if (liveDoc.exists && liveDoc.data().isLive) {
+      btn.classList.add("active");
+      btn.innerHTML = `
+        <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed633027976d278ff80bba_live-focus.png"
+             alt="Live Icon" class="live-icon" />
+        Stop Sharing
+      `;
+      // ✅ Znovu spusť update loop (aby pokračovalo sledování polohy)
+      startLive();
+    } else {
+      btn.classList.remove("active");
+      btn.innerHTML = `
+        <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed62ac5fa9fb8e0fe1bf96_live.png"
+             alt="Live Icon" class="live-icon" />
+        Share Location
+      `;
+    }
+  }
+
+
+  btn.addEventListener("click", async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    if (liveWatchId === null) {
+  // === START SHARING ===
+  await startLive();
+  btn.classList.add("active");
+  btn.innerHTML = `
+    <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed633027976d278ff80bba_live-focus.png"
+         alt="Live Icon" class="live-icon" />
+    Stop Sharing
+  `;
+
+
+      // ✅ Okamžitý update ve Firebase
+      const userDoc = await db.collection("users").doc(user.uid).get();
+      const userData = userDoc.exists ? userDoc.data() : {};
+
+      await db.collection("liveLocations").doc(user.uid).set({
+        isLive: true,
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+        displayName: user.displayName || "User",
+        photoURL: user.photoURL || "",
+        verified: userData.verified || false,
+        ranger: userData.ranger || false
+      }, { merge: true });
+
+      // ✅ Okamžitý vizuální marker s pulzujícím rámečkem
+      if (liveMarkers[user.uid]) {
+        const icon = L.icon({
+          iconUrl: user.photoURL || "https://www.gravatar.com/avatar?d=mp",
+          iconSize: [44, 44],
+          iconAnchor: [22, 44],
+          className: "user-icon live-outline"
+        });
+        liveMarkers[user.uid].setIcon(icon);
+      }
+
+      
+
+     // ✅ Okamžitě přepíšeme mini-popup na „Live“
+const firstName = (user.displayName || "User").split(" ")[0];
+
+// pokud už máš mini-popup uložený, aktualizuj jeho HTML
+if (window.miniPopups && window.miniPopups[user.uid]) {
+  const popupEl = window.miniPopups[user.uid].getElement();
+  if (popupEl) {
+    popupEl.innerHTML = `
+      <div class="mini-popup-inner">
+        <span class="mini-popup-name">
+          ${firstName}
+          ${user.verified ? '<img class="verified-icon" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ec104bbf6183f2f84c71b7_verified.png" alt="Verified" />' : ''}
+          ${user.ranger ? '<img class="ranger-icon" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68fba159091b4ac6d4781634_ranger%20(1).png" alt="Ranger" />' : ''}
+        </span>
+        <span class="mini-popup-status live">Live</span>
+      </div>
+    `;
+  }
+}
+
+// ✅ a do půl sekundy i update z Firestore
+setTimeout(() => setupLiveLocations(), 500);
+
+    } else {
+      // === STOP SHARING ===
+      await stopLive();
+      btn.classList.remove("active");
+      btn.innerHTML = `
+  <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed62ac5fa9fb8e0fe1bf96_live.png"
+       alt="Live Icon" class="live-icon" />
+  Share Location
+`;
+
+      // ✅ Smazání markerů a bublin
+      Object.values(liveMarkers).forEach(m => map.removeLayer(m));
+      for (const uid in liveMarkers) delete liveMarkers[uid];
+
+      if (window.miniPopups) {
+        Object.values(window.miniPopups).forEach(p => map.removeLayer(p));
+        window.miniPopups = {};
+      }
+
+      // ✅ Refresh mapy po 0.8 s (aktualizace z Firestore)
+      setTimeout(() => {
+        setupLiveLocations();
+      }, 800);
+    }
+  });
+}
+
+function refreshChatAvatars() {
+  const messages = document.querySelectorAll(".msg.other, .msg.me");
+
+  messages.forEach(async msgEl => {
+    const uid = msgEl.getAttribute("data-uid");
+    if (!uid) return;
+
+    try {
+      const userDoc = await db.collection("users").doc(uid).get();
+      if (userDoc.exists) {
+        const userData = userDoc.data();
+        const avatarImg = msgEl.querySelector(".avatar");
+        if (avatarImg && userData.photoURL) {
+          avatarImg.src = userData.photoURL;
+        }
+      }
+    } catch (err) {
+      console.error("Error refreshing avatar for user:", uid, err);
+    }
+  });
+}
+
+
+// === Visibility toggle ===
+const visibilityBtnEl = document.getElementById("visibilityBtn");
+if (visibilityBtnEl) {
+  let isVisible = true;
+
+    // 🟢 Při načtení zkontroluj stav hidden z Firestore a uprav ikonku
+  (async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const userDocRef = db.collection("liveLocations").doc(user.uid);
+    const liveDoc = await userDocRef.get();
+
+    if (liveDoc.exists && liveDoc.data().hidden === true) {
+      isVisible = false;
+      document.getElementById("visibilityIcon").src =
+        "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f6a54af63bb9cb97f07730_visibility.png"; // přeškrtnuté oko
+    } else {
+      isVisible = true;
+      document.getElementById("visibilityIcon").src =
+        "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f6a54a2914de7af9a65d54_blind.png"; // otevřené oko
+    }
+  })();
+
+  visibilityBtnEl.addEventListener("click", async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const userDocRef = db.collection("liveLocations").doc(user.uid);
+    const liveDoc = await userDocRef.get();
+    const isLive = liveDoc.exists && liveDoc.data().isLive === true;
+
+    // ❗ Visibility lze měnit jen když NESDÍLÍM polohu
+    if (isLive) {
+      alert("You can’t change visibility while sharing location. Stop Sharing first.");
+      return;
+    }
+
+    if (isVisible) {
+      // 🔴 Skryj mojí ikonu lokálně + ulož flag
+      if (liveMarkers[user.uid]) map.removeLayer(liveMarkers[user.uid]);
+      if (window.miniPopups && window.miniPopups[user.uid]) map.removeLayer(window.miniPopups[user.uid]);
+
+      document.getElementById("visibilityIcon").src =
+        "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f6a54af63bb9cb97f07730_visibility.png";
+
+      await userDocRef.set({ hidden: true }, { merge: true });
+      isVisible = false;
+    } else {
+      // 🟢 Zobraz zpátky (načti markery znovu)
+      await userDocRef.set({ hidden: false }, { merge: true });
+
+      // reinit markerů (používáš onSnapshot -> stačí re-call utilitky)
+      setupLiveLocations();
+
+      document.getElementById("visibilityIcon").src =
+        "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f6a54a2914de7af9a65d54_blind.png";
+
+      isVisible = true;
+    }
+  });
+}
+
+
+
+   function loadMessages(group = "general") {
+  console.log("Loading messages for group:", group);
+
+  const loader = document.getElementById("globalLoader");
+  if (loader) loader.style.display = "flex"; // 🧭 Zobraz loader hned
+
+  // 🔁 Pokud už běžel nějaký listener, vypneme ho
+  if (window.currentMessagesUnsub) {
+    window.currentMessagesUnsub();
+  }
+
+  // 📂 Kolekce podle skupiny
+  const groupCollection = db.collection(`messages_${group}`);
+
+  // 💬 Načti zprávy
+  window.currentMessagesUnsub = groupCollection
+    .orderBy("createdAt", "asc")
+    .onSnapshot(snapshot => {
+      chatDiv.innerHTML = "";
+
+      snapshot.forEach(doc => {
+      // 🔽 Okamžitý skok na konec bez animace
+        requestAnimationFrame(() => {
+          chatDiv.scrollTop = chatDiv.scrollHeight;
+        }); 
+        const msg = doc.data();
+        const msgDiv = document.createElement("div");
+        msgDiv.classList.add("msg");
+
+        // 🔥 Rozlišení mých zpráv
+        if (msg.uid === auth.currentUser?.uid) {
+          msgDiv.classList.add("me");
+        } else {
+          msgDiv.classList.add("other");
+        }
+
+        // 🧠 Důležité – přidáme UID jako identifikátor
+        msgDiv.setAttribute("data-uid", msg.uid);
+
+        const avatar = document.createElement("img");
+        avatar.className = "avatar";
+        avatar.src = msg.photoURL || "https://www.gravatar.com/avatar?d=mp";
+        avatar.alt = "avatar";
+        avatar.setAttribute("data-uid", msg.uid);
+
+        const bubble = document.createElement("div");
+        bubble.className = "bubble";
+        let content = "";
+        if (msg.text) content += `<div>${msg.text}</div>`;
+        if (msg.imageUrl) {
+          content += `
+            <img src="${msg.imageUrl}" 
+                 alt="Sent image" 
+                 class="chat-image"
+                 style="margin-top:6px; max-width:200px; border-radius:10px; display:block; cursor:pointer;">
+          `;
+        }
+
+        // 🕒 Funkce pro formátování času jako 6h, 1d, 2w, ...
+function getRelativeTime(timestamp) {
+  if (!timestamp) return "";
+  const now = new Date();
+  const diffMs = now - timestamp;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffH = Math.floor(diffMin / 60);
+  const diffD = Math.floor(diffH / 24);
+  const diffW = Math.floor(diffD / 7);
+
+  if (diffMin < 1) return "now";
+  if (diffH < 1) return `${diffMin}m`;
+  if (diffD < 1) return `${diffH}h`;
+  if (diffW < 1) return `${diffD}d`;
+  return `${diffW}w`;
+}
+
+// 🧩 uvnitř renderu zpráv
+const timeText = msg.createdAt?.toDate ? getRelativeTime(msg.createdAt.toDate()) : "";
+
+bubble.innerHTML = `
+  <div class="meta">
+    ${msg.displayName || "Unknown"}
+    ${msg.verified ? '<span class="badge verified-badge"><img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ec104bbf6183f2f84c71b7_verified.png" alt="Verified" class="verified-icon" />Verified</span>' : ''}
+    ${msg.ranger ? '<span class="badge ranger-badge"><img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68fba159091b4ac6d4781634_ranger%20(1).png" alt="Ranger" class="ranger-icon" />Ranger</span>' : ''}
+    <span class="msg-time">${timeText}</span>
+  </div>
+  ${content}
+`;
+
+
+msgDiv.appendChild(avatar);
+msgDiv.appendChild(bubble);
+chatDiv.appendChild(msgDiv);
+
+      });
+
+      // 🧠 Aktualizuj avatary po každém snapshotu
+      refreshChatAvatars();
+
+      // 🔥 Scrolluj dolů po načtení
+      setTimeout(() => {
+        chatDiv.scrollTop = chatDiv.scrollHeight;
+      }, 50);
+
+      // ✅ Skryj loader po načtení zpráv
+      if (loader) loader.style.display = "none";
+    }, err => {
+      console.error("❌ Error loading messages:", err);
+      if (loader) loader.style.display = "none";
+    });
+}
+
+
+
+// === Galerie obrázku v chatu ===
+const imageModal = document.getElementById("imageModal");
+const modalImg = document.getElementById("modalImg");
+const closeImageModal = document.getElementById("closeImageModal");
+
+// Kliknutí na obrázek v chatu
+document.addEventListener("click", (e) => {
+  if (e.target.classList.contains("chat-image")) {
+    modalImg.src = e.target.src;
+    imageModal.style.display = "flex";
+  }
+});
+
+// Zavření galerie
+closeImageModal.addEventListener("click", () => {
+  imageModal.style.display = "none";
+  modalImg.src = "";
+});
+
+// Zavření kliknutím mimo obrázek
+imageModal.addEventListener("click", (e) => {
+  if (e.target === imageModal) {
+    imageModal.style.display = "none";
+    modalImg.src = "";
+  }
+});
+
+
+let exploreMap;
+function initExploreMap() {
+  if (!exploreMap) {
+    exploreMap = L.map('froadMap').setView([50.0755, 14.4378], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors',
+      maxZoom: 18
+    }).addTo(exploreMap);
+  }
+}
+
+
+
+
+
+    function closeAccessModal() {
+      document.getElementById("accessDeniedModal").style.display = "none";
+    }
+
+    // === SAVE PROFILE HANDLER ===
+saveProfileBtn.addEventListener("click", async () => {
+
+  const user = auth.currentUser;
+  if (!user) return;
+
+  saveProfileBtn.disabled = true;                
+  saveProfileBtn.textContent = "Saving...";      
+
+  const displayName = displayNameInput.value.trim();
+  const bio = document.getElementById("bioInput").value.trim();
+  const instagram = document.getElementById("instagramInput").value.trim();
+  const vehicle = document.getElementById("vehicleSelect").value;
+  const avatarFile = avatarInput.files[0];
+  const vehicleFile = vehiclePhotoInput.files[0];
+  const userRef = db.collection("users").doc(user.uid);
+
+  try {
+    // Načti aktuální data (abychom porovnali změny)
+    const userDoc = await userRef.get();
+    const userData = userDoc.data() || {};
+
+    let photoURL = user.photoURL || "";
+    let vehiclePhotoURL = userData.vehiclePhotoURL || "";
+
+    // === Upload avatar ===
+    if (avatarFile) {
+      const avatarRef = storage.ref(`avatars/${user.uid}`);
+      await avatarRef.put(avatarFile);
+      photoURL = await avatarRef.getDownloadURL();
+      await user.updateProfile({ photoURL });
+    }
+
+    // === Upload vehicle photo ===
+    if (vehicleFile && vehicleFile.name) {
+      const fileName = `${Date.now()}_${vehicleFile.name}`;
+      const vehicleRef = storage.ref(`vehicles/${user.uid}/${fileName}`);
+      const snapshot = await vehicleRef.put(vehicleFile);
+      vehiclePhotoURL = await snapshot.ref.getDownloadURL();
+    }
+
+    // === ⚡ SAFE GUARD – žádné "file://" a žádné přepisování prázdnými hodnotami ===
+    if (vehiclePhotoPreview.src && vehiclePhotoPreview.src.startsWith("https://")) {
+      vehiclePhotoURL = vehiclePhotoPreview.src;
+    }
+
+    // 🔍 Zjisti, jestli se něco skutečně změnilo
+    const hasChanges =
+      displayName !== (userData.displayName || "") ||
+      bio !== (userData.bio || "") ||
+      instagram !== (userData.instagram || "") ||
+      vehicle !== (userData.vehicle || "") ||
+      photoURL !== (userData.photoURL || "") ||
+      vehiclePhotoURL !== (userData.vehiclePhotoURL || "");
+
+    if (!hasChanges) {
+      console.log("ℹ️ No changes to save.");
+      alert("No changes detected.");
+      saveProfileBtn.disabled = false;
+      saveProfileBtn.textContent = "Save";
+      return;
+    }
+
+    // === SAVE TO FIRESTORE ===
+    await userRef.set({
+      displayName,
+      photoURL,
+      vehicle,
+      bio,
+      instagram,
+      vehiclePhotoURL
+    }, { merge: true });
+
+    // === OKAMŽITÁ AKTUALIZACE UI ===
+    await user.updateProfile({
+      displayName,
+      photoURL: photoURL || user.photoURL || ""
+    });
+
+    const headerName = document.getElementById("headerName");
+    if (headerName) {
+      const firstName = (displayName || "User").split(" ")[0];
+      headerName.textContent = firstName;
+    }
+
+    const profileIcon = document.getElementById("profileIcon");
+    const defaultPhoto = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f42acf3f8263cdf39637b0_unknown.jpg";
+    if (profileIcon) {
+      profileIcon.src = photoURL || defaultPhoto;
+    }
+
+    if (currentAvatar) {
+      currentAvatar.src = photoURL || defaultPhoto;
+    }
+
+    // ✅ Aktualizuj liveLocations jen když UŽIVATEL REÁLNĚ sdílí polohu
+const liveRef = db.collection("liveLocations").doc(user.uid);
+const liveSnap = await liveRef.get();
+
+// 🧠 Aktualizuj nebo vytvoř liveLocations záznam, i když uživatel není Live
+if (!liveSnap.exists) {
+  // nový uživatel — vytvoř dokument
+  await liveRef.set({
+    displayName,
+    photoURL,
+    vehicle,
+    bio,
+    instagram,
+    vehiclePhotoURL,
+    isLive: false,
+    hidden: false,
+    lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+  });
+} else {
+  // už existuje — aktualizuj data
+  // ✅ Bezpečný fallback – zajistí, že liveLocations má vždy platná data
+const safePhoto = photoURL || "https://www.gravatar.com/avatar?d=mp";
+const safeVehiclePhoto = vehiclePhotoURL || "";
+
+await liveRef.set({
+  displayName: displayName || "User",
+  photoURL: safePhoto,
+  vehicle: vehicle || "",
+  bio: bio || "",
+  instagram: instagram || "",
+  vehiclePhotoURL: safeVehiclePhoto,
+  lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+}, { merge: true });
+
+}
+
+// pokud není isLive:true, NIC do liveLocations neukládej
+
+
+    alert("✅ Profile saved!");
+    profileEditor.style.display = "none";
+
+  } catch (err) {
+    console.error("❌ Error saving profile:", err);
+    alert("Failed to save profile. Try again later.");
+  } finally {
+    saveProfileBtn.disabled = false;             
+    saveProfileBtn.textContent = "Save";         
+  }
+
+  // ✅ Po uložení profilu proveď refresh s loaderem
+  const loader = document.getElementById("globalLoader");
+  if (loader) loader.style.display = "flex"; 
+  setTimeout(() => {
+    window.location.reload();
+  }, 1000);
+
+ // 🔄 Sync do liveLocations (aby se panel People hned aktualizoval)
+try {
+  const liveRef = db.collection("liveLocations").doc(auth.currentUser.uid);
+  await liveRef.set({
+    bio: updatedData.bio || "",
+    vehicle: updatedData.vehicle || "",
+    instagram: updatedData.instagram || "",
+    photoURL: updatedData.photoURL || "",
+    vehiclePhotoURL: updatedData.vehiclePhotoURL || "",
+    displayName: updatedData.displayName || auth.currentUser.displayName || "User"
+  }, { merge: true });
+  console.log("✅ LiveLocations synced after profile save");
+} catch (err) {
+  console.error("❌ Failed to sync liveLocations:", err);
+}
+ 
+
+});
+
+document.getElementById("closeProfileBtn").addEventListener("click", () => {
+  profileEditor.style.display = "none";
+  refreshChatAvatars(); 
+});
+
+
+// === DELETE AVATAR FUNCTION ===
+document.getElementById("deleteAvatarBtn").addEventListener("click", async () => {
+  const confirmDelete = confirm("Are you sure you want to delete this photo?");
+  if (!confirmDelete) return;
+
+  const user = auth.currentUser;
+  if (!user) return alert("Not logged in");
+
+  const defaultAvatar = "https://www.gravatar.com/avatar?d=mp";
+
+  // 🔄 Aktualizace UI
+  const currentAvatar = document.getElementById("currentAvatar");
+  const profileIcon = document.getElementById("profileIcon");
+  if (currentAvatar) currentAvatar.src = defaultAvatar;
+  if (profileIcon) profileIcon.src = defaultAvatar;
+
+  try {
+    // 🔄 Aktualizace ve Firestore
+    await db.collection("users").doc(user.uid).update({
+      photoURL: defaultAvatar
+    });
+
+    // 🔄 Aktualizace v Auth profilu
+    await user.updateProfile({ photoURL: defaultAvatar });
+
+    // 🔄 Aktualizace i v liveLocations (aby se přepsala fotka i v People)
+const liveDocRef = db.collection("liveLocations").doc(user.uid);
+await liveDocRef.set(
+  {
+    photoURL: defaultAvatar
+  },
+  { merge: true }
+);
+
+// 🔁 Okamžitý refresh markeru na mapě (pokud existuje)
+if (liveMarkers[user.uid]) {
+  const icon = L.icon({
+    iconUrl: defaultAvatar,
+    iconSize: [44, 44],
+    iconAnchor: [22, 44],
+    className: "user-icon live-outline"
+  });
+  liveMarkers[user.uid].setIcon(icon);
+}
+
+
+    alert("✅ Profile photo deleted.");
+  } catch (err) {
+    console.error("Error deleting avatar:", err);
+    alert("❌ Failed to delete photo. Try again later.");
+  }
+
+  // 🔄 Aktualizuj i liveLocations (aby se změna projevila hned v People sekci)
+try {
+  const liveRef = db.collection("liveLocations").doc(user.uid);
+  await liveRef.set(
+    {
+      photoURL: defaultAvatar
+    },
+    { merge: true }
+  );
+
+  // ✅ Okamžitý update markeru bez nutnosti refreshu
+  if (liveMarkers[user.uid]) {
+    const newIcon = L.icon({
+      iconUrl: defaultAvatar,
+      iconSize: [44, 44],
+      iconAnchor: [22, 44],
+      className: "user-icon live-outline"
+    });
+    liveMarkers[user.uid].setIcon(newIcon);
+  }
+} catch (err) {
+  console.error("Failed to update live marker photo:", err);
+}
+});
+
+
+document.getElementById("closeProfileBtn").addEventListener("click", () => {
+  const profileEditor = document.getElementById("profileEditor");
+  profileEditor.style.display = "none";
+});
+
+
+// === Aktualizace markeru uživatele na mapě ===
+function updateUserMarker(data) {
+  if (!window.liveMarkers || !map) return;
+
+  const existing = window.liveMarkers[data.uid];
+  if (!existing) return;
+
+  const icon = L.icon({
+  iconUrl: data.photoURL || "https://www.gravatar.com/avatar?d=mp",
+  iconSize: [40, 40],
+  iconAnchor: [20, 40],
+  popupAnchor: [0, -42],
+  className: "user-icon",
+});
+
+  existing.setIcon(icon);
+
+  const vehicleText = data.vehicle ? ` (${data.vehicle})` : "";
+  const gpsText =
+  data.lat && data.lng
+    ? `${data.lat.toFixed(5)}, ${data.lng.toFixed(5)}`
+    : "No GPS data";
+
+const popupHTML = `
+  <div class="popup-content">
+    <strong>${data.displayName || "Unknown User"}</strong>
+    <div class="gps">📍 ${gpsText}</div>
+    <div class="vehicle">🚙 ${data.vehicle || "No vehicle info"}</div>
+  </div>
+`;
+
+existing.bindPopup(popupHTML, { className: "custom-popup" });
+
+}
+
+  // === Ikony ===
+const chatIconDefault = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed60dbeff425a3e7d0d35e_paper-plane.png";
+const chatIconActive  = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed60e5e6a6b87e493e45db_paper-plane-focus.png";
+
+const liveIconDefault = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed62ac5fa9fb8e0fe1bf96_live.png";
+const liveIconActive  = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed633027976d278ff80bba_live-focus.png";
+
+// 🆕 Explore (nová mapa s froady)
+const exploreIconDefault = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed640a5b1f7f0d0f842643_map%20(3).png";
+const exploreIconActive  = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed64a21a1343f06a3152d5_map-focus.png";
+
+// 🧭 Community (přejmenovaná původní mapa)
+const communityIconDefault = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68efa731bab109784845d316_people.png";
+const communityIconActive  = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68efa7311faefa85ba34ed0a_people-focus.png";
+
+document.querySelectorAll('.footer-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.footer-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+
+    const tab = btn.dataset.tab;
+
+    // 🧩 Když se přepíná přes footer, schovej chat header
+const chatHeader = document.getElementById("chatHeader");
+if (tab !== "chat" && chatHeader) {
+  chatHeader.style.display = "none";
+}
+
+
+    // Přepínání ikon (máš je nadefinované výše)
+    document.querySelector('.explore-btn .explore-icon').src =
+      (tab === "explore") ? exploreIconActive : exploreIconDefault;
+    document.querySelector('.map-btn .map-icon').src =
+      (tab === "map") ? communityIconActive : communityIconDefault;
+    document.querySelector('.chat-btn .chat-icon').src =
+      (tab === "chat") ? chatIconActive : chatIconDefault;
+
+    // Zobrazení sekcí
+    document.getElementById('exploreMap').style.display = (tab === "explore") ? "block" : "none";
+    document.getElementById('mapContainer').style.display = (tab === "map") ? "block" : "none";
+    document.getElementById('chat').style.display = (tab === "chat") ? "flex" : "none";
+    document.getElementById('form').style.display = (tab === "chat") ? "flex" : "none";
+
+    // ✅ Oprava Leaflet mapy po přepnutí na "People"
+if (tab === "map") {
+  const loader = document.getElementById("globalLoader");
+  loader.style.display = "flex";
+  setTimeout(() => {
+    if (window.map && typeof map.invalidateSize === "function") {
+      map.invalidateSize();
+    }
+    loader.style.display = "none";
+  }, 400);
+}
+
+
+    // === Chat Groups visibility ===
+    if (tab === "chat") {
+  // 🧩 pokaždé, když kliknu na Chat ve footeru → vždy čistý seznam skupin
+  chatGroups.style.display = "flex";
+  chatDiv.style.display = "none";
+  formEl.style.display = "none";
+
+  // 🔒 schovej případný header „← General“
+  const chatHeader = document.getElementById("chatHeader");
+  if (chatHeader) chatHeader.style.display = "none";
+
+  // 🧹 smaž uloženou skupinu, aby se po reloadu nezobrazila General
+  localStorage.removeItem("selectedChatGroup");
+} else {
+  chatGroups.style.display = "none";
+}
+
+    // === Výběr chat group ===
+    document.querySelectorAll(".chat-group").forEach(group => {
+  group.addEventListener("click", async () => {
+    chatGroups.style.display = "none";
+    chatDiv.style.display = "block";
+    formEl.style.display = "flex";
+    chatHeader.style.display = "flex";
+    chatGroupTitle.textContent = group.querySelector("span").textContent;
+    backBtn.style.display = "inline-block";
+
+    // 🧩 Načti zprávy
+    await loadMessages(group.dataset.group);
+
+    // 🔽 Automaticky skoč na konec (bez animace)
+    const chatContainer = document.getElementById("chat");
+    if (chatContainer) {
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+  });
+});
+
+
+    // 🧭 Back button – návrat z chatu do seznamu skupin
+    const backBtn = document.getElementById("backToGroupsBtn");
+
+    document.querySelectorAll(".chat-group").forEach(group => {
+      group.addEventListener("click", () => {
+        backBtn.style.display = "block"; // zobraz tlačítko zpět
+      });
+    });
+
+    backBtn.addEventListener("click", () => {
+  chatDiv.style.display = "none";
+  formEl.style.display = "none";
+  chatGroups.style.display = "flex";
+  backBtn.style.display = "none";
+
+  // 🧩 Skryj i header (← General)
+  const chatHeader = document.getElementById("chatHeader");
+  if (chatHeader) chatHeader.style.display = "none";
+});
+
+
+    // Tlačítka: znovu si je vezmu ze DOM (bez závislosti na jiném scope)
+    const shareBtnEl = document.getElementById('shareLocationBtn');
+    const visibilityBtnEl = document.getElementById('visibilityBtn');
+    const customActionBtnEl = document.getElementById("customActionBtn");
+    
+
+    if (tab === "map") {
+  if (shareBtnEl) shareBtnEl.style.display = "flex";
+  if (visibilityBtnEl) visibilityBtnEl.style.display = "flex";
+  const customActionBtn = document.getElementById("customActionBtn");
+  if (customActionBtn) customActionBtn.style.display = "flex";
+} else {
+  if (shareBtnEl) shareBtnEl.style.display = "none";
+  if (visibilityBtnEl) visibilityBtnEl.style.display = "none";
+  const customActionBtn = document.getElementById("customActionBtn");
+  if (customActionBtn) customActionBtn.style.display = "none";
+}
+
+    // User panel mimo People pryč
+    const userPanel = document.getElementById("userDetailPanel");
+    if (userPanel) {
+      userPanel.classList.remove("active");
+      userPanel.style.display = (tab === "map") ? "block" : "none";
+    }
+
+    // Chat scroll fix
+    if (tab === "chat") {
+      const chatDiv = document.getElementById('chat');
+      chatDiv.scrollTop = chatDiv.scrollHeight;
+    }
+
+    // Explore init
+    if (tab === "explore" && typeof initExploreMap === "function") {
+      initExploreMap();
+    }
+  });
+});
+
+
+
+// 🧩 Disable local explore init when iframe is used
+function initExploreMap() {
+  console.log("Explore map is loaded via iframe – no Leaflet init here.");
+}
+
+window.addEventListener("load", () => {
+  const loader = document.getElementById("globalLoader");
+  if (loader) {
+    loader.style.display = "none";
+  }
+});
+
+const chatHeader = document.getElementById("chatHeader");
+const chatGroupTitle = document.getElementById("chatGroupTitle");
+
+document.querySelectorAll(".chat-group").forEach(group => {
+  group.addEventListener("click", () => {
+    chatGroups.style.display = "none";
+    chatDiv.style.display = "block";
+    formEl.style.display = "flex";
+    chatHeader.style.display = "flex"; // zobraz header
+    chatGroupTitle.textContent = group.querySelector("span").textContent; // název skupiny
+    backBtn.style.display = "inline-block";
+
+    loadMessages(group.dataset.group);
+  });
+});
+
+backBtn.addEventListener("click", () => {
+  chatDiv.style.display = "none";
+  formEl.style.display = "none";
+  chatGroups.style.display = "flex";
+  chatHeader.style.display = "none"; // skryj header
+});
+
+
+
+  </script>
+</body>
+</html>
