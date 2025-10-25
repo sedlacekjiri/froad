@@ -1704,9 +1704,17 @@ if (tab !== "chat" && chatHeader) {
     document.getElementById('chat').style.display = (tab === "chat") ? "flex" : "none";
     document.getElementById('form').style.display = (tab === "chat") ? "flex" : "none";
 
-    // ✅ Initialize Explore map when tab is opened
-    if (tab === "explore" && typeof initExploreMap === "function") {
-      initExploreMap();
+    // ✅ Fix Explore map size after tab switch
+    if (tab === "explore") {
+      if (typeof initExploreMap === "function") {
+        initExploreMap(); // Initialize if not already done (has protection)
+      }
+      // Fix map size after becoming visible
+      setTimeout(() => {
+        if (window.exploreMap && typeof window.exploreMap.invalidateSize === "function") {
+          window.exploreMap.invalidateSize();
+        }
+      }, 100);
     }
 
     // ✅ Oprava Leaflet mapy po přepnutí na "People"

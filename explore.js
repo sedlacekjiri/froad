@@ -1,5 +1,6 @@
 // Explore Map Initialization
 let exploreMapInitialized = false;
+let exploreMapInstance = null; // Global reference to the map
 
 function initExploreMap() {
   // Prevent double initialization
@@ -13,9 +14,11 @@ function initExploreMap() {
     return;
   }
 
-    
+
     const minZoom = 7;
     const map = L.map('exploreMapContainer').setView([63.9, -18.9], minZoom);
+    exploreMapInstance = map; // Store globally
+    window.exploreMap = map; // Make accessible globally
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution:'© OpenStreetMap contributors', maxZoom:19, minZoom
     }).addTo(map);
