@@ -256,12 +256,7 @@ document.querySelector('.chat-btn .chat-icon').src =
 document.querySelector('.map-btn .map-icon').src =
   "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68efa731bab109784845d316_people.png";
 
-
-// Zobraz Explore mapu jako výchozí sekci
-document.getElementById('exploreMap').style.display = "block";
-document.getElementById('mapContainer').style.display = "none";
-document.getElementById('chat').style.display = "none";
-document.getElementById('form').style.display = "none";
+// Display settings moved to window.load listener
 
 // ✅ Skryj Share Location tlačítko při načtení (jen People ho má mít)
 const shareBtn = document.getElementById('shareLocationBtn');
@@ -273,11 +268,6 @@ if (shareBtn) {
 const visibilityBtn = document.getElementById('visibilityBtn');
 if (visibilityBtn) {
   visibilityBtn.style.display = "none";
-}
-
-// ✅ Initialize Explore map on first load
-if (typeof initExploreMap === "function") {
-  initExploreMap();
 }
 
 
@@ -1834,6 +1824,25 @@ window.addEventListener("load", () => {
   const loader = document.getElementById("globalLoader");
   if (loader) {
     loader.style.display = "none";
+  }
+
+  // ✅ Show Explore map BEFORE initialization (Leaflet needs visible container)
+  const exploreMapDiv = document.getElementById('exploreMap');
+  if (exploreMapDiv) {
+    exploreMapDiv.style.display = "block";
+  }
+
+  // Hide other sections
+  const sections = ['mapContainer', 'chat', 'form'];
+  sections.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = "none";
+  });
+
+  // ✅ Initialize Explore map immediately on page load (outside auth)
+  if (typeof initExploreMap === "function") {
+    console.log("Initializing Explore map on page load");
+    initExploreMap();
   }
 });
 
