@@ -1,3 +1,18 @@
+// Explore Map Initialization
+let exploreMapInitialized = false;
+
+function initExploreMap() {
+  // Prevent double initialization
+  if (exploreMapInitialized) return;
+  exploreMapInitialized = true;
+
+  // Check if container exists
+  const container = document.getElementById('exploreMapContainer');
+  if (!container) {
+    console.error('Explore map container not found');
+    return;
+  }
+
     
     const minZoom = 7;
     const map = L.map('exploreMapContainer').setView([63.9, -18.9], minZoom);
@@ -1604,7 +1619,6 @@ function closeGallery(){
 })();
 
 
-  </script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function(){
@@ -1615,7 +1629,6 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 });
 
-</script>
 
 <script>
 const UPDATES = [
@@ -2065,7 +2078,6 @@ ${trkXml}
 
 
 
-</script>
 
 <script>
 (() => {
@@ -2138,7 +2150,6 @@ if (handle) {
     panel.style.height = '55vh'; // zpět na defaultní
   });
 })();
-</script>
 
 
 
@@ -2147,4 +2158,4 @@ if (handle) {
 
 
 
-</body>
+} // End of initExploreMap

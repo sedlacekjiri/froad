@@ -275,7 +275,10 @@ if (visibilityBtn) {
   visibilityBtn.style.display = "none";
 }
 
-// Explore mapa se inicializuje automaticky v explore.js
+// ✅ Initialize Explore map on first load
+if (typeof initExploreMap === "function") {
+  initExploreMap();
+}
 
 
   // === LOAD / INIT USER DOC ===
@@ -1711,6 +1714,11 @@ if (tab !== "chat" && chatHeader) {
     document.getElementById('chat').style.display = (tab === "chat") ? "flex" : "none";
     document.getElementById('form').style.display = (tab === "chat") ? "flex" : "none";
 
+    // ✅ Initialize Explore map when tab is opened
+    if (tab === "explore" && typeof initExploreMap === "function") {
+      initExploreMap();
+    }
+
     // ✅ Oprava Leaflet mapy po přepnutí na "People"
 if (tab === "map") {
   const loader = document.getElementById("globalLoader");
@@ -1815,7 +1823,6 @@ if (tab === "map") {
       chatDiv.scrollTop = chatDiv.scrollHeight;
     }
 
-    // Explore mapa je již inicializovaná v explore.js
   });
 });
 
