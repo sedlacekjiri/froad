@@ -275,10 +275,7 @@ if (visibilityBtn) {
   visibilityBtn.style.display = "none";
 }
 
-// Inicializace Explore mapy (pokud ještě není)
-if (typeof initExploreMap === "function") {
-  initExploreMap();
-}
+// Explore mapa se inicializuje automaticky v explore.js
 
 
   // === LOAD / INIT USER DOC ===
@@ -1365,15 +1362,7 @@ imageModal.addEventListener("click", (e) => {
 
 
 let exploreMap;
-function initExploreMap() {
-  if (!exploreMap) {
-    exploreMap = L.map('froadMap').setView([50.0755, 14.4378], 6);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors',
-      maxZoom: 18
-    }).addTo(exploreMap);
-  }
-}
+// initExploreMap removed - mapa se inicializuje v explore.js
 
 
 
@@ -1826,19 +1815,13 @@ if (tab === "map") {
       chatDiv.scrollTop = chatDiv.scrollHeight;
     }
 
-    // Explore init
-    if (tab === "explore" && typeof initExploreMap === "function") {
-      initExploreMap();
-    }
+    // Explore mapa je již inicializovaná v explore.js
   });
 });
 
 
 
-// 🧩 Disable local explore init when iframe is used
-function initExploreMap() {
-  console.log("Explore map is loaded via iframe – no Leaflet init here.");
-}
+// Explore mapa je nyní načtena přímo (explore.js), ne přes iframe
 
 window.addEventListener("load", () => {
   const loader = document.getElementById("globalLoader");
