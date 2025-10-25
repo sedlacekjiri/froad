@@ -7,7 +7,6 @@
   <title>Froad Community + Live Map</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="styles.css" />
-  <link rel="stylesheet" href="explore.css" />
 </head>
 <body>
   <header>
@@ -75,256 +74,23 @@
 </button>
 
 
-<div id="exploreMap" style="display:none;">
-  <!-- Vehicle filter -->
-  <div id="vehicleFilter" style="position:absolute;top:10px;left:60px;z-index:1000;
-       background:white;padding:10px 14px;border-radius:8px;
-       box-shadow:0 2px 5px rgba(0,0,0,.2);display:flex;align-items:center;gap:10px;">
-    <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/6893c2dc9f3ada3f8c6f8a16_jeeps.png"
-         alt="Jeep icon" style="width:24px; height:auto;" />
-    <select id="vehicleSelect" style="font-size:14px; padding:4px 8px; border-radius:4px;">
-      <option value="all">Choose your 4x4 vehicle</option>
-  
-  <!-- Compact SUVs -->
-  <option value="jimny">Suzuki Jimny</option>
-  <option value="duster">Dacia Duster</option>
-  <option value="sportage">Kia Sportage</option>
-  <option value="tucson">Hyundai Tucson</option>
-  <option value="rav4">Toyota RAV4</option>
-
-  <!-- Mid-size SUVs -->
-  <option value="outlander">Mitsubishi Outlander</option>
-  <option value="xtrail">Nissan X-Trail</option>
-  <option value="forester">Subaru Forester</option>
-  <option value="cx5">Mazda CX-5</option>
-
-  <!-- Large SUVs & Offroad -->
-  <option value="landcruiser">Toyota Land Cruiser</option>
-  <option value="hilux">Toyota Hilux</option>
-  <option value="wrangler">Jeep Wrangler</option>
-  <option value="renegade">Jeep Renegade</option>
-  <option value="defender">Land Rover Defender</option>
-  <option value="discovery">Land Rover Discovery</option>
-  <option value="grenadier">INEOS Grenadier</option>
-
-  <!-- Luxury -->
-  <option value="xc90">Volvo XC90</option>
-  <option value="x5">BMW X5</option>
-  <option value="gle">Mercedes GLE</option>
-  <option value="gclass">Mercedes G-Class</option>
-  <option value="q7">Audi Q7</option>
-
-  <!-- Campers -->
-  <option value="transporter-4x4">VW Transporter 4x4 Camper</option>
-  <option value="sprinter-4x4">Mercedes Sprinter 4x4 Camper</option>
-</select>
-
+  <div id="exploreMap" style="display:none;">
+    <iframe
+      id="froadsMap"
+      src="explore.html"
+      title="F-roads Map"
+      style="
+        position:absolute;
+        top:0; left:0;
+        width:100%; height:100%;
+        border:none;
+        overflow:hidden;
+        touch-action:none;
+      "
+      allow="geolocation"
+      scrolling="no">
+    </iframe>
   </div>
-
-<!-- Bottom-left info box (subtle) -->
-<div id="bottomInfoBox">
-  <div id="currentTime"></div>
-  <button id="openDisclaimer" type="button" title="Important Disclaimer">Safety notice</button>
-</div>
-
-<!-- Backdrop + Modal (white theme) -->
-<div id="legalModalBackdrop" aria-hidden="true"></div>
-<div id="legalModal" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
-  <button id="legalClose" class="closeBtn" aria-label="Close">✕</button>
-
-  <div id="legalContent">
-    <h2 id="legalTitle">Important Disclaimer</h2>
-    <p>
-      The vehicle selection and road recommendations shown here are only
-      <strong>general suggestions</strong> based on common road difficulty levels.
-      Actual conditions can change quickly due to weather, river flow, snow, or closures.
-    </p>
-    <ul>
-      <li>Driving on F-roads is entirely <strong>at your own risk</strong> and the driver takes full responsibility.</li>
-      <li>Always check official road conditions (<em>road.is</em>) and the weather forecast before driving.</li>
-      <li>Do not attempt river crossings unless you and your vehicle are fully capable.</li>
-      <li>Respect road signs, closures, and your rental company’s rules.</li>
-    </ul>
-    <p>
-      The creators of this map accept no responsibility for damages, accidents, or fines resulting from the use of these recommendations.
-    </p>
-  </div>
-
-  <div id="legalFooter">
-    <button id="legalAccept" type="button">I Understand</button>
-  </div>
-</div>
-
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-
-  <!-- Download GPX Button -->
-  <div id="gpxDownloadBtn" class="leaflet-bar leaflet-control" style="position:absolute; top:130px; left:10px; z-index:1000;">
-    <a href="#" title="Download GPX">
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-           stroke-width="2" stroke="#333" fill="none" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M12 5v14M5 12l7 7 7-7"/>
-        <path d="M5 19h14" />
-      </svg>
-    </a>
-  </div>
-
-  
-  
-
-  <div id="exploreMapContainer"></div>
-
-  <div id="updatesPanel" class="updates">
-  <button id="closeUpdates">✕</button>
-  <h2>Updates</h2>
-  <ul id="updatesList" class="updates-list">
-    <!-- vyplní JS -->
-  </ul>
-</div>
-
-<div id="updatesBtn" class="leaflet-bar">
-  <a href="#" title="View updates">
-    <span class="updates-icon">!</span>
-  </a>
-</div>
-
-<!-- SOS 112 button (hned pod Updates) -->
-<div id="sosBtn">
-  <a href="tel:112" aria-label="Call emergency number 112">112</a>
-</div>
-
-
-
-  <div id="sidePanel">
-    <div id="panelHandle" aria-hidden="true"></div>
-    <button id="closePanel">✕</button>
-    <div id="roadStatusBadge" class="open">OPEN</div>
-    <div id="roadImageWrapper" style="display:none;">
-  <img id="roadImage" alt="Road Photo"/>
-  <div class="high-water-badge">
-  Caution: High Water Possible
-</div>
-  <button id="spGalleryBtn" type="button" title="Gallery">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="#111" stroke-width="1.6"/>
-      <path d="M8 13l2-2 3 3 3-4 3 4" fill="none" stroke="#111" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="8" cy="9" r="1.6" fill="#111"/>
-    </svg>
-    <span>Gallery</span>
-  </button>
-
-  
-  
-  <div id="galleryOverlay">
-  <div id="galleryHeader">
-    <span>Gallery</span>
-    <button id="closeGallery" aria-label="Close gallery">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-    <line x1="6" y1="6" x2="18" y2="18" stroke-width="2" stroke-linecap="round"/>
-    <line x1="6" y1="18" x2="18" y2="6" stroke-width="2" stroke-linecap="round"/>
-  </svg>
-</button>
-  </div>
-  <div id="galleryStrip"></div>
-</div>
-</div>
-    <div id="roadDetails">
-      <h2>F-road Details</h2>
-
-      <!-- Weather card -->
-      <div id="wxCard" class="wx-card" title="">
-  
-  <!-- Teplota -->
-  <div class="wx-temp">
-    <div id="wxIcon" class="wx-icon" aria-hidden="true"></div>
-    <div class="wx-temp-num">
-      <span id="wxT">--</span><span class="unit">°C</span>
-    </div>
-  </div>
-
-  <div class="wx-sep" aria-hidden="true"></div>
-
-  <!-- Vítr -->
-  <div class="wx-wind">
-    <div class="wx-compass" aria-label="Wind direction">
-      <svg viewBox="0 0 44 44" role="img" aria-label="Wind compass">
-        <circle cx="22" cy="22" r="20" fill="#f8fafc" stroke="#dbeafe" stroke-width="1.5"/>
-        <line x1="22" y1="2"  x2="22" y2="6"  stroke="#9ca3af" stroke-width="1"/>
-        <line x1="22" y1="38" x2="22" y2="42" stroke="#9ca3af" stroke-width="1"/>
-        <line x1="2"  y1="22" x2="6"  y2="22" stroke="#9ca3af" stroke-width="1"/>
-        <line x1="38" y1="22" x2="42" y2="22" stroke="#9ca3af" stroke-width="1"/>
-        <g id="wxArrow" class="arrow">
-          <polygon points="22,7 18.5,17.5 25.5,17.5" fill="#e23b3b"/>
-          <line x1="22" y1="17.5" x2="22" y2="31" stroke="#e23b3b" stroke-width="2" stroke-linecap="round"/>
-        </g>
-      </svg>
-    </div>
-    <div class="wx-wind-info">
-      <div class="wx-wind-speed"><span id="wxF">--</span><span class="unit">m/s</span></div>
-      <div class="wx-wind-dir" id="wxDtxt">--</div>
-    </div>
-  </div>
-
-  <div class="wx-sep" aria-hidden="true"></div>
-
-  <!-- Srážky -->
-  <div class="wx-precip" title="Precipitation (mm/h)">
-    <div class="wx-precip-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24">
-        <path d="M12 3C10 6 6 10 6 13.5A6 6 0 0 0 18 13.5C18 10 14 6 12 3z"
-              fill="currentColor"/>
-      </svg>
-    </div>
-    <div class="wx-precip-val">
-      <span id="wxP">--</span><span class="unit">mm/h</span>
-    </div>
-  </div>
-
-</div>
-
-      
-      <!-- Hidden fallback text (kept) -->
-      <span id="wx" style="display:none">-- °C · -- m/s</span>
-
-      <div>
-        <strong>River Crossings:</strong>
-        <span id="infoRiver"></span>
-      </div>
-
-      <strong class="info-title">Informations:</strong>
-
-      <div class="info-row">
-        <span class="info-label">Difficulty:</span>
-        <span id="infoDifficulty"></span>
-      </div>
-
-      <div class="info-row">
-        <span class="info-label">Length:</span>
-        <span id="infoLength"></span> km
-      </div>
-
-      <div class="info-row">
-        <span class="info-label">Approx. Time:</span>
-        <span id="infoTime"></span>
-      </div>
-
-      <div class="info-row">
-        <span class="info-label">Surface:</span>
-        <span id="infoSurface"></span>
-      </div>
-
-      <div class="info-row">
-        <span class="info-label">Watch out for:</span>
-        <span id="infoWatch"></span>
-      </div>
-
-
-      <!-- River crossings section is injected below -->
-    </div>
-  </div>
-</div>
-</div>
   
 <div id="chatHeader" class="chat-header" style="display:none;">
   <button id="backToGroupsBtn" class="back-btn">←</button>
@@ -555,8 +321,6 @@
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-  <script src="explore.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

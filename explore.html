@@ -1,24 +1,950 @@
-// Explore Map Initialization
-let exploreMapInitialized = false;
-let exploreMapInstance = null; // Global reference to the map
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <title>F-Roads Iceland</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+  
+  <style>
+    body, html { margin:0; padding:0; height:100%; font-family:'Poppins',sans-serif; overflow:hidden; }
+    #map { position:absolute; top:0; left:0; width:100%; height:100vh; z-index:1; }
 
-function initExploreMap() {
-  // Prevent double initialization
-  if (exploreMapInitialized) return;
-  exploreMapInitialized = true;
+    /* ---- Side panel ---- */
+    #sidePanel{
+      position:absolute; left:0; bottom:-100%; width:100%; height:55vh;
+      background:#fdfbfb; padding:20px; box-sizing:border-box;
+      box-shadow:0 -2px 6px rgba(0,0,0,.3);
+      display:flex; flex-direction:column; overflow-y:auto;
+      transition:bottom .25s ease-out; z-index:1500; overscroll-behavior:contain;
+    }
+    #sidePanel.open{ bottom:0; display:block; }
+    #sidePanel img{ width:100%; height:200px; object-fit:cover; border-radius:8px; margin-bottom:16px; }
 
-  // Check if container exists
-  const container = document.getElementById('exploreMapContainer');
-  if (!container) {
-    console.error('Explore map container not found');
-    return;
-  }
+    #panelHandle {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 70%;          /* klikací oblast přes celou šířku panelu */
+      height: 50px;         /* zvětší vertikální zónu */
+      background: transparent; /* neviditelný pruh */
+      cursor: grab;
+      z-index: 5;
+    }
+
+    #panelHandle::before {
+      content: "";
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 5px;
+      border-radius: 3px;
+      background: #111;
+      opacity: 0.25;
+    }
+    #panelHandle:active::before {
+      opacity: 0.5;
+      transform: translateX(-50%) scaleX(1.1);
+    }
 
 
+    @media (max-width:768px){ #sidePanel{ width:100vw; left:0; right:0; max-width:none; overflow-x:hidden; } }
+
+    .road-label-icon div{
+      display:inline-block; background:#000; color:#fff; border:1px solid #fff; border-radius:5px;
+      padding:4px 6px; font-size:12px;
+    }
+    .road-label-icon.dimmed div{ opacity:.4; background:#aaa; }
+
+    #closePanel{
+      position:absolute; top:12px; right:12px; background:rgba(255,255,255,.9); border:1px solid #000;
+      font-size:1.5em; padding:4px 8px; border-radius:4px; cursor:pointer; margin-bottom:8px; align-self:flex-end;
+      z-index:1; color:#000;
+    }
+
+    /* Locate control (current position) */
+    .leaflet-control-locate{ margin-top:10px !important; }
+    .leaflet-control-locate a{
+      display:flex; align-items:center; justify-content:center; width:34px; height:34px; background:#fff;
+      border:1px solid #ccc; border-radius:4px; cursor:pointer;
+    }
+    .leaflet-control-locate svg{ width:18px; height:18px; display:block; }
+
+    #gpxDownloadBtn a{
+      display:flex; align-items:center; justify-content:center; width:34px; height:34px; background:#fff;
+      border:1px solid #ccc; border-radius:4px; cursor:pointer;
+    }
+    #gpxDownloadBtn svg{ width:18px; height:18px; }
+    #gpxDownloadBtn a:hover{ background:#f4f4f4; }
+
+    #vehicleSelect{
+      background-color:#fff !important; color:#000 !important;
+      font-family:'Poppins',sans-serif !important; font-size:14px;
+      padding:4px 8px; border-radius:4px; border:1px solid #ccc;
+      -webkit-appearance:none; -moz-appearance:none; appearance:none;
+    }
+
+    /* ---- Weather card (Temp + Wind) ---- */
+    .wx-card{
+      display:flex; align-items:center; gap:11px;
+      padding:10px 12px; border:1px solid #e5e7eb; border-radius:12px; background:#fff;
+      margin:6px 0 12px;
+    }
+    .wx-temp{ display:flex; align-items:center; gap:10px; }
+    .wx-icon svg{ width:28px; height:28px; display:block; color:#111; }
+    .wx-temp-num{ font-size:16px; line-height:1; font-weight:700; color:#e23b3b; }
+    .wx-temp-num .unit{ margin-left:3px; font-size:14px; font-weight:600; color:#e23b3b; opacity:.9; }
+
+    .wx-sep{ width:1px; align-self:stretch; background:linear-gradient(180deg,#e5e7eb,transparent 70%); }
+
+    .wx-wind{ display:flex; align-items:center; gap:10px; }
+    .wx-compass svg{ width:30px; height:30px; display:block; }
+    .wx-compass .arrow{ transform-origin:22px 22px; transition:transform .25s ease; }
+
+    .wx-wind-info{ display:flex; flex-direction:column; line-height:1.1; }
+    .wx-wind-speed{ font-weight:800; color:#e23b3b; font-size:16px; }
+    .wx-wind-speed .unit{ margin-left:4px; font-size:12px; font-weight:700; color:#e23b3b; opacity:.9; }
+    .wx-wind-dir{ font-size:12px; color:#374151; opacity:.9; }
+
+    .wx-precip{
+      display:flex; align-items:center; gap:8px;
+      background:#fff;
+    }
+    .wx-precip-icon svg{ width:22px; height:22px; display:block; color:#2563eb; }
+    .wx-precip-val{ font-weight:800; color:#111; font-size:14px; line-height:1; }
+    .wx-precip-val .unit{ margin-left:4px; font-size:12px; font-weight:700; color:#6b7280; }
+
+
+    /* ---- River crossings UI ---- */
+    #rc-section{ margin-top:12px; }
+    #rc-title{ font-weight:600; margin:10px 0 6px; display:flex; align-items:center; gap:8px; }
+    #rc-list{ list-style:none; padding:0; margin:0; display:grid; gap:8px; }
+    .rc-item{
+      display:grid; grid-template-columns:30px 1fr auto;
+      align-items:center; gap:10px; padding:8px 10px;
+      border:1px solid #e5e7eb; border-radius:8px; background:#fff;
+    }
+    .rc-name{ font-weight:600; }
+    .rc-metrics{ font-size:12px; color:#374151; }
+    .rc-right{ display:flex; align-items:center; gap:8px; }
+    .rc-badge{ font-size:12px; font-weight:600; padding:2px 8px; border-radius:999px; border:1px solid transparent; }
+    .rc-badge.easy{ color:#166534; background:#dcfce7; border-color:#86efac; }
+    .rc-badge.medium{ color:#92400e; background:#ffedd5; border-color:#fed7aa; }
+    .rc-badge.hard{ color:#7f1d1d; background:#fee2e2; border-color:#fecaca; }
+    .rc-badge.extreme{ color:#7c2d12; background:#ffedd5; border-color:#fdba74; box-shadow:0 0 0 2px #f59e0b inset; }
+
+    /* Crossing icon holder */
+    .rc-icon{ width:28px; height:28px; display:inline-grid; place-items:center; }
+    .rc-icon svg{ width:28px; height:28px; display:block; }
+
+    .rc-btn{ border:1px solid #111; background:#fff; color:#111; border-radius:6px; padding:4px 8px; font-size:12px; cursor:pointer; }
+    .rc-btn:hover{ background:#f3f4f6; }
+
+
+    .info-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  margin: 10px 0;
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  font-size: 14px;
+}
+
+.info-label {
+  font-weight: 600;
+  color: #111;
+  min-width: 110px; /* sjednocení zarovnání */
+}
+
+Lepší oddělení sekce info */
+#roadDetails {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  /* přidáno kvůli scrollování a správnému chování při dragu 👇 */
+  flex: 1;
+  overflow-y: auto;
+  touch-action: pan-y; /* umožní scroll uvnitř */
+  -webkit-overflow-scrolling: touch; /* plynulý scroll na iOS */
+}
+
+.info-title {
+  display: block;
+  margin: 15px 0;
+}
+
+/* Container pro obrázek + tlačítko */
+#roadImageWrapper {
+  position: relative;
+  display: block;
+  margin-bottom: 16px;
+}
+#roadImageWrapper img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+
+/* Gallery button v overlay */
+#spGalleryBtn {
+  position: absolute;
+  bottom: 10px;   /* místo top:10px */
+  right: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  font-size: 14px;
+  font-weight: 600;
+  border: 1px solid #111;
+  border-radius: 8px;
+  background: rgba(255,255,255,0.85);
+  color: #111;
+  cursor: pointer;
+  backdrop-filter: blur(4px);
+}
+#spGalleryBtn:hover {
+  background: rgba(255,255,255,1);
+}
+
+#spGalleryBtn svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+/* Fullscreen gallery overlay – navrchu všeho */
+#galleryOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 1);
+  z-index: 9999999;          /* bylo méně – teď nad Leafletem i tvými UI (vehicle filter ~1000) */
+  display: none;
+  flex-direction: column;
+}
+#galleryOverlay.open { display: flex; }
+
+#galleryHeader {
+  display:flex; 
+  align-items:center; 
+  justify-content:space-between;
+  padding:12px 16px;
+  color:#000000; 
+  font-weight:600;
+  font-family:'Poppins', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; /* Poppins */
+  background:#fff;              /* světlý pruh jako ostatní UI */
+  border-bottom:1px solid #e5e7eb;
+}
+
+/* Pruh s obsahem – VERTIKÁLNĚ pod sebou */
+#galleryStrip{
+  flex:1;
+  display:block;            /* stačí blok – budou pod sebou */
+  overflow-y:auto;          /* vertikální scroll */
+  overflow-x:hidden;
+  padding:16px;
+}
+
+/* Každý slide je „karta“ uprostřed, max šířka kvůli čitelnosti */
+.gal-slide{
+  width:min(100%, 1200px);
+  margin:0 auto 16px auto;
+  border-radius:12px; overflow:hidden; background:#ffffff;
+}
+
+/* Obrázek se přizpůsobí – žádné ořezávání, výška max 80vh */
+.gal-slide img{
+  display:block;
+  width:100%;
+  border-radius:12px;               /* vyplní šířku kontejneru */
+  height:auto;              /* ponechá poměr stran */
+  object-fit:contain;       /* bez ořezu */
+}
+.gal-cap{ color:#000000; font-size:14px; padding:6px 10px; text-align:center; }
+
+/* Volitelné: skryj scrollbar na mobilu / zjemni vzhled */
+#galleryStrip::-webkit-scrollbar { width: 10px; }
+#galleryStrip::-webkit-scrollbar-thumb { background:#666; border-radius:8px; }
+#galleryStrip::-webkit-scrollbar-track { background:transparent; }
+
+#closeGallery {
+  background: #fff;
+  border: 1px solid #111;
+  border-radius: 50%;
+  width: 34px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background .2s ease;
+}
+#closeGallery:hover {
+  background: #f3f4f6;
+}
+#closeGallery svg {
+  width: 18px;
+  height: 18px;
+  stroke: #111;
+}
+
+
+
+/* Když je otevřená galerie, schovej tyto prvky */
+body.gallery-open #vehicleFilter { display:none !important; }
+body.gallery-open #gpxDownloadBtn { display:none !important; }
+/* Pokud máš další Leaflet ovladače, schovej celý control container */
+body.gallery-open .leaflet-control-container { display:none !important; }
+
+/* Overlay – opravdu navrchu, fullscreen */
+#galleryOverlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 1);
+  z-index: 2147483647; /* maximum prakticky všude */
+  display: none;
+  flex-direction: column;
+}
+#galleryOverlay.open{ display:flex; }
+
+/* Když je galerie otevřená, zruš possible 'transform' na hlavních blocích,
+   aby 'position: fixed' overlaye neuvízl v jejich stacking contextu (iframe/Webflow bug). */
+body.gallery-open #map,
+body.gallery-open #sidePanel,
+body.gallery-open #vehicleFilter,
+body.gallery-open #gpxDownloadBtn {
+  transform: none !important;
+  filter: none !important;
+  perspective: none !important;
+}
+
+/* A rovnou schovej konfliktní UI nad mapou */
+body.gallery-open #vehicleFilter,
+body.gallery-open #gpxDownloadBtn,
+body.gallery-open .leaflet-control-container {
+  display: none !important;
+}
+
+/* ===== Unified POI Popup (Campsites + Huts) ===== */
+/* Leaflet shell */
+.leaflet-container .poi-popup .leaflet-popup-content-wrapper{
+  padding:0;
+  border:1px solid #e5e7eb;
+  border-radius:14px;
+  box-shadow:0 10px 25px rgba(0,0,0,.25);
+  background:#fff;
+}
+.leaflet-container .poi-popup .leaflet-popup-content{
+  margin:0;
+  font-family:'Poppins', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+.leaflet-container .poi-popup .leaflet-popup-tip{
+  background:#fff;
+  box-shadow:1px 1px 0 0 #e5e7eb;
+}
+
+/* Close button – mírný radius, ladí s UI */
+.leaflet-container .poi-popup a.leaflet-popup-close-button{
+  position:absolute; right:8px; top:8px;
+  width:28px; height:28px; line-height:26px;
+  color:#111; background:#fff;
+  border:1px solid #111; border-radius:8px;
+  opacity:1;
+}
+.leaflet-container .poi-popup a.leaflet-popup-close-button:hover{ background:#f3f4f6; }
+
+/* Card layout */
+.poi-card{ background:#fff; border-radius:14px; overflow:hidden; }
+.poi-cover{ width:100%; height:140px; object-fit:cover; display:block; }
+.poi-body{ padding:12px 14px; }
+
+.poi-title{
+  font-weight:700; font-size:15px; color:#111; margin:0 0 6px;
+}
+.poi-desc{
+  font-size:13px; color:#374151; margin:0 0 10px;
+}
+
+/* Actions – CTA vpravo */
+.poi-actions{
+  display:flex; justify-content:flex-end; align-items:center; gap:8px; flex-wrap:wrap;
+}
+
+/* CTA button (enforces black text) */
+.poi-btn,
+.poi-btn:link,
+.poi-btn:visited{
+  display: block;                 /* místo inline-flex, zabere celý řádek */
+  width: 100%;
+  margin: 0 auto;                 /* vycentruje díky auto marginům */
+  padding: 10px 14px;             /* příjemný vnitřní spacing */
+  border: 1px solid #111;
+  border-radius: 8px;
+  background: #fff;
+  color: #111 !important;
+  font-weight: 600;
+  font-size: 13px;
+  text-align: center;             /* text doprostřed */
+  text-decoration: none !important;
+  box-sizing: border-box;         /* jistota že padding se počítá do šířky */
+}
+.poi-btn:hover{ background:#f3f4f6; }
+.poi-btn svg{ width:16px; height:16px; display:inline-block; vertical-align:middle; }
+
+
+/* Neutralize generic anchor colors inside popup */
+.leaflet-container .poi-popup a{ color:inherit; }
+
+/* Small screens – trochu kompaktnější */
+@media (max-width: 420px){
+  .poi-cover{ height:150px; }
+  .poi-title{ font-size:14px; }
+  .poi-desc{ font-size:12px; }
+  .poi-btn{ font-size:12px; padding:6px 8px; }
+}
+
+/* ==== Road status badge ==== */
+#roadStatusBadge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  padding: 4px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  border: 1px solid transparent;
+  z-index: 2;
+}
+
+#roadStatusBadge.open {
+  color: #166534;
+  background-color: #dcfce7;
+  border-color: #86efac;
+}
+
+#roadStatusBadge.closed {
+  color: #7f1d1d;
+  background-color: #fee2e2;
+  border-color: #fecaca;
+}
+
+#updatesPanel {
+  position:absolute;
+  left:0; bottom:-100%;
+  width:100%; height:55vh;
+  background:#fdfbfb;
+  padding:20px;
+  box-sizing:border-box;
+  box-shadow:0 -2px 6px rgba(0,0,0,.3);
+  transition:bottom .25s ease-out;
+  z-index:1500;
+  overflow-y:auto;
+}
+#updatesPanel.open { bottom:0; }
+
+#updatesPanel h2 { margin-top:0; font-size:18px; }
+
+#closeUpdates {
+  position:absolute; top:12px; right:12px;
+  background:#fff; border:1px solid #111; border-radius:4px;
+  font-size:1.2em; padding:2px 8px; cursor:pointer;
+  color:#111; /* černá ikonka/text */
+}
+#closeUpdates:hover { background:#f3f4f6; }
+
+.updates-list { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
+.update-item {
+  padding:10px;
+  border:1px solid #e5e7eb; border-radius:8px;
+  background:#fff;
+}
+.update-item.warning { border-left:4px solid #dc2626; }
+.update-item.info    { border-left:4px solid #2563eb; }
+.update-item.notice  { border-left:4px solid #ffe600; }
+.update-time { font-size:12px; color:#6b7280; margin-bottom:4px; }
+
+#updatesBtn {
+  position: absolute;
+  top: 180px; /* posuň podle potřeby */
+  left: 10px;
+  z-index: 1000;
+}
+
+#updatesBtn a {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  background: #facc15;       /* žlutý background */
+  border-radius: 6px;        /* lehce zaoblené */
+  cursor: pointer;
+}
+
+#updatesBtn .updates-icon {
+  font-weight: 900;
+  font-size: 18px;
+  color: #000;               /* černá ikonka */
+  font-family: 'Poppins', sans-serif;
+  line-height: 1;
+}
+
+#updatesBtn a:hover {
+  background: #fcd34d;       /* světlejší žlutá při hoveru */
+}
+
+#closeUpdates svg line {
+  stroke: #000;
+}
+
+/* SOS – 112 (hned pod Updates) */
+#sosBtn{
+  position: absolute;
+  top: 228px;          /* 180 + 35 výška + 8 mezera = 223 */
+  left: 9px;
+  z-index: 1000;
+}
+
+#sosBtn a{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 35px;
+  height: 35px;
+  background: #ef4444;           /* červená */
+  color: #fff;                   /* bílý text */
+  font: 700 13px/1 'Poppins', sans-serif;
+  border-radius: 6px;
+  border: 1px solid #ef4444;     /* tmavší červená hrana */
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+#sosBtn a:hover{
+  background: #f05252;           /* světlejší červená */
+}
+
+
+html, body { font-family: 'Poppins', sans-serif; }
+html, body {
+  touch-action: none;
+  overscroll-behavior: contain;
+}
+
+/* ===== Bottom-left card (subtle) ===== */
+#bottomInfoBox{
+  position:fixed; left:12px; bottom:12px;
+  display:flex; flex-direction:column; gap:4px; align-items:flex-start;
+  padding:8px 10px;
+  background:rgba(255,255,255,0.72);
+  border:1px solid rgba(17,17,17,.08);
+  border-radius:10px;
+  box-shadow:0 6px 18px rgba(0,0,0,.10);
+  z-index: 650; /* pod modalem, nad mapou */
+  font-family:'Poppins',sans-serif; color:#111;
+  backdrop-filter: blur(4px);
+}
+#currentTime{
+  font-size:12px; font-weight:600; opacity:.75;
+}
+
+/* nenápadný odkaz místo výrazného tlačítka */
+#openDisclaimer{
+  appearance:none;
+  border:none;
+  background:transparent;
+  color:#111;                 /* černý text */
+  cursor:pointer;
+  padding:0; margin:0;
+  font-size:12px;
+  font-weight:500;
+  text-decoration:underline;  /* vypadá jako odkaz */
+  opacity:.6;
+  transition:opacity .15s ease, color .15s ease;
+}
+#openDisclaimer:hover{
+  opacity:1;
+  color:#333;                 /* na hover jen trochu tmavší/šedší */
+}
+
+
+/* ===== Modal nad VŠÍM (překryje mapu, ikony, side panel, atd.) ===== */
+#legalModalBackdrop{
+  position:fixed; inset:0; background:rgba(0,0,0,.45);
+  opacity:0; visibility:hidden; transition:opacity .2s ease;
+  z-index: 2147483646; /* téměř maximum */
+}
+#legalModalBackdrop.open{ opacity:1; visibility:visible; }
+
+#legalModal{
+  position:fixed; left:50%; top:50%;
+  transform:translate(-50%,-50%) scale(.97);
+  width:min(640px, 92vw); max-height:85vh; overflow:auto;
+  background:#fff; color:#111; font-family:'Poppins',sans-serif;
+  border:1px solid #e5e7eb; border-radius:14px;
+  box-shadow:0 24px 60px rgba(0,0,0,.25);
+  opacity:0; visibility:hidden; transition:opacity .2s ease, transform .2s ease;
+  z-index: 2147483647; /* nad vším */
+  display:flex; flex-direction:column;
+}
+#legalModal.open{ opacity:1; visibility:visible; transform:translate(-50%,-50%) scale(1); }
+
+/* Close (jediný) */
+#legalClose.closeBtn{
+  position:absolute; top:12px; right:12px;
+  border:1px solid #111; background:#fff; color:#111;
+  width:32px; height:32px; border-radius:8px;
+  display:inline-grid; place-items:center; cursor:pointer; font-size:18px;
+}
+#legalClose.closeBtn:hover{ background:#f3f4f6; }
+
+/* Content spacing */
+#legalContent{ padding:24px 24px 0; }
+#legalContent h2{ margin:0 0 14px; font-size:20px; font-weight:600; }
+#legalContent p{ margin:10px 0; font-size:14px; line-height:1.5; }
+#legalContent ul{ margin:10px 0 10px 22px; font-size:14px; line-height:1.5; }
+
+/* Footer s modrým CTA */
+#legalFooter{
+  padding:16px 24px; border-top:1px solid #eee;
+  display:flex; justify-content:flex-end;
+}
+#legalAccept{
+  background:#2a61ff; color:#fff; border:none;
+  padding:10px 18px; border-radius:8px;
+  font-size:14px; font-weight:600; cursor:pointer;
+  box-shadow:0 4px 12px rgba(42,97,255,.35);
+  transition:filter .15s ease;
+}
+#legalAccept:hover{ filter:brightness(1.08); }
+
+/* Když je modal otevřený: lock scroll + schovej mapové ovladače, ať „nelezou přes“ */
+body.modal-open{ overflow:hidden; }
+body.modal-open .leaflet-control-container{ display:block !important; }
+
+/* ==== High Water Alert Badge – levý spodní roh obrázku ==== */
+.high-water-badge {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+
+  display: none;
+  align-items: center;
+
+  padding: 6px 12px;
+  border-radius: 10px;
+  font: 600 13px/1.3 'Poppins', sans-serif;
+
+  background: #fde68a;     /* nice yellow background */
+  color: #991b1b;          /* strong red text */
+  border: 1px solid #fcd34d;
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  z-index: 2;
+}
+
+/* ===== Current location – oranžový bod + bílý obrys + pulz ===== */
+
+/* divIcon wrapper – neklikatelný */
+.leaflet-marker-icon.me-dot { pointer-events: none !important; }
+
+/* samotný bod (můžeš zvětšit na 18–20px) */
+.me-dot__core {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #0073ff; /* modrá (Tailwind blue-500) */
+  box-shadow:
+    0 0 0 2px #fff,                  /* bílý outline */
+    0 0 20px 8px rgba(0, 115, 255, .4); /* modrý rozptyl (blur) */
+  animation: meBlink 1s ease-in-out infinite; /* pulz opacity */
+}
+
+@keyframes meBlink{
+  0%, 100% { opacity: 1; }
+  50%      { opacity: .2; }
+}
+
+/* větší „accuracy“ kruh – pulzuje fill-opacity (Leaflet path v SVG) */
+.leaflet-interactive.me-accuracy{
+  animation: meFill 1s ease-in-out infinite;
+}
+@keyframes meFill{
+  0%,100% { fill-opacity: .25; }
+  50%     { fill-opacity: .10; }
+}
+
+
+  </style>
+</head>
+
+<body>
+  <!-- Vehicle filter -->
+  <div id="vehicleFilter" style="position:absolute;top:10px;left:60px;z-index:1000;
+       background:white;padding:10px 14px;border-radius:8px;
+       box-shadow:0 2px 5px rgba(0,0,0,.2);display:flex;align-items:center;gap:10px;">
+    <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/6893c2dc9f3ada3f8c6f8a16_jeeps.png"
+         alt="Jeep icon" style="width:24px; height:auto;" />
+    <select id="vehicleSelect" style="font-size:14px; padding:4px 8px; border-radius:4px;">
+      <option value="all">Choose your 4x4 vehicle</option>
+  
+  <!-- Compact SUVs -->
+  <option value="jimny">Suzuki Jimny</option>
+  <option value="duster">Dacia Duster</option>
+  <option value="sportage">Kia Sportage</option>
+  <option value="tucson">Hyundai Tucson</option>
+  <option value="rav4">Toyota RAV4</option>
+
+  <!-- Mid-size SUVs -->
+  <option value="outlander">Mitsubishi Outlander</option>
+  <option value="xtrail">Nissan X-Trail</option>
+  <option value="forester">Subaru Forester</option>
+  <option value="cx5">Mazda CX-5</option>
+
+  <!-- Large SUVs & Offroad -->
+  <option value="landcruiser">Toyota Land Cruiser</option>
+  <option value="hilux">Toyota Hilux</option>
+  <option value="wrangler">Jeep Wrangler</option>
+  <option value="renegade">Jeep Renegade</option>
+  <option value="defender">Land Rover Defender</option>
+  <option value="discovery">Land Rover Discovery</option>
+  <option value="grenadier">INEOS Grenadier</option>
+
+  <!-- Luxury -->
+  <option value="xc90">Volvo XC90</option>
+  <option value="x5">BMW X5</option>
+  <option value="gle">Mercedes GLE</option>
+  <option value="gclass">Mercedes G-Class</option>
+  <option value="q7">Audi Q7</option>
+
+  <!-- Campers -->
+  <option value="transporter-4x4">VW Transporter 4x4 Camper</option>
+  <option value="sprinter-4x4">Mercedes Sprinter 4x4 Camper</option>
+</select>
+
+  </div>
+
+<!-- Bottom-left info box (subtle) -->
+<div id="bottomInfoBox">
+  <div id="currentTime"></div>
+  <button id="openDisclaimer" type="button" title="Important Disclaimer">Safety notice</button>
+</div>
+
+<!-- Backdrop + Modal (white theme) -->
+<div id="legalModalBackdrop" aria-hidden="true"></div>
+<div id="legalModal" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
+  <button id="legalClose" class="closeBtn" aria-label="Close">✕</button>
+
+  <div id="legalContent">
+    <h2 id="legalTitle">Important Disclaimer</h2>
+    <p>
+      The vehicle selection and road recommendations shown here are only
+      <strong>general suggestions</strong> based on common road difficulty levels.
+      Actual conditions can change quickly due to weather, river flow, snow, or closures.
+    </p>
+    <ul>
+      <li>Driving on F-roads is entirely <strong>at your own risk</strong> and the driver takes full responsibility.</li>
+      <li>Always check official road conditions (<em>road.is</em>) and the weather forecast before driving.</li>
+      <li>Do not attempt river crossings unless you and your vehicle are fully capable.</li>
+      <li>Respect road signs, closures, and your rental company’s rules.</li>
+    </ul>
+    <p>
+      The creators of this map accept no responsibility for damages, accidents, or fines resulting from the use of these recommendations.
+    </p>
+  </div>
+
+  <div id="legalFooter">
+    <button id="legalAccept" type="button">I Understand</button>
+  </div>
+</div>
+
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+
+  <!-- Download GPX Button -->
+  <div id="gpxDownloadBtn" class="leaflet-bar leaflet-control" style="position:absolute; top:130px; left:10px; z-index:1000;">
+    <a href="#" title="Download GPX">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+           stroke-width="2" stroke="#333" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12l7 7 7-7"/>
+        <path d="M5 19h14" />
+      </svg>
+    </a>
+  </div>
+
+  
+  
+
+  <div id="map"></div>
+
+  <div id="updatesPanel" class="updates">
+  <button id="closeUpdates">✕</button>
+  <h2>Updates</h2>
+  <ul id="updatesList" class="updates-list">
+    <!-- vyplní JS -->
+  </ul>
+</div>
+
+<div id="updatesBtn" class="leaflet-bar">
+  <a href="#" title="View updates">
+    <span class="updates-icon">!</span>
+  </a>
+</div>
+
+<!-- SOS 112 button (hned pod Updates) -->
+<div id="sosBtn">
+  <a href="tel:112" aria-label="Call emergency number 112">112</a>
+</div>
+
+
+
+  <div id="sidePanel">
+    <div id="panelHandle" aria-hidden="true"></div>
+    <button id="closePanel">✕</button>
+    <div id="roadStatusBadge" class="open">OPEN</div>
+    <div id="roadImageWrapper" style="display:none;">
+  <img id="roadImage" alt="Road Photo"/>
+  <div class="high-water-badge">
+  Caution: High Water Possible
+</div>
+  <button id="spGalleryBtn" type="button" title="Gallery">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="#111" stroke-width="1.6"/>
+      <path d="M8 13l2-2 3 3 3-4 3 4" fill="none" stroke="#111" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="8" cy="9" r="1.6" fill="#111"/>
+    </svg>
+    <span>Gallery</span>
+  </button>
+
+  
+  
+  <div id="galleryOverlay">
+  <div id="galleryHeader">
+    <span>Gallery</span>
+    <button id="closeGallery" aria-label="Close gallery">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
+    <line x1="6" y1="6" x2="18" y2="18" stroke-width="2" stroke-linecap="round"/>
+    <line x1="6" y1="18" x2="18" y2="6" stroke-width="2" stroke-linecap="round"/>
+  </svg>
+</button>
+  </div>
+  <div id="galleryStrip"></div>
+</div>
+</div>
+    <div id="roadDetails">
+      <h2>F-road Details</h2>
+
+      <!-- Weather card -->
+      <div id="wxCard" class="wx-card" title="">
+  
+  <!-- Teplota -->
+  <div class="wx-temp">
+    <div id="wxIcon" class="wx-icon" aria-hidden="true"></div>
+    <div class="wx-temp-num">
+      <span id="wxT">--</span><span class="unit">°C</span>
+    </div>
+  </div>
+
+  <div class="wx-sep" aria-hidden="true"></div>
+
+  <!-- Vítr -->
+  <div class="wx-wind">
+    <div class="wx-compass" aria-label="Wind direction">
+      <svg viewBox="0 0 44 44" role="img" aria-label="Wind compass">
+        <circle cx="22" cy="22" r="20" fill="#f8fafc" stroke="#dbeafe" stroke-width="1.5"/>
+        <line x1="22" y1="2"  x2="22" y2="6"  stroke="#9ca3af" stroke-width="1"/>
+        <line x1="22" y1="38" x2="22" y2="42" stroke="#9ca3af" stroke-width="1"/>
+        <line x1="2"  y1="22" x2="6"  y2="22" stroke="#9ca3af" stroke-width="1"/>
+        <line x1="38" y1="22" x2="42" y2="22" stroke="#9ca3af" stroke-width="1"/>
+        <g id="wxArrow" class="arrow">
+          <polygon points="22,7 18.5,17.5 25.5,17.5" fill="#e23b3b"/>
+          <line x1="22" y1="17.5" x2="22" y2="31" stroke="#e23b3b" stroke-width="2" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+    <div class="wx-wind-info">
+      <div class="wx-wind-speed"><span id="wxF">--</span><span class="unit">m/s</span></div>
+      <div class="wx-wind-dir" id="wxDtxt">--</div>
+    </div>
+  </div>
+
+  <div class="wx-sep" aria-hidden="true"></div>
+
+  <!-- Srážky -->
+  <div class="wx-precip" title="Precipitation (mm/h)">
+    <div class="wx-precip-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24">
+        <path d="M12 3C10 6 6 10 6 13.5A6 6 0 0 0 18 13.5C18 10 14 6 12 3z"
+              fill="currentColor"/>
+      </svg>
+    </div>
+    <div class="wx-precip-val">
+      <span id="wxP">--</span><span class="unit">mm/h</span>
+    </div>
+  </div>
+
+</div>
+
+      
+      <!-- Hidden fallback text (kept) -->
+      <span id="wx" style="display:none">-- °C · -- m/s</span>
+
+      <div>
+        <strong>River Crossings:</strong>
+        <span id="infoRiver"></span>
+      </div>
+
+      <strong class="info-title">Informations:</strong>
+
+      <div class="info-row">
+        <span class="info-label">Difficulty:</span>
+        <span id="infoDifficulty"></span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Length:</span>
+        <span id="infoLength"></span> km
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Approx. Time:</span>
+        <span id="infoTime"></span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Surface:</span>
+        <span id="infoSurface"></span>
+      </div>
+
+      <div class="info-row">
+        <span class="info-label">Watch out for:</span>
+        <span id="infoWatch"></span>
+      </div>
+
+
+      <!-- River crossings section is injected below -->
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+  
+  <script>
+    
     const minZoom = 7;
-    const map = L.map('exploreMapContainer').setView([63.9, -18.9], minZoom);
-    exploreMapInstance = map; // Store globally
-    window.exploreMap = map; // Make accessible globally
+    const map = L.map('map').setView([63.9, -18.9], minZoom);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution:'© OpenStreetMap contributors', maxZoom:19, minZoom
     }).addTo(map);
@@ -1622,6 +2548,7 @@ function closeGallery(){
 })();
 
 
+  </script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function(){
@@ -1632,6 +2559,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 });
 
+</script>
 
 <script>
 const UPDATES = [
@@ -2081,6 +3009,7 @@ ${trkXml}
 
 
 
+</script>
 
 <script>
 (() => {
@@ -2153,6 +3082,7 @@ if (handle) {
     panel.style.height = '55vh'; // zpět na defaultní
   });
 })();
+</script>
 
 
 
@@ -2161,4 +3091,5 @@ if (handle) {
 
 
 
-} // End of initExploreMap
+</body>
+</html>

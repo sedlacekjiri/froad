@@ -256,7 +256,12 @@ document.querySelector('.chat-btn .chat-icon').src =
 document.querySelector('.map-btn .map-icon').src =
   "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68efa731bab109784845d316_people.png";
 
-// Display settings moved to window.load listener
+
+// Zobraz Explore mapu jako výchozí sekci
+document.getElementById('exploreMap').style.display = "block";
+document.getElementById('mapContainer').style.display = "none";
+document.getElementById('chat').style.display = "none";
+document.getElementById('form').style.display = "none";
 
 // ✅ Skryj Share Location tlačítko při načtení (jen People ho má mít)
 const shareBtn = document.getElementById('shareLocationBtn');
@@ -1354,11 +1359,7 @@ imageModal.addEventListener("click", (e) => {
 });
 
 
-let exploreMap;
-// initExploreMap removed - mapa se inicializuje v explore.js
-
-
-
+// Explore map now loaded via iframe from explore.html
 
 
     function closeAccessModal() {
@@ -1704,18 +1705,7 @@ if (tab !== "chat" && chatHeader) {
     document.getElementById('chat').style.display = (tab === "chat") ? "flex" : "none";
     document.getElementById('form').style.display = (tab === "chat") ? "flex" : "none";
 
-    // ✅ Fix Explore map size after tab switch
-    if (tab === "explore") {
-      if (typeof initExploreMap === "function") {
-        initExploreMap(); // Initialize if not already done (has protection)
-      }
-      // Fix map size after becoming visible
-      setTimeout(() => {
-        if (window.exploreMap && typeof window.exploreMap.invalidateSize === "function") {
-          window.exploreMap.invalidateSize();
-        }
-      }, 100);
-    }
+    // Explore map runs in iframe - no initialization needed here
 
     // ✅ Oprava Leaflet mapy po přepnutí na "People"
 if (tab === "map") {
@@ -1826,32 +1816,13 @@ if (tab === "map") {
 
 
 
-// Explore mapa je nyní načtena přímo (explore.js), ne přes iframe
-
 window.addEventListener("load", () => {
   const loader = document.getElementById("globalLoader");
   if (loader) {
     loader.style.display = "none";
   }
 
-  // ✅ Show Explore map BEFORE initialization (Leaflet needs visible container)
-  const exploreMapDiv = document.getElementById('exploreMap');
-  if (exploreMapDiv) {
-    exploreMapDiv.style.display = "block";
-  }
-
-  // Hide other sections
-  const sections = ['mapContainer', 'chat', 'form'];
-  sections.forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.style.display = "none";
-  });
-
-  // ✅ Initialize Explore map immediately on page load (outside auth)
-  if (typeof initExploreMap === "function") {
-    console.log("Initializing Explore map on page load");
-    initExploreMap();
-  }
+  // Explore map loaded in iframe - initialization handled there
 });
 
 const chatHeader = document.getElementById("chatHeader");
