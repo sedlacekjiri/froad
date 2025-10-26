@@ -278,7 +278,8 @@ if (visibilityBtn) {
 
   // === LOAD / INIT USER DOC ===
   const userRef = db.collection("users").doc(user.uid);
-const userDoc = await userRef.get();
+// 🔒 Vždy načti ze serveru, ne z cache (bezpečnostní fix)
+const userDoc = await userRef.get({ source: 'server' });
 
 if (!userDoc.exists) {
   await userRef.set({
@@ -298,8 +299,10 @@ if (!userDoc.exists) {
   // 🧹 Reset cizích dat při novém přihlášení (bez access)
   const existingData = userDoc.data();
   if (existingData && !existingData.access) {
+    // 🔒 BEZPEČNOSTNÍ FIX: Přepiš VŠECHNA pole na výchozí hodnoty
     await userRef.set({
       displayName: user.displayName || "User",
+      email: user.email || "",
       bio: "",
       instagram: "",
       vehicle: "",
@@ -307,20 +310,24 @@ if (!userDoc.exists) {
       photoURL: "",
       verified: false,
       ranger: false,
-    }, { merge: true });
-    console.log("🧼 Reset old profile data for new user:", user.uid);
+      access: false,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    console.log("🧼 Reset profile data for user without access:", user.uid);
   }
 }
 
-// 🧠 Načti znovu čerstvá data po vytvoření (fix na staré hodnoty)
-const refreshedDoc = await userRef.get();
+// 🧠 Načti znovu čerstvá data VŽDY ZE SERVERU (ne z cache) - bezpečnostní fix
+const refreshedDoc = await userRef.get({ source: 'server' });
 const userData = refreshedDoc.data() || {};
 
-// 🔄 Aktualizuj Auth profil pro nový účet (aby se jméno zobrazilo i v chatu)
-await user.updateProfile({
-  displayName: "User",
-  photoURL: ""
-});
+// 🔄 Synchronizuj Auth profil s Firestore daty (ne naopak!)
+if (userData.displayName && user.displayName !== userData.displayName) {
+  await user.updateProfile({ displayName: userData.displayName });
+}
+if (userData.photoURL && user.photoURL !== userData.photoURL) {
+  await user.updateProfile({ photoURL: userData.photoURL });
+}
 
 
   if (userData.vehiclePhotoURL) {
@@ -357,14 +364,6 @@ if (profileIcon) {
 
 if (userData.bio) document.getElementById("bioInput").value = userData.bio;
 if (userData.instagram) document.getElementById("instagramInput").value = userData.instagram;
-
-// ✅ Synchronizuj Auth profil s daty z Firestore (např. když se změní jméno)
-if (userData.displayName && user.displayName !== userData.displayName) {
-  await user.updateProfile({ displayName: userData.displayName });
-}
-if (userData.photoURL && user.photoURL !== userData.photoURL) {
-  await user.updateProfile({ photoURL: userData.photoURL });
-}
 
 
   // Toggle editor
