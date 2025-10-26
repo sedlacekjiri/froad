@@ -75,11 +75,16 @@
     .leaflet-control-locate svg{ width:18px; height:18px; display:block; }
 
     #gpxDownloadBtn a{
-      display:flex; align-items:center; justify-content:center; width:34px; height:34px; background:#fff;
-      border:1px solid #ccc; border-radius:4px; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      width:44px; height:44px;
+      background:#fff;
+      border:none;
+      border-radius:10px;
+      cursor:pointer;
+      transition: all 0.2s ease;
     }
-    #gpxDownloadBtn svg{ width:18px; height:18px; }
-    #gpxDownloadBtn a:hover{ background:#f4f4f4; }
+    #gpxDownloadBtn svg{ width:20px; height:20px; }
+    #gpxDownloadBtn a:hover{ background:#f3f3f3; }
 
     #vehicleSelect{
       background-color:#fff !important; color:#000 !important;
@@ -476,7 +481,7 @@ body.gallery-open .leaflet-control-container {
 
 #updatesBtn {
   position: absolute;
-  top: 180px; /* posuň podle potřeby */
+  top: 180px;
   left: 10px;
   z-index: 1000;
 }
@@ -485,23 +490,25 @@ body.gallery-open .leaflet-control-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 35px;
-  height: 35px;
-  background: #facc15;       /* žlutý background */
-  border-radius: 6px;        /* lehce zaoblené */
+  width: 44px;
+  height: 44px;
+  background: #ffffff;
+  border: none;
+  border-radius: 10px;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 #updatesBtn .updates-icon {
   font-weight: 900;
   font-size: 18px;
-  color: #000;               /* černá ikonka */
+  color: #000;
   font-family: 'Poppins', sans-serif;
   line-height: 1;
 }
 
 #updatesBtn a:hover {
-  background: #fcd34d;       /* světlejší žlutá při hoveru */
+  background: #f3f3f3;
 }
 
 #closeUpdates svg line {
@@ -511,8 +518,8 @@ body.gallery-open .leaflet-control-container {
 /* SOS – 112 (hned pod Updates) */
 #sosBtn{
   position: absolute;
-  top: 228px;          /* 180 + 35 výška + 8 mezera = 223 */
-  left: 9px;
+  top: 234px;          /* 180 + 44 výška + 10 mezera */
+  left: 10px;
   z-index: 1000;
 }
 
@@ -520,20 +527,82 @@ body.gallery-open .leaflet-control-container {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 35px;
-  height: 35px;
-  background: #ef4444;           /* červená */
-  color: #fff;                   /* bílý text */
+  width: 44px;
+  height: 44px;
+  background: #ef4444;
+  color: #fff;
   font: 700 13px/1 'Poppins', sans-serif;
-  border-radius: 6px;
-  border: 1px solid #ef4444;     /* tmavší červená hrana */
-  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+  border-radius: 10px;
+  border: none;
   text-decoration: none;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
 #sosBtn a:hover{
-  background: #f05252;           /* světlejší červená */
+  background: #f05252;
+}
+
+/* Current Location button */
+#currentLocationBtn{
+  position: absolute;
+  top: 288px;          /* 234 + 44 výška + 10 mezera */
+  left: 10px;
+  z-index: 1000;
+}
+
+#currentLocationBtn a{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: #ffffff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+#currentLocationBtn img{
+  width: 20px;
+  height: 20px;
+}
+
+#currentLocationBtn a:hover{
+  background: #f3f3f3;
+}
+
+/* Satellite Toggle button */
+#satelliteBtn{
+  position: absolute;
+  top: 342px;          /* 288 + 44 výška + 10 mezera */
+  left: 10px;
+  z-index: 1000;
+}
+
+#satelliteBtn a{
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: #ffffff;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+#satelliteBtn img{
+  width: 20px;
+  height: 20px;
+}
+
+#satelliteBtn a:hover{
+  background: #f3f3f3;
 }
 
 
@@ -808,7 +877,19 @@ body.modal-open .leaflet-control-container{ display:block !important; }
   <a href="tel:112" aria-label="Call emergency number 112">112</a>
 </div>
 
+<!-- Current Location button -->
+<div id="currentLocationBtn">
+  <a href="#" title="Current location" id="currentLocationLink">
+    <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f6cd2d11c04896062f5fb5_location.png" alt="Current location" />
+  </a>
+</div>
 
+<!-- Satellite Toggle button -->
+<div id="satelliteBtn">
+  <a href="#" title="Toggle satellite view" id="satelliteLink">
+    <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f6ca8e8bd3492108cb48c8_layers.png" alt="Toggle satellite" />
+  </a>
+</div>
 
   <div id="sidePanel">
     <div id="panelHandle" aria-hidden="true"></div>
@@ -950,24 +1031,12 @@ body.modal-open .leaflet-control-container{ display:block !important; }
     }).addTo(map);
     
 
-    /* ---- Current Position control ---- */
-const LocateControl = L.Control.extend({
-  options:{ position:'topleft' },
-  onAdd:function(){
-    const container = L.DomUtil.create('div','leaflet-bar leaflet-control leaflet-control-locate');
-    const a = L.DomUtil.create('a','',container);
-    a.href='#'; a.title='Current position';
-    a.innerHTML = `
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <circle cx="12" cy="12" r="2.5" fill="#111"/>
-        <path d="M12 3v3M12 18v3M3 12h3M18 12h3" stroke="#111" stroke-width="1.5" stroke-linecap="round"/>
-        <circle cx="12" cy="12" r="7" fill="none" stroke="#111" stroke-width="1.5"/>
-      </svg>`;
-    L.DomEvent.on(a,'click',L.DomEvent.stop).on(a,'click',()=> locateOnce());
-    return container;
-  }
-});
-map.addControl(new LocateControl());
+    /* ---- Satellite layer setup ---- */
+    let isSatellite = false;
+    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: 'Tiles &copy; Esri',
+      maxZoom: 19
+    });
 
 let myLocMarker = null, myLocCircle = null;
 
@@ -1001,8 +1070,27 @@ function locateOnce(){
   );
 }
 
+    /* ---- Button event listeners ---- */
+    // Current Location button
+    document.getElementById('currentLocationLink').addEventListener('click', function(e) {
+      e.preventDefault();
+      locateOnce();
+    });
 
-    
+    // Satellite Toggle button
+    document.getElementById('satelliteLink').addEventListener('click', function(e) {
+      e.preventDefault();
+      if (!isSatellite) {
+        map.addLayer(satelliteLayer);
+        isSatellite = true;
+        console.log('🛰️ Satellite view ON');
+      } else {
+        map.removeLayer(satelliteLayer);
+        isSatellite = false;
+        console.log('🗺️ Normal view ON');
+      }
+    });
+
 
     /* ---- Roads (sample) ---- */
     const froadData = [
