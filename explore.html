@@ -430,7 +430,7 @@ body.gallery-open .leaflet-control-container {
 
 #updatesBtn {
   position: absolute;
-  top: 180px;
+  top: 220px;          /* 170 + 40 + 10 */
   left: 20px;
   z-index: 1000;
 }
@@ -441,7 +441,7 @@ body.gallery-open .leaflet-control-container {
   justify-content: center;
   width: 40px;
   height: 40px;
-  background: #ffffff;
+  background: #ffe600;
   border: none;
   border-radius: 10px;
   cursor: pointer;
@@ -457,7 +457,7 @@ body.gallery-open .leaflet-control-container {
 }
 
 #updatesBtn a:hover {
-  background: #f3f3f3;
+  background: #ffd700;
 }
 
 #closeUpdates svg line {
@@ -467,7 +467,7 @@ body.gallery-open .leaflet-control-container {
 /* SOS – 112 (hned pod Updates) */
 #sosBtn{
   position: absolute;
-  top: 230px;          /* 180 + 40 výška + 10 mezera */
+  top: 270px;          /* 220 + 40 + 10 */
   left: 20px;
   z-index: 1000;
 }
@@ -495,7 +495,7 @@ body.gallery-open .leaflet-control-container {
 /* Current Location button */
 #currentLocationBtn{
   position: absolute;
-  top: 280px;          /* 230 + 40 výška + 10 mezera */
+  top: 120px;          /* After zoom buttons: 70 + 40 + 10 */
   left: 20px;
   z-index: 1000;
 }
@@ -526,7 +526,7 @@ body.gallery-open .leaflet-control-container {
 /* Satellite Toggle button */
 #satelliteBtn{
   position: absolute;
-  top: 330px;          /* 280 + 40 výška + 10 mezera */
+  top: 170px;          /* 120 + 40 + 10 */
   left: 20px;
   z-index: 1000;
 }
@@ -744,10 +744,16 @@ body.modal-open .leaflet-control-container{ display:block !important; }
 }
 
 /* === CUSTOM ZOOM BUTTONS (styled like Visibility/Layers) === */
+.leaflet-top.leaflet-left {
+  left: 20px !important;
+  top: 20px !important;
+}
+
 .leaflet-control-zoom {
   border: none !important;
   box-shadow: none !important;
   background: none !important;
+  margin: 0 !important;
 }
 
 .leaflet-control-zoom-in,
@@ -763,8 +769,12 @@ body.modal-open .leaflet-control-container{ display:block !important; }
   color: #000 !important;
   cursor: pointer;
   transition: all 0.2s ease;
-  margin: 10px 0 !important;
+  margin: 0 !important;
   box-shadow: 0 2px 4px rgba(0,0,0,0.12);
+}
+
+.leaflet-control-zoom-in {
+  margin-bottom: 10px !important;
 }
 
 .leaflet-control-zoom-in:hover,
