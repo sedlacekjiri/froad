@@ -2125,13 +2125,18 @@ function resetPolylineStyle(polyline){
 
 
     // Load F-roads from Firestore
-    async function loadFroadsFromFirestore() {
+async function loadFroadsFromFirestore() {
       console.log("📥 Loading F-roads from Firestore...");
       try {
         const snapshot = await db.collection("froads").orderBy("order", "asc").get();
         froadData = [];
         snapshot.forEach(doc => {
-          froadData.push({ id: doc.id, ...doc.data() });
+          const data = doc.data();
+          // Parse coords from JSON string back to array
+          if (typeof data.coords === 'string') {
+            data.coords = JSON.parse(data.coords);
+          }
+          froadData.push({ id: doc.id, ...data });
         });
         console.log("✅ Loaded", froadData.length, "F-roads from Firestore");
         renderFroads();
@@ -2141,6 +2146,7 @@ function resetPolylineStyle(polyline){
         froadData = typeof froadDataHardcoded !== "undefined" ? froadDataHardcoded : [];
         renderFroads();
       }
+    }
     }
 
     // Render F-roads on map
