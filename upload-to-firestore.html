@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload F-roads to Firestore</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Poppins', sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; margin-bottom: 20px; }
+    .btn {
+      background: #000;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 10px 5px;
+    }
+    .btn:hover { background: #333; }
+    .btn:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .btn-danger {
+      background: #d32f2f;
+    }
+    .btn-danger:hover {
+      background: #b71c1c;
+    }
+    .status {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      display: none;
+    }
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    .warning {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeeba;
+    }
+    .log {
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 12px;
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 6px;
+    }
+    .log-line {
+      padding: 2px 0;
+    }
+    .log-error {
+      color: #d32f2f;
+    }
+    .log-success {
+      color: #2e7d32;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🗺️ Upload F-roads to Firestore</h1>
+    <p>This will upload all F-road data from explore.html directly to your Firestore database.</p>
+
+    <div style="margin: 20px 0;">
+      <button class="btn" id="uploadBtn" disabled>📤 Upload All F-roads</button>
+      <button class="btn btn-danger" id="clearBtn" disabled>🗑️ Clear All F-roads</button>
+    </div>
+
+    <div id="status" class="status">
+      <div id="statusText"></div>
+      <div id="log" class="log"></div>
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <script>
+    let db;
+    const logLines = [];
+
+    // Initialize Firebase
+    document.addEventListener('DOMContentLoaded', function() {
+      const config = {
+        apiKey: "AIzaSyDDMNnJgtm-gK9OrVev7qmBRpaA8CAoDiM",
+        authDomain: "froad-7d561.firebaseapp.com",
+        projectId: "froad-7d561",
+        storageBucket: "froad-7d561.firebasestorage.app",
+        messagingSenderId: "1086299585443",
+        appId: "1:1086299585443:web:10bcb67effd6a89c24f816"
+      };
+
+      firebase.initializeApp(config);
+      db = firebase.firestore();
+
+      addLog('✅ Firebase initialized');
+
+      // Enable buttons
+      document.getElementById('uploadBtn').disabled = false;
+      document.getElementById('clearBtn').disabled = false;
+
+      // Attach event listeners
+      document.getElementById('uploadBtn').addEventListener('click', uploadAllFroads);
+      document.getElementById('clearBtn').addEventListener('click', clearAllFroads);
+    });
+
+    function showStatus(type, message) {
+      const statusEl = document.getElementById('status');
+      const statusText = document.getElementById('statusText');
+      statusEl.style.display = 'block';
+      statusEl.className = 'status ' + type;
+      statusText.innerHTML = message;
+    }
+
+    function addLog(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const logDiv = document.getElementById('log');
+
+      const className = type === 'error' ? 'log-error' : (type === 'success' ? 'log-success' : '');
+      logLines.push(`<div class="log-line ${className}">[${timestamp}] ${message}</div>`);
+
+      logDiv.innerHTML = logLines.join('');
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    async function clearAllFroads() {
+      if (!confirm('⚠️ Are you sure you want to DELETE all F-roads from Firestore?')) {
+        return;
+      }
+
+      logLines.length = 0;
+      showStatus('warning', '🗑️ Deleting all F-roads...');
+      document.getElementById('clearBtn').disabled = true;
+
+      try {
+        const snapshot = await db.collection('froads').get();
+        addLog('Found ' + snapshot.size + ' F-roads to delete');
+
+        if (snapshot.size === 0) {
+          showStatus('info', 'ℹ️ No F-roads found in database');
+          return;
+        }
+
+        let deleteCount = 0;
+        for (const doc of snapshot.docs) {
+          await doc.ref.delete();
+          deleteCount++;
+          addLog('Deleted: ' + doc.id, 'success');
+        }
+
+        addLog('✅ All F-roads deleted', 'success');
+        showStatus('success', '✅ Deleted ' + deleteCount + ' F-roads');
+      } catch (err) {
+        addLog('❌ Error: ' + err.message, 'error');
+        showStatus('error', '❌ Failed to delete F-roads');
+        console.error(err);
+      } finally {
+        document.getElementById('clearBtn').disabled = false;
+      }
+    }
+
+    async function uploadAllFroads() {
+      logLines.length = 0;
+      showStatus('info', '📤 Uploading F-roads to Firestore...');
+      document.getElementById('uploadBtn').disabled = true;
+
+      try {
+        // Fetch explore.html to extract F-roads data
+        addLog('📥 Loading F-roads data from explore.html...');
+        const response = await fetch('./explore.html');
+        const html = await response.text();
+
+        // Extract froadDataHardcoded array
+        const match = html.match(/const froadDataHardcoded = \[([\s\S]*?)\s+\];/);
+
+        if (!match) {
+          throw new Error('Could not find froadDataHardcoded in explore.html');
+        }
+
+        const arrayStr = '[' + match[1] + ']';
+        const froadData = eval(arrayStr);
+
+        addLog('Found ' + froadData.length + ' F-roads to upload');
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let i = 0; i < froadData.length; i++) {
+          const froad = froadData[i];
+
+          // Create document ID from name
+          const docId = froad.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+
+          try {
+            await db.collection('froads').doc(docId).set({
+              name: froad.name,
+              coords: froad.coords,
+              photo: froad.photo || '',
+              gallery: froad.gallery || [],
+              description: froad.description || '',
+              difficulty: froad.difficulty || 'Medium',
+              lengthKm: froad.lengthKm || 0,
+              approxTime: froad.approxTime || '',
+              surface: froad.surface || '',
+              watchOut: froad.watchOut || '',
+              order: i + 1
+            });
+
+            successCount++;
+            addLog('[' + (i + 1) + '/' + froadData.length + '] ✅ ' + froad.name, 'success');
+          } catch (err) {
+            errorCount++;
+            addLog('[' + (i + 1) + '/' + froadData.length + '] ❌ ' + froad.name + ' - ' + err.message, 'error');
+            console.error('Error uploading ' + froad.name + ':', err);
+          }
+        }
+
+        showStatus('success',
+          '🎉 Upload complete!<br>' +
+          '✅ Success: ' + successCount + '<br>' +
+          '❌ Errors: ' + errorCount
+        );
+
+      } catch (err) {
+        addLog('❌ Fatal error: ' + err.message, 'error');
+        showStatus('error', '❌ Upload failed! Check console.');
+        console.error(err);
+      } finally {
+        document.getElementById('uploadBtn').disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
