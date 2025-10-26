@@ -163,18 +163,41 @@ document.getElementById("forgotPasswordLink").addEventListener("click", async (e
   const errorEl = document.getElementById("loginError");
 
   if (!email) {
+    errorEl.style.color = "red";
     errorEl.textContent = "Please enter your email first.";
     return;
   }
 
+  // 🧩 Zobraz loading stav
+  errorEl.style.color = "blue";
+  errorEl.textContent = "Sending reset link...";
+
   try {
-    await auth.sendPasswordResetEmail(email);
+    await auth.sendPasswordResetEmail(email, {
+      url: window.location.origin + '/index.html',
+      handleCodeInApp: false
+    });
+
+    console.log("✅ Password reset email sent to:", email);
     errorEl.style.color = "green";
-    errorEl.textContent = "Password reset link has been sent to your email.";
+    errorEl.textContent = "Password reset link has been sent! Check your email (including spam folder).";
   } catch (err) {
-    console.error("Password reset error:", err);
+    console.error("❌ Password reset error:", err);
+    console.error("Error code:", err.code);
+    console.error("Error message:", err.message);
+
     errorEl.style.color = "red";
-    errorEl.textContent = "Couldn't send reset link. Please check your email.";
+
+    // 🔍 Konkrétní chybové hlášky
+    if (err.code === "auth/user-not-found") {
+      errorEl.textContent = "No account found with this email.";
+    } else if (err.code === "auth/invalid-email") {
+      errorEl.textContent = "Invalid email format.";
+    } else if (err.code === "auth/too-many-requests") {
+      errorEl.textContent = "Too many attempts. Please try again later.";
+    } else {
+      errorEl.textContent = `Error: ${err.message}`;
+    }
   }
 });
 
