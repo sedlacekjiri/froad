@@ -61,6 +61,8 @@ avatarInput.addEventListener("change", e => {
   reader.onload = ev => {
     vehiclePhotoPreview.src = ev.target.result;
     vehiclePhotoPreview.style.display = "block";
+    const placeholder = document.getElementById("vehiclePhotoPlaceholder");
+    if (placeholder) placeholder.style.display = "none";
   };
   reader.readAsDataURL(file);
 });
@@ -330,10 +332,16 @@ if (userData.photoURL && user.photoURL !== userData.photoURL) {
 }
 
 
+  // ✅ Zobraz vehicle photo nebo placeholder v profile editoru
+  const vehiclePhotoPlaceholder = document.getElementById("vehiclePhotoPlaceholder");
   if (userData.vehiclePhotoURL) {
-  vehiclePhotoPreview.src = userData.vehiclePhotoURL;
-  vehiclePhotoPreview.style.display = "block";
-}
+    vehiclePhotoPreview.src = userData.vehiclePhotoURL;
+    vehiclePhotoPreview.style.display = "block";
+    if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "none";
+  } else {
+    vehiclePhotoPreview.style.display = "none";
+    if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "flex";
+  }
 
   // ✅ Access kontrola
   if (!userData.access) {
@@ -620,13 +628,17 @@ if (content && auth.currentUser && auth.currentUser.uid === uid) {
 
   if (bioEl) bioEl.textContent = data.bio || "";
   if (vehicleEl) vehicleEl.textContent = data.vehicle || "";
+
+  // ✅ Zobraz vehicle photo nebo placeholder
+  const vehicleImgPlaceholder = document.getElementById("userVehiclePhotoPlaceholder");
   if (vehicleImg) {
     if (data.vehiclePhotoURL) {
       vehicleImg.src = data.vehiclePhotoURL;
-      vehicleImg.classList.add("show");
+      vehicleImg.style.display = "block";
+      if (vehicleImgPlaceholder) vehicleImgPlaceholder.style.display = "none";
     } else {
-      vehicleImg.src = "";
-      vehicleImg.classList.remove("show");
+      vehicleImg.style.display = "none";
+      if (vehicleImgPlaceholder) vehicleImgPlaceholder.style.display = "flex";
     }
   }
 }
@@ -826,13 +838,16 @@ db.collection("users").onSnapshot(snapshot => {
       document.getElementById("userBioText").textContent = data.bio || "";
       document.getElementById("userVehicleText").textContent = data.vehicle || "";
 
+      // ✅ Zobraz vehicle photo nebo placeholder
       const vehicleImg = document.getElementById("userVehiclePhoto");
+      const vehicleImgPlaceholder = document.getElementById("userVehiclePhotoPlaceholder");
       if (data.vehiclePhotoURL) {
         vehicleImg.src = data.vehiclePhotoURL;
-        vehicleImg.classList.add("show");
+        vehicleImg.style.display = "block";
+        if (vehicleImgPlaceholder) vehicleImgPlaceholder.style.display = "none";
       } else {
-        vehicleImg.src = "";
-        vehicleImg.classList.remove("show");
+        vehicleImg.style.display = "none";
+        if (vehicleImgPlaceholder) vehicleImgPlaceholder.style.display = "flex";
       }
     }
   });

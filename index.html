@@ -36,7 +36,10 @@
     <div class="user-section">
       <h3>Vehicle photo</h3>
       <div id="userVehiclePhotoWrapper">
-        <img id="userVehiclePhoto" src="" alt="Vehicle photo" />
+        <div id="userVehiclePhotoPlaceholder" style="background:#f4f4f4; border-radius:12px; height:160px; display:flex; justify-content:center; align-items:center; color:#888; font-size:14px;">
+          No vehicle photo
+        </div>
+        <img id="userVehiclePhoto" src="" alt="Vehicle photo" style="display:none; width:100%; border-radius:12px; object-fit:cover;" />
       </div>
     </div>
 
@@ -219,7 +222,12 @@
   <label for="vehicleSelect">Vehicle type</label>
 <input type="text" id="vehicleSelect" placeholder="Enter your vehicle name" />
 
-  <img id="vehiclePhotoPreview" src="" alt="Vehicle photo preview" style="display:none;">
+  <div id="vehiclePhotoPreviewWrapper" style="margin: 16px 0;">
+    <div id="vehiclePhotoPlaceholder" style="background:#f4f4f4; border-radius:12px; height:160px; display:flex; justify-content:center; align-items:center; color:#888; font-size:14px;">
+      No vehicle photo
+    </div>
+    <img id="vehiclePhotoPreview" src="" alt="Vehicle photo preview" style="display:none; width:100%; border-radius:12px; max-height:200px; object-fit:cover;">
+  </div>
 
 <label for="vehiclePhoto" class="upload-vehicle-btn">+ Upload Vehicle Photo</label>
 <input type="file" id="vehiclePhoto" accept="image/*" hidden />
