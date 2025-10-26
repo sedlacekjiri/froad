@@ -1,1016 +1,105 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <title>F-Roads Iceland</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet"/>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
-  
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload F-roads to Firestore</title>
   <style>
-    body, html { margin:0; padding:0; height:100%; font-family:'Poppins',sans-serif; overflow:hidden; }
-    #map { position:absolute; top:0; left:0; width:100%; height:100vh; z-index:1; }
-
-    /* ---- Side panel ---- */
-    #sidePanel{
-      position:absolute; left:0; bottom:-100%; width:100%; height:55vh;
-      background:#fdfbfb; padding:20px; box-sizing:border-box;
-      box-shadow:0 -2px 6px rgba(0,0,0,.3);
-      display:flex; flex-direction:column; overflow-y:auto;
-      transition:bottom .25s ease-out; z-index:1500; overscroll-behavior:contain;
+    body {
+      font-family: 'Poppins', sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
     }
-    #sidePanel.open{ bottom:0; display:block; }
-    #sidePanel img{ width:100%; height:200px; object-fit:cover; border-radius:8px; margin-bottom:16px; }
-
-    @media (max-width:768px){ #sidePanel{ width:100vw; left:0; right:0; max-width:none; overflow-x:hidden; } }
-
-    .road-label-icon div{
-      display:inline-block; background:#000; color:#fff; border:1px solid #fff; border-radius:5px;
-      padding:4px 6px; font-size:12px;
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
-    .road-label-icon.dimmed div{ opacity:.4; background:#aaa; }
-
-    #closePanel{
-      position:absolute; top:12px; right:12px; background:rgba(255,255,255,.9); border:1px solid #000;
-      font-size:1.5em; padding:4px 8px; border-radius:4px; cursor:pointer; margin-bottom:8px; align-self:flex-end;
-      z-index:1; color:#000;
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
     }
-
-    /* Locate control (current position) */
-    .leaflet-control-locate{ margin-top:10px !important; }
-    .leaflet-control-locate a{
-      display:flex; align-items:center; justify-content:center; width:34px; height:34px; background:#fff;
-      border:1px solid #ccc; border-radius:4px; cursor:pointer;
+    button {
+      background: #000;
+      color: white;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      margin: 10px 5px;
     }
-    .leaflet-control-locate svg{ width:18px; height:18px; display:block; }
-
-    #vehicleSelect{
-      background-color:#fff !important; color:#000 !important;
-      font-family:'Poppins',sans-serif !important; font-size:14px;
-      padding:4px 8px; border-radius:4px; border:1px solid #ccc;
-      -webkit-appearance:none; -moz-appearance:none; appearance:none;
+    button:hover {
+      background: #333;
     }
-
-    /* ---- Weather card (Temp + Wind) ---- */
-    .wx-card{
-      display:flex; align-items:center; gap:11px;
-      padding:10px 12px; border:1px solid #e5e7eb; border-radius:12px; background:#fff;
-      margin:6px 0 12px;
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
     }
-    .wx-temp{ display:flex; align-items:center; gap:10px; }
-    .wx-icon svg{ width:28px; height:28px; display:block; color:#111; }
-    .wx-temp-num{ font-size:16px; line-height:1; font-weight:700; color:#e23b3b; }
-    .wx-temp-num .unit{ margin-left:3px; font-size:14px; font-weight:600; color:#e23b3b; opacity:.9; }
-
-    .wx-sep{ width:1px; align-self:stretch; background:linear-gradient(180deg,#e5e7eb,transparent 70%); }
-
-    .wx-wind{ display:flex; align-items:center; gap:10px; }
-    .wx-compass svg{ width:30px; height:30px; display:block; }
-    .wx-compass .arrow{ transform-origin:22px 22px; transition:transform .25s ease; }
-
-    .wx-wind-info{ display:flex; flex-direction:column; line-height:1.1; }
-    .wx-wind-speed{ font-weight:800; color:#e23b3b; font-size:16px; }
-    .wx-wind-speed .unit{ margin-left:4px; font-size:12px; font-weight:700; color:#e23b3b; opacity:.9; }
-    .wx-wind-dir{ font-size:12px; color:#374151; opacity:.9; }
-
-    .wx-precip{
-      display:flex; align-items:center; gap:8px;
-      background:#fff;
+    #status {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 8px;
+      font-size: 14px;
+      line-height: 1.6;
     }
-    .wx-precip-icon svg{ width:22px; height:22px; display:block; color:#2563eb; }
-    .wx-precip-val{ font-weight:800; color:#111; font-size:14px; line-height:1; }
-    .wx-precip-val .unit{ margin-left:4px; font-size:12px; font-weight:700; color:#6b7280; }
-
-
-    /* ---- River crossings UI ---- */
-    #rc-section{ margin-top:12px; }
-    #rc-title{ font-weight:600; margin:10px 0 6px; display:flex; align-items:center; gap:8px; }
-    #rc-list{ list-style:none; padding:0; margin:0; display:grid; gap:8px; }
-    .rc-item{
-      display:grid; grid-template-columns:30px 1fr auto;
-      align-items:center; gap:10px; padding:8px 10px;
-      border:1px solid #e5e7eb; border-radius:8px; background:#fff;
+    .success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
     }
-    .rc-name{ font-weight:600; }
-    .rc-metrics{ font-size:12px; color:#374151; }
-    .rc-right{ display:flex; align-items:center; gap:8px; }
-    .rc-badge{ font-size:12px; font-weight:600; padding:2px 8px; border-radius:999px; border:1px solid transparent; }
-    .rc-badge.easy{ color:#166534; background:#dcfce7; border-color:#86efac; }
-    .rc-badge.medium{ color:#92400e; background:#ffedd5; border-color:#fed7aa; }
-    .rc-badge.hard{ color:#7f1d1d; background:#fee2e2; border-color:#fecaca; }
-    .rc-badge.extreme{ color:#7c2d12; background:#ffedd5; border-color:#fdba74; box-shadow:0 0 0 2px #f59e0b inset; }
-
-    /* Crossing icon holder */
-    .rc-icon{ width:28px; height:28px; display:inline-grid; place-items:center; }
-    .rc-icon svg{ width:28px; height:28px; display:block; }
-
-    .rc-btn{ border:1px solid #111; background:#fff; color:#111; border-radius:6px; padding:4px 8px; font-size:12px; cursor:pointer; }
-    .rc-btn:hover{ background:#f3f4f6; }
-
-
-    .info-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  margin: 10px 0;
-  background: #fff;
-  border-radius: 6px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  font-size: 14px;
-}
-
-.info-label {
-  font-weight: 600;
-  color: #111;
-  min-width: 110px; /* sjednocení zarovnání */
-}
-
-Lepší oddělení sekce info */
-#roadDetails {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.info-title {
-  display: block;
-  margin: 15px 0;
-}
-
-/* Container pro obrázek + tlačítko */
-#roadImageWrapper {
-  position: relative;
-  display: block;
-  margin-bottom: 16px;
-}
-#roadImageWrapper img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-  border-radius: 8px;
-  display: block;
-}
-
-/* Gallery button v overlay */
-#spGalleryBtn {
-  position: absolute;
-  bottom: 10px;   /* místo top:10px */
-  right: 10px;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  font-size: 14px;
-  font-weight: 600;
-  border: 1px solid #111;
-  border-radius: 8px;
-  background: rgba(255,255,255,0.85);
-  color: #111;
-  cursor: pointer;
-  backdrop-filter: blur(4px);
-}
-#spGalleryBtn:hover {
-  background: rgba(255,255,255,1);
-}
-
-#spGalleryBtn svg {
-  width: 16px;
-  height: 16px;
-  display: block;
-}
-
-/* Fullscreen gallery overlay – navrchu všeho */
-#galleryOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(255, 255, 255, 1);
-  z-index: 9999999;          /* bylo méně – teď nad Leafletem i tvými UI (vehicle filter ~1000) */
-  display: none;
-  flex-direction: column;
-}
-#galleryOverlay.open { display: flex; }
-
-#galleryHeader {
-  display:flex; 
-  align-items:center; 
-  justify-content:space-between;
-  padding:12px 16px;
-  color:#000000; 
-  font-weight:600;
-  font-family:'Poppins', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; /* Poppins */
-  background:#fff;              /* světlý pruh jako ostatní UI */
-  border-bottom:1px solid #e5e7eb;
-}
-
-/* Pruh s obsahem – VERTIKÁLNĚ pod sebou */
-#galleryStrip{
-  flex:1;
-  display:block;            /* stačí blok – budou pod sebou */
-  overflow-y:auto;          /* vertikální scroll */
-  overflow-x:hidden;
-  padding:16px;
-}
-
-/* Každý slide je „karta“ uprostřed, max šířka kvůli čitelnosti */
-.gal-slide{
-  width:min(100%, 1200px);
-  margin:0 auto 16px auto;
-  border-radius:12px; overflow:hidden; background:#ffffff;
-}
-
-/* Obrázek se přizpůsobí – žádné ořezávání, výška max 80vh */
-.gal-slide img{
-  display:block;
-  width:100%;
-  border-radius:12px;               /* vyplní šířku kontejneru */
-  height:auto;              /* ponechá poměr stran */
-  object-fit:contain;       /* bez ořezu */
-}
-.gal-cap{ color:#000000; font-size:14px; padding:6px 10px; text-align:center; }
-
-/* Volitelné: skryj scrollbar na mobilu / zjemni vzhled */
-#galleryStrip::-webkit-scrollbar { width: 10px; }
-#galleryStrip::-webkit-scrollbar-thumb { background:#666; border-radius:8px; }
-#galleryStrip::-webkit-scrollbar-track { background:transparent; }
-
-#closeGallery {
-  background: #fff;
-  border: 1px solid #111;
-  border-radius: 50%;
-  width: 34px;
-  height: 34px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: background .2s ease;
-}
-#closeGallery:hover {
-  background: #f3f4f6;
-}
-#closeGallery svg {
-  width: 18px;
-  height: 18px;
-  stroke: #111;
-}
-
-
-
-/* Když je otevřená galerie, schovej tyto prvky */
-body.gallery-open #vehicleFilter { display:none !important; }
-/* Pokud máš další Leaflet ovladače, schovej celý control container */
-body.gallery-open .leaflet-control-container { display:none !important; }
-
-/* Overlay – opravdu navrchu, fullscreen */
-#galleryOverlay{
-  position: fixed;
-  inset: 0;
-  background: rgba(255, 255, 255, 1);
-  z-index: 2147483647; /* maximum prakticky všude */
-  display: none;
-  flex-direction: column;
-}
-#galleryOverlay.open{ display:flex; }
-
-/* Když je galerie otevřená, zruš possible 'transform' na hlavních blocích,
-   aby 'position: fixed' overlaye neuvízl v jejich stacking contextu (iframe/Webflow bug). */
-body.gallery-open #map,
-body.gallery-open #sidePanel,
-body.gallery-open #vehicleFilter {
-  transform: none !important;
-  filter: none !important;
-  perspective: none !important;
-}
-
-/* A rovnou schovej konfliktní UI nad mapou */
-body.gallery-open #vehicleFilter,
-body.gallery-open .leaflet-control-container {
-  display: none !important;
-}
-
-/* ===== Unified POI Popup (Campsites + Huts) ===== */
-/* Leaflet shell */
-.leaflet-container .poi-popup .leaflet-popup-content-wrapper{
-  padding:0;
-  border:1px solid #e5e7eb;
-  border-radius:14px;
-  box-shadow:0 10px 25px rgba(0,0,0,.25);
-  background:#fff;
-}
-.leaflet-container .poi-popup .leaflet-popup-content{
-  margin:0;
-  font-family:'Poppins', system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-}
-.leaflet-container .poi-popup .leaflet-popup-tip{
-  background:#fff;
-  box-shadow:1px 1px 0 0 #e5e7eb;
-}
-
-/* Close button – mírný radius, ladí s UI */
-.leaflet-container .poi-popup a.leaflet-popup-close-button{
-  position:absolute; right:8px; top:8px;
-  width:28px; height:28px; line-height:26px;
-  color:#111; background:#fff;
-  border:1px solid #111; border-radius:8px;
-  opacity:1;
-}
-.leaflet-container .poi-popup a.leaflet-popup-close-button:hover{ background:#f3f4f6; }
-
-/* Card layout */
-.poi-card{ background:#fff; border-radius:14px; overflow:hidden; }
-.poi-cover{ width:100%; height:140px; object-fit:cover; display:block; }
-.poi-body{ padding:12px 14px; }
-
-.poi-title{
-  font-weight:700; font-size:15px; color:#111; margin:0 0 6px;
-}
-.poi-desc{
-  font-size:13px; color:#374151; margin:0 0 10px;
-}
-
-/* Actions – CTA vpravo */
-.poi-actions{
-  display:flex; justify-content:flex-end; align-items:center; gap:8px; flex-wrap:wrap;
-}
-
-/* CTA button (enforces black text) */
-.poi-btn,
-.poi-btn:link,
-.poi-btn:visited{
-  display: block;                 /* místo inline-flex, zabere celý řádek */
-  width: 100%;
-  margin: 0 auto;                 /* vycentruje díky auto marginům */
-  padding: 10px 14px;             /* příjemný vnitřní spacing */
-  border: 1px solid #111;
-  border-radius: 8px;
-  background: #fff;
-  color: #111 !important;
-  font-weight: 600;
-  font-size: 13px;
-  text-align: center;             /* text doprostřed */
-  text-decoration: none !important;
-  box-sizing: border-box;         /* jistota že padding se počítá do šířky */
-}
-.poi-btn:hover{ background:#f3f4f6; }
-.poi-btn svg{ width:16px; height:16px; display:inline-block; vertical-align:middle; }
-
-
-/* Neutralize generic anchor colors inside popup */
-.leaflet-container .poi-popup a{ color:inherit; }
-
-/* Small screens – trochu kompaktnější */
-@media (max-width: 420px){
-  .poi-cover{ height:150px; }
-  .poi-title{ font-size:14px; }
-  .poi-desc{ font-size:12px; }
-  .poi-btn{ font-size:12px; padding:6px 8px; }
-}
-
-/* ==== Road status badge ==== */
-#roadStatusBadge {
-  position: absolute;
-  top: 12px;
-  left: 12px;
-  padding: 4px 12px;
-  border-radius: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  text-transform: uppercase;
-  border: 1px solid transparent;
-  z-index: 2;
-}
-
-#roadStatusBadge.open {
-  color: #166534;
-  background-color: #dcfce7;
-  border-color: #86efac;
-}
-
-#roadStatusBadge.closed {
-  color: #7f1d1d;
-  background-color: #fee2e2;
-  border-color: #fecaca;
-}
-
-#updatesPanel {
-  position:absolute;
-  left:0; bottom:-100%;
-  width:100%; height:55vh;
-  background:#fdfbfb;
-  padding:20px;
-  box-sizing:border-box;
-  box-shadow:0 -2px 6px rgba(0,0,0,.3);
-  transition:bottom .25s ease-out;
-  z-index:1500;
-  overflow-y:auto;
-}
-#updatesPanel.open { bottom:0; }
-
-#updatesPanel h2 { margin-top:0; font-size:18px; }
-
-#closeUpdates {
-  position:absolute; top:12px; right:12px;
-  background:#fff; border:1px solid #111; border-radius:4px;
-  font-size:1.2em; padding:2px 8px; cursor:pointer;
-  color:#111; /* černá ikonka/text */
-}
-#closeUpdates:hover { background:#f3f4f6; }
-
-.updates-list { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
-.update-item {
-  padding:10px;
-  border:1px solid #e5e7eb; border-radius:8px;
-  background:#fff;
-}
-.update-item.warning { border-left:4px solid #dc2626; }
-.update-item.info    { border-left:4px solid #2563eb; }
-.update-item.notice  { border-left:4px solid #ffe600; }
-.update-time { font-size:12px; color:#6b7280; margin-bottom:4px; }
-
-#updatesBtn {
-  position: absolute;
-  top: 220px;          /* 170 + 40 + 10 */
-  left: 20px;
-  z-index: 1000;
-  border-radius: 10px;
-  overflow: hidden;
-}
-
-#updatesBtn a {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: #ffe600;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-#updatesBtn .updates-icon {
-  font-weight: 900;
-  font-size: 18px;
-  color: #000;
-  font-family: 'Poppins', sans-serif;
-  line-height: 1;
-}
-
-#updatesBtn a:hover {
-  background: #ffd700;
-}
-
-#closeUpdates svg line {
-  stroke: #000;
-}
-
-/* SOS – 112 (hned pod Updates) */
-#sosBtn{
-  position: absolute;
-  top: 270px;          /* 220 + 40 + 10 */
-  left: 20px;
-  z-index: 1000;
-}
-
-#sosBtn a{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: #ef4444;
-  color: #fff;
-  font: 700 13px/1 'Poppins', sans-serif;
-  border-radius: 10px;
-  border: none;
-  text-decoration: none;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-#sosBtn a:hover{
-  background: #f05252;
-}
-
-/* Current Location button */
-#currentLocationBtn{
-  position: absolute;
-  top: 120px;          /* After zoom buttons: 70 + 40 + 10 */
-  left: 20px;
-  z-index: 1000;
-}
-
-#currentLocationBtn a{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: #ffffff;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-}
-
-#currentLocationBtn img{
-  width: 20px;
-  height: 20px;
-}
-
-#currentLocationBtn a:hover{
-  background: #f3f3f3;
-}
-
-/* Satellite Toggle button */
-#satelliteBtn{
-  position: absolute;
-  top: 170px;          /* 120 + 40 + 10 */
-  left: 20px;
-  z-index: 1000;
-}
-
-#satelliteBtn a{
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  background: #ffffff;
-  border: none;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  text-decoration: none;
-}
-
-#satelliteBtn img{
-  width: 20px;
-  height: 20px;
-}
-
-#satelliteBtn a:hover{
-  background: #f3f3f3;
-}
-
-
-html, body { font-family: 'Poppins', sans-serif; }
-
-/* ===== Bottom-left card (subtle) ===== */
-#bottomInfoBox{
-  position:fixed; left:12px; bottom:12px;
-  display:flex; flex-direction:column; gap:4px; align-items:flex-start;
-  padding:8px 10px;
-  background:rgba(255,255,255,0.72);
-  border:1px solid rgba(17,17,17,.08);
-  border-radius:10px;
-  box-shadow:0 6px 18px rgba(0,0,0,.10);
-  z-index: 650; /* pod modalem, nad mapou */
-  font-family:'Poppins',sans-serif; color:#111;
-  backdrop-filter: blur(4px);
-}
-#currentTime{
-  font-size:12px; font-weight:600; opacity:.75;
-}
-
-/* nenápadný odkaz místo výrazného tlačítka */
-#openDisclaimer{
-  appearance:none;
-  border:none;
-  background:transparent;
-  color:#111;                 /* černý text */
-  cursor:pointer;
-  padding:0; margin:0;
-  font-size:12px;
-  font-weight:500;
-  text-decoration:underline;  /* vypadá jako odkaz */
-  opacity:.6;
-  transition:opacity .15s ease, color .15s ease;
-}
-#openDisclaimer:hover{
-  opacity:1;
-  color:#333;                 /* na hover jen trochu tmavší/šedší */
-}
-
-
-/* ===== Modal nad VŠÍM (překryje mapu, ikony, side panel, atd.) ===== */
-#legalModalBackdrop{
-  position:fixed; inset:0; background:rgba(0,0,0,.45);
-  opacity:0; visibility:hidden; transition:opacity .2s ease;
-  z-index: 2147483646; /* téměř maximum */
-}
-#legalModalBackdrop.open{ opacity:1; visibility:visible; }
-
-#legalModal{
-  position:fixed; left:50%; top:50%;
-  transform:translate(-50%,-50%) scale(.97);
-  width:min(640px, 92vw); max-height:85vh; overflow:auto;
-  background:#fff; color:#111; font-family:'Poppins',sans-serif;
-  border:1px solid #e5e7eb; border-radius:14px;
-  box-shadow:0 24px 60px rgba(0,0,0,.25);
-  opacity:0; visibility:hidden; transition:opacity .2s ease, transform .2s ease;
-  z-index: 2147483647; /* nad vším */
-  display:flex; flex-direction:column;
-}
-#legalModal.open{ opacity:1; visibility:visible; transform:translate(-50%,-50%) scale(1); }
-
-/* Close (jediný) */
-#legalClose.closeBtn{
-  position:absolute; top:12px; right:12px;
-  border:1px solid #111; background:#fff; color:#111;
-  width:32px; height:32px; border-radius:8px;
-  display:inline-grid; place-items:center; cursor:pointer; font-size:18px;
-}
-#legalClose.closeBtn:hover{ background:#f3f4f6; }
-
-/* Content spacing */
-#legalContent{ padding:24px 24px 0; }
-#legalContent h2{ margin:0 0 14px; font-size:20px; font-weight:600; }
-#legalContent p{ margin:10px 0; font-size:14px; line-height:1.5; }
-#legalContent ul{ margin:10px 0 10px 22px; font-size:14px; line-height:1.5; }
-
-/* Footer s modrým CTA */
-#legalFooter{
-  padding:16px 24px; border-top:1px solid #eee;
-  display:flex; justify-content:flex-end;
-}
-#legalAccept{
-  background:#2a61ff; color:#fff; border:none;
-  padding:10px 18px; border-radius:8px;
-  font-size:14px; font-weight:600; cursor:pointer;
-  box-shadow:0 4px 12px rgba(42,97,255,.35);
-  transition:filter .15s ease;
-}
-#legalAccept:hover{ filter:brightness(1.08); }
-
-/* Když je modal otevřený: lock scroll + schovej mapové ovladače, ať „nelezou přes“ */
-body.modal-open{ overflow:hidden; }
-body.modal-open .leaflet-control-container{ display:block !important; }
-
-/* ==== High Water Alert Badge – levý spodní roh obrázku ==== */
-.high-water-badge {
-  position: absolute;
-  bottom: 10px;
-  left: 10px;
-
-  display: none;
-  align-items: center;
-
-  padding: 6px 12px;
-  border-radius: 10px;
-  font: 600 13px/1.3 'Poppins', sans-serif;
-
-  background: #fde68a;     /* nice yellow background */
-  color: #991b1b;          /* strong red text */
-  border: 1px solid #fcd34d;
-  box-shadow: 0 4px 12px rgba(0,0,0,.15);
-  z-index: 2;
-}
-
-/* ===== Current location – oranžový bod + bílý obrys + pulz ===== */
-
-/* divIcon wrapper – neklikatelný */
-.leaflet-marker-icon.me-dot { pointer-events: none !important; }
-
-/* samotný bod (můžeš zvětšit na 18–20px) */
-.me-dot__core {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #0073ff; /* modrá (Tailwind blue-500) */
-  box-shadow:
-    0 0 0 2px #fff,                  /* bílý outline */
-    0 0 20px 8px rgba(0, 115, 255, .4); /* modrý rozptyl (blur) */
-  animation: meBlink 1s ease-in-out infinite; /* pulz opacity */
-}
-
-@keyframes meBlink{
-  0%, 100% { opacity: 1; }
-  50%      { opacity: .2; }
-}
-
-/* větší „accuracy“ kruh – pulzuje fill-opacity (Leaflet path v SVG) */
-.leaflet-interactive.me-accuracy{
-  animation: meFill 1s ease-in-out infinite;
-}
-@keyframes meFill{
-  0%,100% { fill-opacity: .25; }
-  50%     { fill-opacity: .10; }
-}
-
-/* === Desktop layout – panels slide from right === */
-@media (min-width: 992px) {
-  #sidePanel,
-  #updatesPanel {
-    bottom: 0 !important;
-    top: 0;
-    left: auto;
-    right: -420px;               /* panel je skrytý mimo viewport */
-    width: 400px;
-    height: 100vh;
-    transition: right 0.3s ease-out;
-    box-shadow: -3px 0 6px rgba(0,0,0,.25);
-    border-left: 1px solid #ddd;
-  }
-
-  #sidePanel.open,
-  #updatesPanel.open {
-    right: 0 !important;         /* při otevření se posune do viewportu */
-  }
-
-  /* Uprav pozici close tlačítek */
-  #closePanel,
-  #closeUpdates {
-    top: 10px;
-    right: 10px;
-    border-radius: 6px;
-    background: #fff;
-    border: 1px solid #111;
-  }
-
-  /* Přizpůsob mapě */
-  #map {
-    width: 100%;
-    height: 100vh;
-  }
-
-  /* Zachovej scrollování obsahu uvnitř panelu */
-  #sidePanel,
-  #updatesPanel {
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
-}
-
-/* === CUSTOM ZOOM BUTTONS (styled like Visibility/Layers) === */
-.leaflet-top.leaflet-left {
-  left: 20px !important;
-  top: 20px !important;
-}
-
-.leaflet-control-zoom {
-  border: none !important;
-  box-shadow: none !important;
-  background: none !important;
-  margin: 0 !important;
-}
-
-.leaflet-control-zoom-in,
-.leaflet-control-zoom-out {
-  background: #ffffff !important;
-  border: none !important;
-  border-radius: 10px !important;
-  width: 40px !important;
-  height: 40px !important;
-  line-height: 40px !important;
-  font-size: 22px !important;
-  font-weight: 600 !important;
-  color: #000 !important;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  margin: 0 !important;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.12);
-}
-
-.leaflet-control-zoom-in {
-  margin-bottom: 10px !important;
-}
-
-.leaflet-control-zoom-in:hover,
-.leaflet-control-zoom-out:hover {
-  background: #f3f3f3 !important;
-}
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+    .info {
+      background: #d1ecf1;
+      color: #0c5460;
+      border: 1px solid #bee5eb;
+    }
+    .warning {
+      background: #fff3cd;
+      color: #856404;
+      border: 1px solid #ffeeba;
+    }
+    .log {
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 10px;
+      font-family: monospace;
+      font-size: 12px;
+    }
   </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🗺️ Upload F-roads to Firestore</h1>
+    <p>This tool will upload all F-road data from explore.html to Firestore database.</p>
+
+    <div>
+      <button id="uploadBtn" onclick="uploadAllFroads()">📤 Upload All F-roads</button>
+      <button id="clearBtn" onclick="clearAllFroads()">🗑️ Clear All F-roads</button>
+      <button id="testBtn" onclick="testConnection()">🔍 Test Connection</button>
+    </div>
+
+    <div id="status" class="info" style="display:none;">
+      <div id="statusText"></div>
+      <div id="log" class="log"></div>
+    </div>
+  </div>
+
   <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
   <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
-</head>
 
-<body>
-  
-    <!-- Hidden vehicle selector (for JS compatibility) -->
-<select id="vehicleSelect" style="display:none;">
-  <option value="all" selected>All vehicles</option>
-</select>
-
-<!-- Bottom-left info box (subtle) -->
-<div id="bottomInfoBox">
-  <div id="currentTime"></div>
-  <button id="openDisclaimer" type="button" title="Important Disclaimer">Safety notice</button>
-</div>
-
-<!-- Backdrop + Modal (white theme) -->
-<div id="legalModalBackdrop" aria-hidden="true"></div>
-<div id="legalModal" role="dialog" aria-modal="true" aria-labelledby="legalTitle">
-  <button id="legalClose" class="closeBtn" aria-label="Close">✕</button>
-
-  <div id="legalContent">
-    <h2 id="legalTitle">Important Disclaimer</h2>
-    <p>
-      The vehicle selection and road recommendations shown here are only
-      <strong>general suggestions</strong> based on common road difficulty levels.
-      Actual conditions can change quickly due to weather, river flow, snow, or closures.
-    </p>
-    <ul>
-      <li>Driving on F-roads is entirely <strong>at your own risk</strong> and the driver takes full responsibility.</li>
-      <li>Always check official road conditions (<em>road.is</em>) and the weather forecast before driving.</li>
-      <li>Do not attempt river crossings unless you and your vehicle are fully capable.</li>
-      <li>Respect road signs, closures, and your rental company’s rules.</li>
-    </ul>
-    <p>
-      The creators of this map accept no responsibility for damages, accidents, or fines resulting from the use of these recommendations.
-    </p>
-  </div>
-
-  <div id="legalFooter">
-    <button id="legalAccept" type="button">I Understand</button>
-  </div>
-</div>
-
-
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <div id="map"></div>
-  
-
-  <div id="updatesPanel" class="updates">
-  <button id="closeUpdates">✕</button>
-  <h2>Updates</h2>
-  <ul id="updatesList" class="updates-list">
-    <!-- vyplní JS -->
-  </ul>
-</div>
-
-<div id="updatesBtn" class="leaflet-bar">
-  <a href="#" title="View updates">
-    <span class="updates-icon">!</span>
-  </a>
-</div>
-
-<!-- SOS 112 button (hned pod Updates) -->
-<div id="sosBtn">
-  <a href="tel:112" aria-label="Call emergency number 112">112</a>
-</div>
-
-<!-- Current Location button -->
-<div id="currentLocationBtn">
-  <a href="#" title="Current location" id="currentLocationLink">
-    <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68fe1494e6a825faf56ef295_target.png" alt="Current location" />
-  </a>
-</div>
-
-<!-- Satellite Toggle button -->
-<div id="satelliteBtn">
-  <a href="#" title="Toggle satellite view" id="satelliteLink">
-    <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f6ca8e8bd3492108cb48c8_layers.png" alt="Toggle satellite" />
-  </a>
-</div>
-
-  <div id="sidePanel">
-    <button id="closePanel">✕</button>
-    <div id="roadStatusBadge" class="open">OPEN</div>
-    <div id="roadImageWrapper" style="display:none;">
-  <img id="roadImage" alt="Road Photo"/>
-  <div class="high-water-badge">
-  Caution: High Water Possible
-</div>
-  <button id="spGalleryBtn" type="button" title="Gallery">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
-      <rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="#111" stroke-width="1.6"/>
-      <path d="M8 13l2-2 3 3 3-4 3 4" fill="none" stroke="#111" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-      <circle cx="8" cy="9" r="1.6" fill="#111"/>
-    </svg>
-    <span>Gallery</span>
-  </button>
-
-  
-  
-  <div id="galleryOverlay">
-  <div id="galleryHeader">
-    <span>Gallery</span>
-    <button id="closeGallery" aria-label="Close gallery">
-  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none">
-    <line x1="6" y1="6" x2="18" y2="18" stroke-width="2" stroke-linecap="round"/>
-    <line x1="6" y1="18" x2="18" y2="6" stroke-width="2" stroke-linecap="round"/>
-  </svg>
-</button>
-  </div>
-  <div id="galleryStrip"></div>
-</div>
-</div>
-    <div id="roadDetails">
-      <h2>F-road Details</h2>
-
-      <!-- Weather card -->
-      <div id="wxCard" class="wx-card" title="">
-  
-  <!-- Teplota -->
-  <div class="wx-temp">
-    <div id="wxIcon" class="wx-icon" aria-hidden="true"></div>
-    <div class="wx-temp-num">
-      <span id="wxT">--</span><span class="unit">°C</span>
-    </div>
-  </div>
-
-  <div class="wx-sep" aria-hidden="true"></div>
-
-  <!-- Vítr -->
-  <div class="wx-wind">
-    <div class="wx-compass" aria-label="Wind direction">
-      <svg viewBox="0 0 44 44" role="img" aria-label="Wind compass">
-        <circle cx="22" cy="22" r="20" fill="#f8fafc" stroke="#dbeafe" stroke-width="1.5"/>
-        <line x1="22" y1="2"  x2="22" y2="6"  stroke="#9ca3af" stroke-width="1"/>
-        <line x1="22" y1="38" x2="22" y2="42" stroke="#9ca3af" stroke-width="1"/>
-        <line x1="2"  y1="22" x2="6"  y2="22" stroke="#9ca3af" stroke-width="1"/>
-        <line x1="38" y1="22" x2="42" y2="22" stroke="#9ca3af" stroke-width="1"/>
-        <g id="wxArrow" class="arrow">
-          <polygon points="22,7 18.5,17.5 25.5,17.5" fill="#e23b3b"/>
-          <line x1="22" y1="17.5" x2="22" y2="31" stroke="#e23b3b" stroke-width="2" stroke-linecap="round"/>
-        </g>
-      </svg>
-    </div>
-    <div class="wx-wind-info">
-      <div class="wx-wind-speed"><span id="wxF">--</span><span class="unit">m/s</span></div>
-      <div class="wx-wind-dir" id="wxDtxt">--</div>
-    </div>
-  </div>
-
-  <div class="wx-sep" aria-hidden="true"></div>
-
-  <!-- Srážky -->
-  <div class="wx-precip" title="Precipitation (mm/h)">
-    <div class="wx-precip-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24">
-        <path d="M12 3C10 6 6 10 6 13.5A6 6 0 0 0 18 13.5C18 10 14 6 12 3z"
-              fill="currentColor"/>
-      </svg>
-    </div>
-    <div class="wx-precip-val">
-      <span id="wxP">--</span><span class="unit">mm/h</span>
-    </div>
-  </div>
-
-</div>
-
-      
-      <!-- Hidden fallback text (kept) -->
-      <span id="wx" style="display:none">-- °C · -- m/s</span>
-
-      <div>
-        <strong>River Crossings:</strong>
-        <span id="infoRiver"></span>
-      </div>
-
-      <strong class="info-title">Informations:</strong>
-
-      <div class="info-row">
-        <span class="info-label">Difficulty:</span>
-        <span id="infoDifficulty"></span>
-      </div>
-
-      <div class="info-row">
-        <span class="info-label">Length:</span>
-        <span id="infoLength"></span> km
-      </div>
-
-      <div class="info-row">
-        <span class="info-label">Approx. Time:</span>
-        <span id="infoTime"></span>
-      </div>
-
-      <div class="info-row">
-        <span class="info-label">Surface:</span>
-        <span id="infoSurface"></span>
-      </div>
-
-      <div class="info-row">
-        <span class="info-label">Watch out for:</span>
-        <span id="infoWatch"></span>
-      </div>
-
-
-      <!-- River crossings section is injected below -->
-    </div>
-  </div>
-
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-  
   <script>
-    
-    const minZoom = 6;
-    const map = L.map('map').setView([63.9, -18.9], minZoom);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution:'© OpenStreetMap contributors', maxZoom:19, minZoom
-    }).addTo(map);
-    
-
-
-    // ========== FIREBASE INTEGRATION ==========
-    const firebaseConfig = {
+    // Firebase config (same as main app)
+    const config = {
       apiKey: "AIzaSyDDMNnJgtm-gK9OrVev7qmBRpaA8CAoDiM",
       authDomain: "froad-7d561.firebaseapp.com",
       projectId: "froad-7d561",
@@ -1018,74 +107,83 @@ body.modal-open .leaflet-control-container{ display:block !important; }
       messagingSenderId: "1086299585443",
       appId: "1:1086299585443:web:10bcb67effd6a89c24f816"
     };
-    firebase.initializeApp(firebaseConfig);
+    firebase.initializeApp(config);
     const db = firebase.firestore();
 
-    /* ---- Satellite layer setup ---- */
-    let isSatellite = false;
-    const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: 'Tiles &copy; Esri',
-      maxZoom: 19
-    });
+    let logMessages = [];
 
-let myLocMarker = null, myLocCircle = null;
+    function showStatus(type, message) {
+      const status = document.getElementById('status');
+      const statusText = document.getElementById('statusText');
+      status.style.display = 'block';
+      status.className = type;
+      statusText.innerHTML = message;
+    }
 
-function locateOnce(){
-  if(!navigator.geolocation){ alert('Geolocation not supported'); return; }
-  navigator.geolocation.getCurrentPosition(
-    (pos)=>{
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-      const acc = pos.coords.accuracy || 30;
-      const latlng = [lat, lon];
+    function addLog(message, isError = false) {
+      const timestamp = new Date().toLocaleTimeString();
+      const logDiv = document.getElementById('log');
+      logMessages.push(`[${timestamp}] ${message}`);
+      logDiv.innerHTML = logMessages.map(m =>
+        `<div style="color: ${isError ? '#d32f2f' : '#333'}">${m}</div>`
+      ).join('');
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
 
-      // 1) ORANŽOVÝ BOD (divIcon), žádný default „pin“
-      const icon = L.divIcon({
-        className: 'me-dot',
-        html: '<div class="me-dot__core"></div>',
-        iconSize: [0,0],
-        iconAnchor: [0,0]
-      });
-      if (!myLocMarker){
-        myLocMarker = L.marker(latlng, { icon, interactive:false, keyboard:false }).addTo(map);
-      } else {
-        myLocMarker.setLatLng(latlng);
+    async function testConnection() {
+      logMessages = [];
+      showStatus('info', '🔍 Testing Firestore connection...');
+
+      try {
+        const testDoc = await db.collection('froads').limit(1).get();
+        addLog('✅ Connected to Firestore successfully');
+        addLog(`📊 Current F-roads count: ${testDoc.size}`);
+        showStatus('success', '✅ Connection successful!');
+      } catch (err) {
+        addLog(`❌ Error: ${err.message}`, true);
+        showStatus('error', '❌ Connection failed! Check console.');
+        console.error(err);
+      }
+    }
+
+    async function clearAllFroads() {
+      if (!confirm('⚠️ Are you sure you want to DELETE all F-roads from Firestore?')) {
+        return;
       }
 
-      // 3) Kamera – trochu přiblížit (min zoom 13)
-      map.flyTo(latlng, Math.max(map.getZoom() || 0, 13), { duration:.6 });
-    },
-    (err)=>{ console.warn(err); alert('Could not get location'); },
-    { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
-  );
-}
+      logMessages = [];
+      showStatus('warning', '🗑️ Deleting all F-roads...');
+      document.getElementById('clearBtn').disabled = true;
 
-    /* ---- Button event listeners ---- */
-    // Current Location button
-    document.getElementById('currentLocationLink').addEventListener('click', function(e) {
-      e.preventDefault();
-      locateOnce();
-    });
+      try {
+        const snapshot = await db.collection('froads').get();
+        addLog(`Found ${snapshot.size} F-roads to delete`);
 
-    // Satellite Toggle button
-    document.getElementById('satelliteLink').addEventListener('click', function(e) {
-      e.preventDefault();
-      if (!isSatellite) {
-        map.addLayer(satelliteLayer);
-        isSatellite = true;
-        console.log('🛰️ Satellite view ON');
-      } else {
-        map.removeLayer(satelliteLayer);
-        isSatellite = false;
-        console.log('🗺️ Normal view ON');
+        const batch = db.batch();
+        snapshot.docs.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+
+        await batch.commit();
+        addLog('✅ All F-roads deleted successfully');
+        showStatus('success', `✅ Deleted ${snapshot.size} F-roads`);
+      } catch (err) {
+        addLog(`❌ Error: ${err.message}`, true);
+        showStatus('error', '❌ Failed to delete F-roads');
+        console.error(err);
+      } finally {
+        document.getElementById('clearBtn').disabled = false;
       }
-    });
+    }
 
+    async function uploadAllFroads() {
+      logMessages = [];
+      showStatus('info', '📤 Uploading F-roads to Firestore...');
+      document.getElementById('uploadBtn').disabled = true;
 
-    /* ---- Roads (sample) ---- */
-    let froadData = []; // Will be loaded from Firestore
-
-    const froadDataHardcoded = [
+      // F-roads data (paste from explore.html lines 1070-1806)
+      const froadData =
+    const froadData = [
       {
         name:"214 Kerlingardalsvegur",
         coords:[[63.424245,-18.903451],[63.425263,-18.90534],[63.425829,-18.907292],[63.426319,-18.908279],[63.427192,-18.909245],[63.427912,-18.909352],[63.428699,-18.909073],[63.429506,-18.908966],[63.430293,-18.909202],[63.431425,-18.90961],[63.432193,-18.909459],[63.432769,-18.908966],[63.433239,-18.908043],[63.434534,-18.905254],[63.435264,-18.904267],[63.436147,-18.90388],[63.439409,-18.904095],[63.442805,-18.904267],[63.443208,-18.903966],[63.443534,-18.902636],[63.444494,-18.899503],[63.445933,-18.896585],[63.446086,-18.895168],[63.446105,-18.892937],[63.447007,-18.889804],[63.447582,-18.889032],[63.447391,-18.888045],[63.447352,-18.887208],[63.447151,-18.885598],[63.44763,-18.883689],[63.448455,-18.880878],[63.449654,-18.876801],[63.450019,-18.876157],[63.450805,-18.875492],[63.451409,-18.875213],[63.451659,-18.875299],[63.452407,-18.87605],[63.452781,-18.876028],[63.453174,-18.875535],[63.455648,-18.871265],[63.456156,-18.8706],[63.456559,-18.870406],[63.457576,-18.870127],[63.457873,-18.870213],[63.458314,-18.870857],[63.45892,-18.871511],[63.459562,-18.872627],[63.460597,-18.875245],[63.461077,-18.875846],[63.461594,-18.876146],[63.462246,-18.876017],[63.462975,-18.876275],[63.463665,-18.876489],[63.464106,-18.877262],[63.464356,-18.878592],[63.464432,-18.880523],[63.464317,-18.882519],[63.463972,-18.883849],[63.463867,-18.884686],[63.463972,-18.885437],[63.464576,-18.887282],[63.464969,-18.887969],[63.46563,-18.88827],[63.466033,-18.888506],[63.466541,-18.889042],[63.467241,-18.889278],[63.467413,-18.889514],[63.467653,-18.890308],[63.467624,-18.891038],[63.46748,-18.891488],[63.467682,-18.892926],[63.468161,-18.893012],[63.468861,-18.892926],[63.469081,-18.893183],[63.469608,-18.893677],[63.470097,-18.893913],[63.470931,-18.893848],[63.471717,-18.893848],[63.471928,-18.893634],[63.472196,-18.893076],[63.472464,-18.89284],[63.472944,-18.892797],[63.473404,-18.893054],[63.473681,-18.893441],[63.473978,-18.893419],[63.474937,-18.892883],[63.475138,-18.892475],[63.475196,-18.89196],[63.475157,-18.891638],[63.474994,-18.891316],[63.474985,-18.890802],[63.475157,-18.889922],[63.47533,-18.889578],[63.475646,-18.888956],[63.475751,-18.888463],[63.475761,-18.887908],[63.475837,-18.887339],[63.47595,-18.886964],[63.476144,-18.886813],[63.476312,-18.886722],[63.476482,-18.886733],[63.476745,-18.886931],[63.477006,-18.887307],[63.477059,-18.8875],[63.477109,-18.887961],[63.477138,-18.888331],[63.477227,-18.888707],[63.47733,-18.888938],[63.477917,-18.889292],[63.478906,-18.889699],[63.479584,-18.889908],[63.479785,-18.889978],[63.480051,-18.890102],[63.480911,-18.890466],[63.48172,-18.89082],[63.482056,-18.890842],[63.482554,-18.890681],[63.483172,-18.890391],[63.483699,-18.889952],[63.484139,-18.889512],[63.484594,-18.889308],[63.484858,-18.889276],[63.485399,-18.88919],[63.486002,-18.888739],[63.486625,-18.888095],[63.488301,-18.886583],[63.489618,-18.885392],[63.490097,-18.884877],[63.490566,-18.884094],[63.490964,-18.883278],[63.491687,-18.881626],[63.492305,-18.880006],[63.492477,-18.879695],[63.493018,-18.879212],[63.493574,-18.878504],[63.49399,-18.877764],[63.494254,-18.876905],[63.494436,-18.875736],[63.494522,-18.87492],[63.494632,-18.874695],[63.494776,-18.874663],[63.494905,-18.87477],[63.495178,-18.875146],[63.495609,-18.875671],[63.495771,-18.875757],[63.496068,-18.87565],[63.496288,-18.875392],[63.496561,-18.874856],[63.497528,-18.872775],[63.497696,-18.872152],[63.497806,-18.871348],[63.497907,-18.8708],[63.498113,-18.870243],[63.498429,-18.869953],[63.498826,-18.869921],[63.499894,-18.870007],[63.500525,-18.870007],[63.501411,-18.869524],[63.501971,-18.868998],[63.502354,-18.868386],[63.502632,-18.867668],[63.502938,-18.866488],[63.503096,-18.865736],[63.503101,-18.865286],[63.502967,-18.864664],[63.502043,-18.863516],[63.501813,-18.863269],[63.501789,-18.863044],[63.501909,-18.862936],[63.502172,-18.862861],[63.502656,-18.862743],[63.503374,-18.862904],[63.503646,-18.862668],[63.503948,-18.862046],[63.504116,-18.86152],[63.504283,-18.860758],[63.504364,-18.859739],[63.504446,-18.858419],[63.504513,-18.857883],[63.504728,-18.857464],[63.505298,-18.857089],[63.505551,-18.857121],[63.506174,-18.8574],[63.506504,-18.857561],[63.506834,-18.858376],[63.507394,-18.859246],[63.507743,-18.859857],[63.50882,-18.861306],[63.509744,-18.862732],[63.510072,-18.863291],[63.513584,-18.866274],[63.514149,-18.866746],[63.515087,-18.866552],[63.515517,-18.866724],[63.515932,-18.867846],[63.516152,-18.86893],[63.516286,-18.869949],[63.516535,-18.870808],[63.516865,-18.871526],[63.517329,-18.872535],[63.517698,-18.873651],[63.51831,-18.875689],[63.51863,-18.877041],[63.518798,-18.877352],[63.519228,-18.878328],[63.519405,-18.879122],[63.519716,-18.879863],[63.51997,-18.880807],[63.520061,-18.88173],[63.520166,-18.882341],[63.520429,-18.882835],[63.52075,-18.882813],[63.521156,-18.882534],[63.521448,-18.882491],[63.522381,-18.88276],[63.523582,-18.883135],[63.52504,-18.883296],[63.525461,-18.883511],[63.525853,-18.883897],[63.52681,-18.883339],[63.527154,-18.883296],[63.527776,-18.882695],[63.528522,-18.882223],[63.528905,-18.882438],[63.529249,-18.883253],[63.529718,-18.884841],[63.530033,-18.886343],[63.530129,-18.887566],[63.530483,-18.888188]],
@@ -1819,1104 +917,63 @@ function locateOnce(){
   surface:"Rocky",
   watchOut:"Narrow tracks",
 },
-
-      
     ];
 
-    /* ---- Campsites ---- */
-    const campsites=[{
-      name: "Básar Campsite",
-      coords: [63.6771443, -19.4813471],
-      link: "https://www.campsire.com/campsites-highlands/basar-hut-and-campsite-thorsmork",
-      photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ade2efbd7011ec342300c6_688013eb5ecbffb361681c5e_basar%20thorsmrok6788.jpg"
-    },
-
-    {
-      name: "Langisjór Campsite",
-      coords: [64.111142, -18.443615],
-      link: "https://www.campsire.com/all-campsites-iceland/langisjor-campsite",
-      photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ded5f8107b56b72806d408_langisjor-campsite.jpg"
-    },
-
-    {
-      name: "Blágil Campsite",
-      coords: [63.9666962, -18.324],
-      link: "https://www.campsire.com/campsites-highlands/blagil-hut-and-campsite",
-      photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68b84f533641d318e181c81f_blagil-campsite.jpg"
-    },
-
-    {
-      name: "Húsadalur Volcano Huts",
-      coords: [63.69101, -19.54088],
-      link: "https://www.campsire.com/campsites-highlands/husadalur-volcano-huts-and-campsite-thorsmork",
-      photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68c6f4da8a596f31bd9db5e5_husadalur.jpg"
-    },
-
-    {
-      name: "Hveravellir Lodge and Campsite",
-      coords: [64.86664, -19.55347],
-      link: "https://www.campsire.com/campsites-highlands/hveravellir-lodge-and-campsite",
-      photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68c6f2a1e724789b67c7cbd9_hveravellir.webp"
-    },
-
-    {
-      name: "Landmannalaugar Campsite",
-      coords: [63.99067, -19.06068],
-      link: "https://www.campsire.com/campsites-highlands/landmannalaugar-camping",
-      photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68b863be2831ae1c5f4d817f_landmannalaugar-campsite.jpg"
-    },
-
-    {
-      name: "Kerlingarfjöll Highland Base",
-      coords: [64.68343, -19.30119],
-      link: "https://www.campsire.com/campsites-highlands/kerlingarfjoll-highland-base",
-      photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68c6ee46d1521df41c3f50a3_kerlingarfjoll-campsite.jpg"
-    },
-    {
-      name: "Flateydalur Campsite",
-      coords: [66.114294, -17.885838],
-      link: "https://www.campsire.com/all-campsites-iceland/flateydalur-campsite",
-      photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68e51abb4df0de8c142f6290_flateydalur-hut.webp"
-    },
-
-  ];
-    
-
-    const roadLayers=[];                          // lines
-    const labelGroup=L.layerGroup().addTo(map);  // labels
-    let crossingLayer = L.layerGroup().addTo(map);
-
-    // midpoint (lat, lon)
-    function getRoadMidLatLon(rd){
-      if(!rd.coords || !rd.coords.length) return [64.1466, -21.9426];
-      const line=turf.lineString(rd.coords.map(c=>[c[1],c[0]]));
-      const lenKm=turf.length(line,{units:'kilometers'});
-      const mid=turf.along(line, lenKm/2, {units:'kilometers'});
-      const [lon,lat]=mid.geometry.coordinates; return [lat,lon];
-    }
-
-    /* ---- River crossings helpers ---- */
-    // Blue circle without outline + centered small white waves
-   function crossingIcon(){
-  const html=`
-    <div class="rc-icon">
-      <svg viewBox="0 0 28 28" aria-hidden="true">
-        <circle cx="14" cy="14" r="12" fill="#1d4ed8"/>
-        <g transform="translate(0,0)">
-          <path d="M8 11.2c2-1 4-1 6 0s4 1 6 0" stroke="#ffffff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M8 14c2-1 4-1 6 0s4 1 6 0" stroke="#ffffff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M8 16.8c2-1 4-1 6 0s4 1 6 0" stroke="#ffffff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-        </g>
-      </svg>
-    </div>`;
-  return L.divIcon({ html, className:'', iconSizee:[28,28], iconAnchor:[14,14] });
-}
-
-    function resolveCrossingCoord(rd,x){
-      if(x.coord && x.coord.length===2) return x.coord; // [lat,lon]
-      if(typeof x.alongKm==='number'){
-        const line=turf.lineString(rd.coords.map(c=>[c[1],c[0]]));
-        const pt=turf.along(line, x.alongKm, {units:'kilometers'});
-        return [pt.geometry.coordinates[1], pt.geometry.coordinates[0]];
-      }
-      return getRoadMidLatLon(rd);
-    }
-
-    function ensureRiverSection(){
-      const details=document.getElementById('roadDetails');
-      let sec=document.getElementById('rc-section');
-      if(!sec){
-        sec=document.createElement('div');
-        sec.id='rc-section';
-        sec.innerHTML=`
-      
-          <ul id="rc-list"></ul>`;
-        const after=document.querySelector('#infoRiver')?.closest('div');
-        if(after && after.parentNode===details) after.insertAdjacentElement('afterend', sec);
-        else details.appendChild(sec);
-      }
-      return sec;
-    }
-
-    function renderRiverCrossings(rd){
-      ensureRiverSection();
-      const list=document.getElementById('rc-list');
-      list.innerHTML=''; crossingLayer.clearLayers();
-      const crossings=Array.isArray(rd.crossings) ? rd.crossings : [];
-      if(!crossings.length){
-        list.innerHTML=`<li class="rc-item" style="grid-template-columns:1fr;"><div class="rc-name">No recorded crossings</div></li>`;
-        return;
-      }
-      crossings.forEach((x,i)=>{
-        const pos=resolveCrossingCoord(rd,x);
-        const marker=L.marker(pos,{ icon:crossingIcon() }).addTo(crossingLayer);
-
-        const title=x.name||`Crossing #${i+1}`;
-        const depth=(x.depth_m_est!=null) ? `${x.depth_m_est} m`:'—';
-        const diff=x.difficulty||'Unknown';
-        const popupHtml=`<strong>${title}</strong><br/>Difficulty: ${diff}<br/>Depth: ${depth}${x.note?`<br/><em>${x.note}</em>`:''}`;
-        marker.bindPopup(popupHtml);
-
-        const li=document.createElement('li');
-        li.className='rc-item';
-        li.innerHTML=`
-          <div>${crossingIcon().options.html}</div>
-          <div>
-            <div class="rc-name">${title}</div>
-            <div class="rc-metrics">Aprox.Depth: <strong>${depth}</strong>${x.note?` · <em>${x.note}</em>`:''}</div>
-          </div>
-          <div class="rc-right">
-            <span class="rc-badge ${String(diff).toLowerCase()}">${diff}</span>
-            <button class="rc-btn" data-idx="${i}">Zoom</button>
-          </div>`;
-        list.appendChild(li);
-
-        li.querySelector('.rc-btn').addEventListener('click', ()=>{
-          map.flyTo(pos, Math.max(map.getZoom(), 13), { duration:.8 });
-          marker.openPopup();
-        });
-      });
-    }
-
-   function updateRoadStatus(isOpen){
-  const badge = document.getElementById('roadStatusBadge');
-  if(!badge) return;
-  badge.textContent = isOpen ? 'OPEN' : 'CLOSED';
-  badge.classList.toggle('open',  isOpen);
-  badge.classList.toggle('closed', !isOpen);
-}
- 
-
-    function showPanel(rd){
-
-  const upd = document.getElementById('updatesPanel');
-  if (upd) upd.classList.remove('open');    
-  const wrapper = document.getElementById('roadImageWrapper');
-  const img = document.getElementById('roadImage');
-
-  if (rd.photo) {
-    img.src = rd.photo;
-    wrapper.style.display = 'block';
-  } else {
-    img.removeAttribute('src');
-    wrapper.style.display = 'none';
-  }
-
-   const isOpen = rd.isOpen !== false;
-  updateRoadStatus(isOpen);
-  
-      document.getElementById('infoDifficulty').textContent=rd.difficulty;
-
-      const rcCount=Array.isArray(rd.crossings) ? rd.crossings.length : (rd.riverCrossing?.count ?? 0);
-
-      document.getElementById('infoLength').textContent=rd.lengthKm;
-      document.getElementById('infoTime').textContent=rd.approxTime;
-      document.getElementById('infoSurface').textContent=rd.surface;
-      document.getElementById('infoWatch').textContent=rd.watchOut;
-      document.querySelector('#roadDetails > h2').textContent=rd.name;
-      document.getElementById('sidePanel').classList.add('open');
-
-      const [lat,lon]=getRoadMidLatLon(rd);
-      Weather.setByCoords(lat,lon);
-      fetchCurrentWeatherMS(lat, lon)
-  .then(w => updateHighWaterBadge(rd, w))
-  .catch(() => updateHighWaterBadge(rd, null));
-
-renderRiverCrossings(rd);
-    }
-
-    
-
-    // --- Road colors helper ---
-const ROAD_COLORS = {
-  open:   '#3bed32',  // tvoje původní zelená
-  closed: '#dc2626',  // červená (ladí s CLOSED badge)
-  selected: '#000000' // černá (po kliku)
-};
-
-function isRoadClosed(rd){
-  // bereme jako "closed", když je open explicitně false nebo status === 'closed'
-  return rd?.isOpen === false || String(rd?.status).toLowerCase() === 'closed';
-}
-
-function baseRoadColor(rd){
-  return isRoadClosed(rd) ? ROAD_COLORS.closed : ROAD_COLORS.open;
-}
-
-// když rušíš zvýraznění vybrané čáry, vrať jí její "základní" barvu podle isOpen
-function resetPolylineStyle(polyline){
-  const r = roadLayers.find(x => x.polyline === polyline);
-  if (!r) return;
-  r.polyline.setStyle({ color: baseRoadColor(r.data), weight: 4, opacity: 1, dashArray: null });
-}
-
-
-    // Load F-roads from Firestore
-    async function loadFroadsFromFirestore() {
-      console.log("📥 Loading F-roads from Firestore...");
       try {
-        const snapshot = await db.collection("froads").orderBy("order", "asc").get();
-        froadData = [];
-        snapshot.forEach(doc => {
-          froadData.push({ id: doc.id, ...doc.data() });
-        });
-        console.log("✅ Loaded", froadData.length, "F-roads from Firestore");
-        renderFroads();
+        addLog('Starting upload of ' + froadData.length + ' F-roads...');
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let i = 0; i < froadData.length; i++) {
+          const froad = froadData[i];
+
+          // Create document ID from name (remove spaces, special chars, lowercase)
+          const docId = froad.name
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+
+          try {
+            await db.collection('froads').doc(docId).set({
+              name: froad.name,
+              coords: froad.coords,
+              photo: froad.photo || '',
+              gallery: froad.gallery || [],
+              description: froad.description || '',
+              difficulty: froad.difficulty || 'Medium',
+              lengthKm: froad.lengthKm || 0,
+              approxTime: froad.approxTime || '',
+              surface: froad.surface || '',
+              watchOut: froad.watchOut || '',
+              order: i + 1,
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            successCount++;
+            addLog('✅ [' + (i + 1) + '/' + froadData.length + '] Uploaded: ' + froad.name);
+          } catch (err) {
+            errorCount++;
+            addLog('❌ [' + (i + 1) + '/' + froadData.length + '] Failed: ' + froad.name + ' - ' + err.message, true);
+            console.error('Error uploading ' + froad.name + ':', err);
+          }
+        }
+
+        showStatus('success',
+          '🎉 Upload complete!<br>' +
+          '✅ Success: ' + successCount + '<br>' +
+          '❌ Errors: ' + errorCount
+        );
+
       } catch (err) {
-        console.error("❌ Error loading F-roads:", err);
-        console.log("⚠️ Using fallback/hardcoded data if available");
-        froadData = typeof froadDataHardcoded !== "undefined" ? froadDataHardcoded : [];
-        renderFroads();
+        addLog('❌ Fatal error: ' + err.message, true);
+        showStatus('error', '❌ Upload failed! Check console.');
+        console.error(err);
+      } finally {
+        document.getElementById('uploadBtn').disabled = false;
       }
     }
-
-    // Render F-roads on map
-    function renderFroads() {
-      console.log("🗺️ Rendering", froadData.length, "F-roads on map...");
-
-    let selectedLayer=null;
-    froadData.forEach(rd=>{
-      const visibleLine = L.polyline(rd.coords, {
-  color: baseRoadColor(rd),
-  weight: 4,
-  className: 'road-main-line'
-}).addTo(map);
-      const bufferLine=L.polyline(rd.coords,{ color:'#000', weight:20, opacity:0, className:'road-hitbox' }).addTo(map);
-
-      const onRoadClick=()=>{
-  if (selectedLayer && selectedLayer !== visibleLine) resetPolylineStyle(selectedLayer);
-  visibleLine.setStyle({ color:'#000', weight:6 });
-  selectedLayer=visibleLine;
-  showPanel(rd);
-};
-bufferLine.on('click', onRoadClick);
-visibleLine.on('click', onRoadClick);
-
-// ⬇️ ULOŽIT si handler do struktury:
-roadLayers.push({ polyline:visibleLine, data:rd, hitbox:bufferLine, onRoadClick });
-      
-    });
-    } // end renderFroads()
-
-
-    function updateLabels(){
-  labelGroup.clearLayers();                         // smazat všechny staré labely
-  const zoom = map.getZoom();
-  const labelsPerRoad = Math.max(1, Math.floor((zoom - minZoom)/3) + 1);
-
-  roadLayers.forEach(r=>{
-    // ⬅️ klíčová podmínka: pro nevhodné cesty nevytvářej vůbec žádné labely
-    if (r.data.allowed === false) return;
-
-    const line = turf.lineString(r.data.coords.map(c=>[c[1],c[0]]));
-    const len  = turf.length(line,{units:'kilometers'});
-    const step = len/labelsPerRoad;
-
-    for(let d=0; d<=len; d+=step){
-      const pt = turf.along(line,d,{units:'kilometers'});
-      const latlng = [pt.geometry.coordinates[1], pt.geometry.coordinates[0]];
-
-      L.marker(latlng,{
-        icon: L.divIcon({
-          className: 'road-label-icon',            // už žádné ' dimmed'
-          html: `<div>${r.data.name.split(' ')[0]}</div>`,
-          iconAnchor: [12,12]
-        }),
-        interactive:false
-      }).addTo(labelGroup);
-    }
-  });
-}
-    map.on('zoomend moveend', updateLabels);
-    updateLabels();
-
-    document.getElementById('closePanel').addEventListener('click', ()=>{
-      document.getElementById('sidePanel').classList.remove('open');
-      crossingLayer.clearLayers();
-      if (selectedLayer) resetPolylineStyle(selectedLayer);
-    });
-    
-
-    document.getElementById('vehicleSelect').addEventListener('change', e=>{
-  const selected = e.target.value;
-
-  const isAllowed = (diff, vehicle) => {
-  const d = diff.toLowerCase();
-
-  if (vehicle === 'all') return true;
-
-  switch (vehicle) {
-    // ✅ Kompaktní 4x4 – jen EASY
-    case 'jimny':
-    case 'renegade':
-    case 'sportage':
-    case 'tucson':
-    case 'rav4':
-    case 'outlander':
-    case 'xtrail':
-    case 'forester':
-    case 'cx5':
-      return d === 'easy';
-
-    // ✅ Střední SUV – zvládnou EASY + MEDIUM
-    case 'duster':
-      return d === 'easy' || d === 'medium';
-
-    // ✅ Velká offroad auta – zvládnou vše kromě EXTREME
-    case 'landcruiser':
-    case 'hilux':
-    case 'wrangler':
-    case 'defender':
-    case 'discovery':
-    case 'grenadier':
-      return d !== 'extreme';
-
-    // ✅ Luxusní SUV – většinou na asfalt + lehčí gravel, takže jen EASY
-    case 'xc90':
-    case 'x5':
-    case 'gle':
-    case 'gclass':
-    case 'q7':
-      return d === 'easy';
-
-    // ✅ Campervany 4x4 – obvykle jen EASY nebo výjimečně MEDIUM (Hilux Camper)
-    case 'transporter-4x4':
-    case 'sprinter-4x4':
-      return d === 'easy';
-
-    default:
-      return true;
-  }
-};
-
-
-  roadLayers.forEach(r=>{
-    const allowed = isAllowed(r.data.difficulty, selected);
-    r.data.allowed = allowed;
-
-    // vždy zruš staré click handlery (na obou vrstvách)
-    r.polyline.off('click');
-    r.hitbox?.off?.('click');
-
-    if (allowed) {
-      // vrať vrstvy do mapy (pokud už tam nejsou)
-      if (!map.hasLayer(r.polyline)) map.addLayer(r.polyline);
-      if (r.hitbox && !map.hasLayer(r.hitbox)) map.addLayer(r.hitbox);
-
-      // pokud není zrovna vybraná, nastav "základní" zelený styl
-      if (selectedLayer !== r.polyline) {
-  r.polyline.setStyle({ color: baseRoadColor(r.data), weight: 4, opacity: 1, dashArray: null });
-}
-
-
-      // zpátky připoj PŮVODNÍ highlight klik (na obě vrstvy)
-      if (r.onRoadClick) {
-        r.polyline.on('click', r.onRoadClick);
-        r.hitbox?.on?.('click', r.onRoadClick);
-      }
-    } else {
-      // úplně skryj z mapy (i hitbox)
-      if (map.hasLayer(r.polyline)) map.removeLayer(r.polyline);
-      if (r.hitbox && map.hasLayer(r.hitbox)) map.removeLayer(r.hitbox);
-
-      // když jsi zrovna měl vybranou tuhle cestu, odvyber ji
-      if (selectedLayer === r.polyline) {
-        selectedLayer = null;
-        // volitelně: zavři panel
-        // document.getElementById('sidePanel').classList.remove('open');
-      }
-    }
-  });
-
-  // okamžitě přegeneruj labely, není třeba zoomovat
-  updateLabels();
-});
-
-
-    /* ---- Campsite example ---- */
-    /* ---- Campsites render (Poppins popup + cover) ---- */
-const CAMP_ICON_URL = 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/689d0b24443379bb01061e52_tent%20(10).png';
-const PLACEHOLDER_COVER = 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop';
-
-// pokud používáš toggle, zajisti vrstvu:
-window.campsitesLayer = window.campsitesLayer || L.layerGroup().addTo(map);
-
-const campIcon = L.icon({
-  iconUrl: CAMP_ICON_URL,
-  iconSize: [30,30],
-  iconAnchor: [12,30],
-  popupAnchor: [0,-30]
-});
-
-campsites.forEach(camp=>{
-  // coords:[lat,lon] nebo lat/lng
-  const lat = camp.coords?.[0] ?? camp.lat;
-  const lng = camp.coords?.[1] ?? camp.lng;
-  if (typeof lat !== 'number' || typeof lng !== 'number') return;
-
-  // cover vždy nahoře (preferuj camp.photo, pak placeholder)
-  const cover = camp.photo || PLACEHOLDER_COVER;
-
-  const html = `
-    <div class="poi-card">
-      <img class="poi-cover" src="${cover}" alt="${camp.name || 'Campsite'}" />
-      <div class="poi-body">
-        <h3 class="poi-title">${camp.name || 'Campsite'}</h3>
-        <p class="poi-desc">${camp.description || camp.desc || ''}</p>
-        <div class="poi-actions">
-          ${camp.link ? `
-            <a class="poi-btn" href="${camp.link}" target="_blank" rel="noopener">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
-                <path d="M7 13l6-6M9 5h6v6" stroke="#111" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              More info
-            </a>` : ``}
-        </div>
-      </div>
-    </div>
-  `;
-
-  L.marker([lat, lng], { icon: campIcon, title: camp.name || 'Campsite' })
-    .addTo(window.campsitesLayer || map)  // máš-li toggle, nech to v campsitesLayer
-    .bindPopup(html, {
-      className: 'poi-popup',
-      maxWidth: 380,
-      minWidth: 260,
-      autoPan: true,
-      autoPanPadding: [20,20],
-      closeButton: true
-    });
-});
-
-
-    const huts = [
-  {
-    name: "Skagfjörðsskáli Hut",
-    lat: 63.6849449,
-    lng: -19.5126214,
-    link: "https://example.com/hut-info",
-    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ae0ff249c12184e1865dd2_68801a4989de05ba76b8416f_Langidalur%20thorsmrok7035-p-800.jpg"
-  },
-  {
-    name: "Blágil Hut",
-    lat: 63.9666976,
-    lng: -18.3219473,
-    link: "https://example.com/hut-info",
-    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68b84d0210496000a2be05fa_blagil-hut.jpg"
-  },
-  {
-    name: "Strútur Hut",
-    lat: 63.83905,
-    lng: -18.97444,
-    link: "https://example.com/hut-info",
-    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68d2fa0b5debc742b87c93c5_strutur-hut.jpg"
-  },
-  {
-    name: "Nyidalur FI Mountain Hut",
-    lat: 64.734942,
-    lng: -18.072574,
-    link: "https://www.fi.is/en/mountain-huts/all-mountain-huts/nyidalur",
-    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68d312f811a8886b8ba28814_nyidalur-hut.jpg"
-  },
-  {
-    name: "Þorsteinsskáli",
-    lat: 65.19287,
-    lng: -16.22264,
-    link: "https://www.fi.is/is/skalar/skalar-ferdafelags-islands/thorsteinsskali",
-    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68de7bdedbd383c39dcdf325_%C3%BEorsteinsskali.jpg"
-  },
-  {
-    name: "Jökulheimar Hut",
-    lat: 64.310308,
-    lng: -18.238683,
-    link: "https://jorfi.is/skalar/",
-    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68debb983343ba71692c3230_jokulhemair-hut.jpg"
-  },
-  {
-    name: "Hagavatn Hut",
-    lat: 64.462549,
-    lng: -20.243930,
-    link: "https://www.fi.is/en/mountain-huts/all-mountain-huts/hagavatn",
-    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68deddb6dc2b4952ac55fff3_hagavatn-hut.jpg"
-  },
-  {
-    name: "Þjófadalir Hut",
-    lat: 64.814895,
-    lng: -19.708942,
-    link: "https://www.fi.is/is/skalar/skalar-ferdafelags-islands/thjofadalir",
-    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68e189b1cf566080a196e157_thjofadalir-hut.jpg"
-  },
-  {
-    name: "Laugafell Hut",
-    lat: 65.027588,
-    lng: -18.332083,
-    link: "https://www.fi.is/is/skalar/skalar-ferdafelags-islands/laugafell",
-    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68e19ded309f06bd2d82b748_laugafell-hut.jpg"
-  },
-  {
-    name: "Húsavík Hut",
-    lat: 65.395086,
-    lng: -13.735203,
-    link: "https://www.fi.is/en/mountain-huts/all-mountain-huts/husavik",
-    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68e59ffa08f06c7e5eb7bfa5_husavikurskalli-hut.jpg"
-  },
-  {
-    name: "Loðmundarfjarðarskáli Hut",
-    lat: 65.365173,
-    lng: -13.896074,
-    link: "https://www.east.is/en/service/ferdafelag-fljotsdalsherads-lodmundarfjordur-klyppstadur",
-    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68e5a24dd6d78a1717fb1328_lodmundarfjardarskalli.webp"
-  },
-  {
-    name: "Múlaskáli Hut",
-    lat: 64.552585,
-    lng: -15.151429,
-    link: "https://gonguferdir.is/mulaskali/",
-    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68e91fa34a83e3b8795a882c_mulaskali-hut.jpg"
-  },
-
-];
-
-
-if (typeof map !== 'undefined' && Array.isArray(huts)) {
-  window.hutsLayer = window.hutsLayer || L.layerGroup().addTo(map);
-
-  const hutIcon = L.icon({
-    iconUrl: 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/689d0a3c12784f92cf6a0fe9_hut.png',
-    iconSize: [24, 24],
-    iconAnchor: [12, 24],
-    popupAnchor: [0, -24]
-  });
-
-  huts.forEach(hut => {
-    if (!hut.lat || !hut.lng) return;
-
-    const cover = hut.photo || 'https://images.unsplash.com/photo-1523413651479-597eb2da0ad9?q=80&w=1200&auto=format&fit=crop';
-
-    const html = `
-      <div class="poi-card">
-        <img class="poi-cover" src="${cover}" alt="${hut.name}" />
-        <div class="poi-body">
-          <h3 class="poi-title">${hut.name}</h3>
-          <p class="poi-desc">${hut.desc || ''}</p>
-          <div class="poi-actions">
-            ${hut.link ? `
-              <a class="poi-btn" href="${hut.link}" target="_blank" rel="noopener">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
-                  <path d="M7 13l6-6M9 5h6v6" stroke="#111" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                More info
-              </a>
-            ` : ''}
-          </div>
-        </div>
-      </div>
-    `;
-
-    L.marker([hut.lat, hut.lng], {
-      icon: hutIcon,
-      title: hut.name
-    })
-    .addTo(window.hutsLayer)
-    .bindPopup(html, {
-      className: 'poi-popup',
-      maxWidth: 380,
-      minWidth: 260,
-      autoPan: true,
-      autoPanPadding: [20, 20],
-      closeButton: true
-    });
-  });
-}
-
-
-
-
-    /* ---------- Utils ---------- */
-    function round(n,p=1){ return Math.round(n * 10**p) / 10**p; }
-    function degToCompass(deg){
-      const dirs=['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'];
-      return dirs[Math.round((((deg%360)+360)%360)/22.5)%16];
-    }
-
-    /* ---------- Weather icon pack ---------- */
-    function weatherIconSvg(code=0, isDay=1){
-      const sun = `
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="4.5" fill="currentColor"/>
-          <g stroke="currentColor" stroke-linecap="round" stroke-width="1.8" fill="none">
-            <line x1="12" y1="1.8" x2="12" y2="5.0"/>
-            <line x1="12" y1="19.0" x2="12" y2="22.2"/>
-            <line x1="1.8" y1="12" x2="5.0" y2="12"/>
-            <line x1="19.0" y1="12" x2="22.2" y2="12"/>
-            <line x1="4.3" y1="4.3" x2="6.6" y2="6.6"/>
-            <line x1="17.4" y1="17.4" x2="19.7" y2="19.7"/>
-            <line x1="4.3" y1="19.7" x2="6.6" y2="17.4"/>
-            <line x1="17.4" y1="6.6" x2="19.7" y2="4.3"/>
-          </g>
-        </svg>`;
-      const cloud = `
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="currentColor" d="M8 18h8a4 4 0 0 0 0-8 6 6 0 0 0-11-1.8A4.5 4.5 0 0 0 8 18z"/>
-        </svg>`;
-      const rain = `
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="currentColor" d="M8 14h8a4 4 0 0 0 0-8 6 6 0 0 0-11-1.8A4.5 4.5 0 0 0 8 14z"/>
-          <g fill="currentColor" opacity=".9">
-            <rect x="8" y="15.5" width="2" height="4" rx="1"/>
-            <rect x="12" y="16.5" width="2" height="4" rx="1"/>
-            <rect x="16" y="15.8" width="2" height="4" rx="1"/>
-          </g>
-        </svg>`;
-      const snow = `
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="currentColor" d="M8 14h8a4 4 0 0 0 0-8 6 6 0 0 0-11-1.8A4.5 4.5 0 0 0 8 14z"/>
-          <g fill="currentColor" opacity=".9">
-            <circle cx="9" cy="18" r="1.2"/><circle cx="12" cy="19" r="1.2"/><circle cx="15" cy="18" r="1.2"/>
-          </g>
-        </svg>`;
-      const fog = `
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="currentColor" d="M8 13h8a4 4 0 0 0 0-8 6 6 0 0 0-11-1.8A4.5 4.5 0 0 0 8 13z"/>
-          <g stroke="currentColor" stroke-linecap="round" stroke-width="1.6">
-            <line x1="4" y1="16" x2="20" y2="16"/>
-            <line x1="6" y1="19" x2="18" y2="19"/>
-          </g>
-        </svg>`;
-      if(code===0) return sun;                               // clear
-      if([1,2,3].includes(code)) return isDay ? sun : cloud; // mainly clear
-      if([45,48].includes(code)) return fog;                 // fog
-      if([51,53,55,56,57,61,63,65,66,67,80,81,82].includes(code)) return rain; // drizzle/rain
-      if([71,73,75,77,85,86].includes(code)) return snow;    // snow
-      if([95,96,99].includes(code)) return rain;             // thunder -> rain fallback
-      return cloud;
-    }
-
-    /* ---------- Weather fetch + renderer ---------- */
-    function renderWxCard({ T, F, Ddeg, code, isDay, timeISO, Pmm }){
-  const elT=document.getElementById('wxT');
-  const elF=document.getElementById('wxF');
-  const elD=document.getElementById('wxDtxt');
-  const elArrow=document.getElementById('wxArrow');
-  const elIcon=document.getElementById('wxIcon');
-  const card=document.getElementById('wxCard');
-  const elP=document.getElementById('wxP'); // ✚
-
-  if(elT) elT.textContent=(T!=null)?round(T,1):'--';
-  if(elF) elF.textContent=(F!=null)?round(F,1):'--';
-  if(elD) elD.textContent=(Ddeg!=null)?degToCompass(Ddeg):'--';
-  if(elArrow && Ddeg!=null) elArrow.style.transform=`rotate(${Ddeg}deg)`;
-  if(elIcon) elIcon.innerHTML = weatherIconSvg(code, isDay);
-  if(card && timeISO){
-    try{ card.title=`Updated: ${new Date(timeISO).toLocaleString('en-IS',{ timeZone:'Atlantic/Reykjavik' })}`; }catch(e){}
-  }
-  // ✚ srážky
-  if(elP) elP.textContent = (Pmm!=null) ? round(Pmm,1) : '--';
-
-      // Hidden fallback text
-      const fallback=document.getElementById('wx');
-      if(fallback){
-        const Dtxt=(Ddeg!=null)?' '+degToCompass(Ddeg):'';
-        fallback.textContent=`${T!=null?round(T,1):'--'} °C · ${F!=null?round(F,1):'--'} m/s${Dtxt}`;
-      }
-    }
-
-    async function fetchCurrentWeatherMS(lat, lon){
-  const url = `https://api.open-meteo.com/v1/forecast`
-            + `?latitude=${lat}&longitude=${lon}`
-            + `&current_weather=true&windspeed_unit=ms`
-            + `&hourly=precipitation`
-            + `&past_days=2`
-            + `&forecast_days=1`
-            + `&timezone=Atlantic%2FReykjavik`;
-
-  const res = await fetch(url, { cache:'no-store' });
-  if(!res.ok) throw new Error('HTTP '+res.status);
-  const data = await res.json();
-
-  const cw = data.current_weather;
-  if(!cw) throw new Error('No current_weather');
-
-  let P = null, sum24 = null;
-
-  if (data.hourly?.time?.length && data.hourly?.precipitation?.length){
-    const times = data.hourly.time.map(t => new Date(t).getTime());
-    const arr   = data.hourly.precipitation.map(v => (typeof v === 'number') ? Math.max(0, v) : 0);
-    const target = new Date(cw.time).getTime();
-
-    // index nejbližší hodině k "teď"
-    let idx = 0, best = Infinity;
-    for (let i=0; i<times.length; i++){
-      const diff = Math.abs(times[i] - target);
-      if (diff < best){ best = diff; idx = i; }
-    }
-
-    P = arr[idx] ?? null;                      // aktuální mm/h
-    const from24 = Math.max(0, idx - 24);      // posledních 24 hodin
-    sum24 = arr.slice(from24, idx).reduce((s,v)=>s+v, 0);
-  }
-
-  return {
-    T: cw.temperature,
-    F: cw.windspeed,
-    Ddeg: cw.winddirection,
-    code: cw.weathercode,
-    isDay: cw.is_day,
-    timeISO: cw.time,
-    Pmm: P,                // mm/h
-    precipSum24: sum24     // ⬅️ nově: součet mm za posledních 24 h
-  };
-}
-
-function roadHasCrossings(rd){
-  return !!(rd?.crossings?.length || rd?.riverCrossing?.exists || rd?.hasFords);
-}
-
-function shouldShowHighWaterBadge(rd, weather){
-  if (!weather) return false;
-  const sum24 = Number(weather.precipSum24) || 0;
-  return roadHasCrossings(rd) && sum24 >= 8;   // TVŮJ PRÁH
-}
-
-function updateHighWaterBadge(rd, weather){
-  const el = document.querySelector('#roadImageWrapper .high-water-badge');
-  if (!el) return; // badge v HTML už máš
-  if (shouldShowHighWaterBadge(rd, weather)) {
-    el.style.display = 'inline-flex';
-    el.title = `Last 24h precipitation: ${Math.round(weather.precipSum24)} mm`;
-  } else {
-    el.style.display = 'none';
-    el.title = '';
-  }
-}
-
-
-
-
-    const Weather=(()=>{
-      let timer=null; const REFRESH_MS=10*60*1000; let last={ lat:null, lon:null };
-      async function update(lat,lon){
-        try{ const w=await fetchCurrentWeatherMS(lat,lon); renderWxCard(w); }
-        catch(e){ console.error('Weather fetch failed:', e); renderWxCard({ T:null,F:null,Ddeg:null,code:2,isDay:1,timeISO:null }); }
-      }
-      function start(lat,lon){ if(timer) clearInterval(timer); last={lat,lon}; update(lat,lon); timer=setInterval(()=>update(last.lat,last.lon), REFRESH_MS); }
-      function setByCoords(lat,lon){ start(lat,lon); }
-      return { setByCoords };
-    })();
-
-    (function(){
-  let __currentRoad = null;
-
-  // přidáme zapamatování aktuální road do showPanel
-  const origShowPanel = window.showPanel;
-  window.showPanel = function(rd){
-    __currentRoad = rd;
-    if (origShowPanel) origShowPanel(rd);
-  };
-
-  function buildFullscreenGallery(rd){
-    const strip = document.getElementById('galleryStrip');
-    if (!strip) return;
-    const urls = Array.isArray(rd.gallery) ? rd.gallery.filter(u => u && u.trim()) : [];
-    strip.innerHTML = urls.length
-      ? urls.map((src,i)=>`
-          <figure class="gal-slide">
-            <img src="${src}" alt="${rd.name ? rd.name+' photo '+(i+1) : 'Gallery photo'}" loading="lazy"/>
-            <figcaption class="gal-cap">${rd.name || ''}</figcaption>
-          </figure>
-        `).join('')
-      : `<div style="color:#ccc; margin:auto;">No gallery photos</div>`;
-  }
-
-  function openGallery(){
-  if (!__currentRoad) return;
-  buildFullscreenGallery(__currentRoad);
-  document.getElementById('galleryOverlay').classList.add('open');
-  document.documentElement.style.overflow = 'hidden';
-  document.body.classList.add('gallery-open');     // ⬅️ přidat
-}
-
-function closeGallery(){
-  document.getElementById('galleryOverlay').classList.remove('open');
-  document.documentElement.style.overflow = '';
-  document.body.classList.remove('gallery-open');  // ⬅️ odebrat
-}
-
-  document.addEventListener('DOMContentLoaded', ()=>{
-    const btn = document.getElementById('spGalleryBtn');
-    if (btn) btn.addEventListener('click', e=>{ e.preventDefault(); openGallery(); });
-    document.getElementById('closeGallery').addEventListener('click', closeGallery);
-  });
-
-  window.openGallery = openGallery;
-  window.closeGallery = closeGallery;
-})();
-
-
-
-    // ========== INITIALIZE APP ==========
-    // Load F-roads from Firestore when page loads
-    loadFroadsFromFirestore();
-
   </script>
-
-<script>
-document.addEventListener('DOMContentLoaded', function(){
-  // 1) Přesuň overlay přímo pod <body>, kdyby byl omylem uvnitř #sidePanel apod.
-  const ov = document.getElementById('galleryOverlay');
-  if (ov && ov.parentElement !== document.body) {
-    document.body.appendChild(ov);
-  }
-});
-
-</script>
-
-<script>
-const UPDATES = [
-  { type:'warning', time:'21:32, 30.8.2025', text:'Please notice that due to weather and extreme water level, the southern highlands, including Fjallabak south and north, as well as the Laki area. Travellers are strongly advised not to travel in the area.' },
-  { type:'info',    time:'14:10, 20.8.2025', text:'F249 Þórsmerkurvegur is open, but river levels are above average. Drive with caution.' },
-  { type:'notice',  time:'09:05, 27.8.2025', text:'General reminder: Always check road.is before traveling on F-roads.' },
-];
-
-function parseUpdateTime(str){
-  const m = String(str).match(/^\s*(\d{1,2}):(\d{2})\s*,\s*(\d{1,2})\.(\d{1,2})\.(\d{4})\s*$/);
-  if (!m) return null;
-  const hh=+m[1], mm=+m[2], d=+m[3], mon=+m[4], y=+m[5];
-  return new Date(Date.UTC(y, mon-1, d, hh, mm));
-}
-function pad2(n){ return (n<10?'0':'')+n; }
-function formatRelativeLabel(dateUtc){
-  if (!(dateUtc instanceof Date)) return '--';
-  const now=new Date();
-  const todayMid = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const dateMid  = Date.UTC(dateUtc.getUTCFullYear(), dateUtc.getUTCMonth(), dateUtc.getUTCDate());
-  const diffDays = Math.floor((todayMid - dateMid)/86400000);
-  const hhmm = `${pad2(dateUtc.getUTCHours())}:${pad2(dateUtc.getUTCMinutes())}`;
-  if (diffDays===0) return `Today · ${hhmm}`;
-  if (diffDays===1) return `Yesterday · ${hhmm}`;
-  return `${diffDays} days ago · ${hhmm}`;
-}
-
-function renderUpdates(){
-  const list = document.getElementById('updatesList');
-  if (!list) return;
-  list.innerHTML = '';
-  const items = [...UPDATES].sort((a,b)=>{
-    const da = parseUpdateTime(a.time)?.getTime() ?? 0;
-    const db = parseUpdateTime(b.time)?.getTime() ?? 0;
-    return db - da;
-  });
-  items.forEach(u=>{
-    const when = parseUpdateTime(u.time);
-    const li = document.createElement('li');
-    li.className = `update-item ${u.type||'info'}`;
-    li.innerHTML = `
-      <div class="update-time" title="${when ? when.toUTCString().replace('GMT','UTC') : ''}">
-        ${when ? formatRelativeLabel(when) : u.time}
-      </div>
-      <div class="update-text">${u.text}</div>
-    `;
-    list.appendChild(li);
-  });
-}
-
-function openUpdatesPanel(){
-  renderUpdates();
-  document.getElementById('updatesPanel')?.classList.add('open');
-}
-function closeUpdatesPanel(){
-  document.getElementById('updatesPanel')?.classList.remove('open');
-}
-
-document.addEventListener('DOMContentLoaded', ()=>{
-  const AUTO_OPEN_ON_LOAD = true; // ← nastav na false, pokud nechceš auto-open
-
-  // zapojení tlačítek (podle tvého HTML může být #updatesBtn nebo #updatesBtn a > a)
-  const btnWrap = document.getElementById('updatesBtn');
-  const btn = btnWrap?.querySelector('a') || btnWrap; 
-  btn?.addEventListener('click', (e)=>{ e.preventDefault(); openUpdatesPanel(); });
-
-  document.getElementById('closeUpdates')?.addEventListener('click', closeUpdatesPanel);
-
-  // první render
-  renderUpdates();
-
-  // AUTO-OPEN hned po načtení (to ti chybělo)
-  if (AUTO_OPEN_ON_LOAD) openUpdatesPanel();
-
-  // přepočet relativních štítků každou minutu
-  setInterval(renderUpdates, 60*1000);
-});
-
-
-// === Čas do bottom-left boxu (CS formát) ===
-(function(){
-  const el = document.getElementById('currentTime');
-  function tick(){
-    const now = new Date();
-    const d = now.toLocaleDateString('en-GB', { 
-  day:'2-digit', month:'2-digit', year:'numeric',
-  timeZone: 'Atlantic/Reykjavik'
-});
-const t = now.toLocaleTimeString('en-GB', { 
-  hour:'2-digit', minute:'2-digit',
-  timeZone: 'Atlantic/Reykjavik'
-});
-
-    if (el) el.textContent = `${d} · ${t}`;
-  }
-  tick(); setInterval(tick, 1000);
-})();
-
-// === Modal open/close – 1x Close, bílé UI, nepřekrývá side panel ===
-(function(){
-  const body     = document.body;
-  const backdrop = document.getElementById('legalModalBackdrop');
-  const modal    = document.getElementById('legalModal');
-  const trigger  = document.getElementById('openDisclaimer');
-
-  function openModal(){
-    if (!backdrop || !modal) return;
-    body.classList.add('modal-open');
-    backdrop.classList.add('open');
-    modal.classList.add('open');
-  }
-  function closeModal(){
-    if (!backdrop || !modal) return;
-    modal.classList.remove('open');
-    backdrop.classList.remove('open');
-    body.classList.remove('modal-open');
-  }
-
-  
-
-  // Delegovaný posluchač: funguje i když je modal re-renderován
-  document.addEventListener('click', (e)=>{
-    const t = e.target;
-
-    // otevření
-    if (t.closest('#openDisclaimer')) {
-      e.preventDefault();
-      openModal();
-      return;
-    }
-
-    // zavření přes křížek nebo „I Understand“
-    if (t.closest('#legalClose') || t.closest('#legalAccept')) {
-      e.preventDefault();
-      closeModal();
-      return;
-    }
-
-    // klik na backdrop mimo modal zavře
-    if (backdrop && t === backdrop) {
-      closeModal();
-    }
-  });
-
-  // ESC zavře
-  document.addEventListener('keydown', (e)=>{
-    if (e.key === 'Escape' && modal?.classList.contains('open')) {
-      closeModal();
-    }
-  });
-})();
-
-// ===== Vehicle filter: abecední řazení (All nahoře) =====
-(function sortVehicleFilterInit(){
-  const SELECT_ID = 'vehicleSelect';
-
-  function isAllOption(opt){
-    if (!opt) return false;
-    const v = String(opt.value || '').toLowerCase();
-    const t = String(opt.textContent || '').toLowerCase();
-    return v === 'all' || t.includes('all vehicles') || t.trim() === 'all';
-  }
-
-  function sortVehicleSelect(){
-    const sel = document.getElementById(SELECT_ID);
-    if (!sel) return;
-
-    // zapamatuj si výběr
-    const prev = sel.value;
-
-    // všechny přímé <option> (bez optgroup)
-    const options = Array.from(sel.querySelectorAll(':scope > option'));
-
-    // odděl „All“ od ostatních
-    const allOpts   = options.filter(isAllOption);
-    const otherOpts = options.filter(o => !isAllOption(o));
-
-    // setřiď podle textu – bez ohledu na velikost písmen/diakritiku
-    otherOpts.sort((a,b)=> a.textContent.localeCompare(b.textContent, undefined, { sensitivity:'base' }));
-
-    // slož zpět
-    sel.innerHTML = '';
-    [...allOpts, ...otherOpts].forEach(o => sel.appendChild(o));
-
-    // obnov původní výběr, případně zvol „All“
-    if (Array.from(sel.options).some(o => o.value === prev)) {
-      sel.value = prev;
-    } else if (allOpts[0]) {
-      sel.value = allOpts[0].value;
-    }
-
-    // vystřel change, pokud na něj navazuješ logiku mapy/filtru
-    sel.dispatchEvent(new Event('change', { bubbles:true }));
-  }
-
-  // Spusť po načtení DOMu
-  document.addEventListener('DOMContentLoaded', sortVehicleSelect);
-
-  // Kdyby se options měnily dynamicky, přerovnej znovu
-  const mo = new MutationObserver((muts)=>{
-    if (muts.some(m => [...m.addedNodes, ...m.removedNodes].some(n => n.nodeName === 'OPTION'))) {
-      sortVehicleSelect();
-    }
-  });
-  document.addEventListener('DOMContentLoaded', ()=>{
-    const sel = document.getElementById(SELECT_ID);
-    if (sel) mo.observe(sel, { childList:true });
-  });
-})();
-
-</script>
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  const panel = document.getElementById('sidePanel');
-  const closeBtn = document.getElementById('closePanel');
-  let isRoadClick = false; // flag
-
-  // Klik na cestu → otevři panel
-  map.eachLayer(layer => {
-    if (layer instanceof L.Polyline && !layer._url) { // vynech tilelayer
-      layer.on('click', () => {
-        isRoadClick = true;
-        panel.classList.add('open');
-      });
-    }
-  });
-
-  // Klik mimo panel → zavři (ale ignoruj klik na cestu nebo river crossing)
-  document.addEventListener('click', (e) => {
-    const clickedInsidePanel = panel.contains(e.target);
-    const clickedClose = closeBtn.contains(e.target);
-
-    // 💡 výjimka: klik na river crossing ikonku nebo tlačítko
-    if (e.target.closest('.rc-icon') || e.target.closest('.rc-btn')) return;
-
-    if (isRoadClick) { isRoadClick = false; return; } // právě klik na cestu, nech být
-    if (clickedInsidePanel || clickedClose) return;
-    if (!panel.classList.contains('open')) return;
-
-    // použij přesně tvůj systém zavírání
-    closeBtn.click();
-  });
-});
-
-</script>
-
-
-
 </body>
 </html>
