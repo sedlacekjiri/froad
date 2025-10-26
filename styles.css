@@ -1262,6 +1262,19 @@ header {
     border-left: 1px solid #e0e0e0;
     box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
   }
+
+  /* User detail panel (People marker popup) - vycentrovaný s 40% šířkou */
+  #userDetailPanel {
+    width: 40%;
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    margin: 0;
+  }
+
+  #userDetailPanel.active {
+    transform: translateX(-50%);
+  }
 }
 
 
