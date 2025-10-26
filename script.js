@@ -504,6 +504,13 @@ setInterval(loadGroupAvatars, 20000);
     }
     function closeAccessModal() {
       document.getElementById("accessDeniedModal").style.display = "none";
+
+      // Přepni na login formulář po zavření modalu
+      document.getElementById("emailLoginForm").style.display = "flex";
+      document.getElementById("signupForm").style.display = "none";
+      document.getElementById("toSignup").style.display = "block";
+      document.getElementById("toLogin").style.display = "none";
+      document.getElementById("authTitle").textContent = "Log in";
     }
 
     // 🌍 Globální proměnné pro přepínání vrstev
@@ -1378,6 +1385,13 @@ imageModal.addEventListener("click", (e) => {
 
     function closeAccessModal() {
       document.getElementById("accessDeniedModal").style.display = "none";
+
+      // Přepni na login formulář po zavření modalu
+      document.getElementById("emailLoginForm").style.display = "flex";
+      document.getElementById("signupForm").style.display = "none";
+      document.getElementById("toSignup").style.display = "block";
+      document.getElementById("toLogin").style.display = "none";
+      document.getElementById("authTitle").textContent = "Log in";
     }
 
     // === SAVE PROFILE HANDLER ===
