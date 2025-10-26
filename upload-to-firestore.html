@@ -233,7 +233,7 @@
           try {
             await db.collection('froads').doc(docId).set({
               name: froad.name,
-              coords: froad.coords,
+              coords: JSON.stringify(froad.coords),
               photo: froad.photo || '',
               gallery: froad.gallery || [],
               description: froad.description || '',
