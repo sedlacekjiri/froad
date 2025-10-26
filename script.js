@@ -238,6 +238,20 @@ document.getElementById("chatGroups").style.display = "none";
     chatDiv.style.display = "none";
     mapContainer.style.display = "none";
     logoutBtn.style.display = "none";
+
+    // 🔒 BEZPEČNOSTNÍ FIX: Vyčisti všechny inputy při odhlášení
+    displayNameInput.value = "";
+    document.getElementById("bioInput").value = "";
+    document.getElementById("instagramInput").value = "";
+    document.getElementById("vehicleSelect").value = "";
+    currentAvatar.src = "https://www.gravatar.com/avatar?d=mp";
+    vehiclePhotoPreview.src = "";
+    vehiclePhotoPreview.style.display = "none";
+    const vehiclePhotoPlaceholder = document.getElementById("vehiclePhotoPlaceholder");
+    if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "flex";
+    avatarInput.value = "";
+    vehiclePhotoInput.value = "";
+
     return;
   }
 
@@ -370,8 +384,9 @@ if (profileIcon) {
   profileIcon.src = userData.photoURL || defaultPhoto;
 }
 
-if (userData.bio) document.getElementById("bioInput").value = userData.bio;
-if (userData.instagram) document.getElementById("instagramInput").value = userData.instagram;
+// 🔒 BEZPEČNOSTNÍ FIX: Vždy nastav hodnoty (i prázdné), aby se přepsala stará data
+document.getElementById("bioInput").value = userData.bio || "";
+document.getElementById("instagramInput").value = userData.instagram || "";
 
 
   // Toggle editor
@@ -491,6 +506,19 @@ setInterval(loadGroupAvatars, 20000);
 
   // 🧼 Zavři editory, panely
   profileEditor.style.display = "none";
+
+  // 🔒 BEZPEČNOSTNÍ FIX: Vyčisti všechny inputy v profileEditoru
+  displayNameInput.value = "";
+  document.getElementById("bioInput").value = "";
+  document.getElementById("instagramInput").value = "";
+  document.getElementById("vehicleSelect").value = "";
+  currentAvatar.src = "https://www.gravatar.com/avatar?d=mp";
+  vehiclePhotoPreview.src = "";
+  vehiclePhotoPreview.style.display = "none";
+  const vehiclePhotoPlaceholder = document.getElementById("vehiclePhotoPlaceholder");
+  if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "flex";
+  avatarInput.value = "";
+  vehiclePhotoInput.value = "";
 
   // Zobraz login screen
   loginScreen.style.display = "flex";
