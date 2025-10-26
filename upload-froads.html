@@ -130,7 +130,7 @@
       logDiv.scrollTop = logDiv.scrollHeight;
     }
 
-    async function testConnection() {
+    window.testConnection = async function() {
       logMessages = [];
       showStatus('info', '🔍 Testing Firestore connection...');
 
@@ -146,7 +146,7 @@
       }
     }
 
-    async function clearAllFroads() {
+    window.clearAllFroads = async function() {
       if (!confirm('⚠️ Are you sure you want to DELETE all F-roads from Firestore?')) {
         return;
       }
@@ -176,7 +176,7 @@
       }
     }
 
-    async function uploadAllFroads() {
+    window.uploadAllFroads = async function() {
       logMessages = [];
       showStatus('info', '📤 Uploading F-roads to Firestore...');
       document.getElementById('uploadBtn').disabled = true;
