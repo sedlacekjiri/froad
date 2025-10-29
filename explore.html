@@ -58,7 +58,7 @@
       left: 50%;
       transform: translateX(-50%);
       z-index: 1000;
-      width: 90%;
+      width: 80%;
       max-width: 400px;
     }
 
@@ -74,7 +74,7 @@
 
     #searchIcon {
       flex-shrink: 0;
-      color: #000000;
+      color: #666;
     }
 
     #roadSearchInput {
@@ -85,6 +85,9 @@
       color: #000;
       background: transparent;
       font-family: 'Poppins', sans-serif;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
 
     #roadSearchInput::placeholder {
@@ -175,7 +178,11 @@
     @media (max-width: 768px) {
       #roadSearchContainer {
         top: 20px;
-        width: 280px;
+        left: 80px;
+        right: 20px;
+        width: auto;
+        max-width: 280px;
+        transform: none;
       }
     }
 
