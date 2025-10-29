@@ -814,6 +814,30 @@ body.modal-open .leaflet-control-container{ display:block !important; }
   color: #666;
 }
 
+/* === COMPACT RATING (under route title) === */
+.compact-rating {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+  margin-top: 8px;
+}
+
+.compact-star-icon {
+  flex-shrink: 0;
+}
+
+.compact-rating-value {
+  font-size: 13px;
+  font-weight: 600;
+  color: #000;
+}
+
+.compact-rating-count {
+  font-size: 12px;
+  color: #666;
+}
+
 .rate-button {
   width: 100%;
   padding: 10px 16px;
@@ -1100,6 +1124,15 @@ body.modal-open .leaflet-control-container{ display:block !important; }
 </div>
     <div id="roadDetails">
       <h2>F-road Details</h2>
+
+      <!-- Compact Rating Display (under title) -->
+      <div id="compactRating" class="compact-rating">
+        <svg class="compact-star-icon" width="14" height="14" viewBox="0 0 24 24" fill="#FFD700">
+          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+        </svg>
+        <span class="compact-rating-value" id="compactRatingValue">--</span>
+        <span class="compact-rating-count" id="compactRatingCount">(0)</span>
+      </div>
 
       <!-- Weather card -->
       <div id="wxCard" class="wx-card" title="">
@@ -3187,19 +3220,30 @@ async function loadRoadRating(roadId) {
     const ratingDoc = await db.collection('ratings').doc(roadId).get();
     const ratingValue = document.getElementById('ratingValue');
     const ratingCount = document.getElementById('ratingCount');
+    const compactRatingValue = document.getElementById('compactRatingValue');
+    const compactRatingCount = document.getElementById('compactRatingCount');
 
     if (ratingDoc.exists) {
       const data = ratingDoc.data();
-      ratingValue.textContent = (data.averageRating || 0).toFixed(1);
-      ratingCount.textContent = `(${data.totalRatings || 0})`;
+      const avgRating = (data.averageRating || 0).toFixed(1);
+      const totalCount = `(${data.totalRatings || 0})`;
+
+      ratingValue.textContent = avgRating;
+      ratingCount.textContent = totalCount;
+      compactRatingValue.textContent = avgRating;
+      compactRatingCount.textContent = totalCount;
     } else {
       ratingValue.textContent = '--';
       ratingCount.textContent = '(0)';
+      compactRatingValue.textContent = '--';
+      compactRatingCount.textContent = '(0)';
     }
   } catch (err) {
     console.error('Error loading rating:', err);
     document.getElementById('ratingValue').textContent = '--';
     document.getElementById('ratingCount').textContent = '(0)';
+    document.getElementById('compactRatingValue').textContent = '--';
+    document.getElementById('compactRatingCount').textContent = '(0)';
   }
 }
 
