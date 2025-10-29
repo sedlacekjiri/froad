@@ -884,6 +884,9 @@ header {
   z-index: 500;
   transition: transform 0.15s ease, background 0.15s ease;
 }
+#customActionBtn:hover {
+  background: #f3f3f3;
+}
 #customActionBtn img {
   width: 16px;
   height: 16px;
