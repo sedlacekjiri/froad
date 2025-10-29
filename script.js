@@ -265,28 +265,33 @@ if (homeBtn) {
     homeIcon.src = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690214cdec9d2efab9720566_home-focus.png"; // aktivní Home ikonka
 }
 
-// ✅ Aktualizuj Welcome text s jménem uživatele
-const homeWelcome = document.getElementById('homeWelcome');
-if (homeWelcome && userData.displayName) {
-  const firstName = userData.displayName.split(' ')[0];
-  homeWelcome.textContent = `Welcome, ${firstName}`;
-}
-
 // ✅ Reset všech ikon do výchozího stavu
-document.querySelector('.explore-btn .explore-icon').src =
-  "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed640a5b1f7f0d0f842643_map%20(3).png";
-document.querySelector('.chat-btn .chat-icon').src =
-  "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed60dbeff425a3e7d0d35e_paper-plane.png";
-document.querySelector('.map-btn .map-icon').src =
-  "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68efa731bab109784845d316_people.png";
+const exploreIcon = document.querySelector('.explore-btn .explore-icon');
+if (exploreIcon) {
+  exploreIcon.src = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed640a5b1f7f0d0f842643_map%20(3).png";
+}
+const chatIcon = document.querySelector('.chat-btn .chat-icon');
+if (chatIcon) {
+  chatIcon.src = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed60dbeff425a3e7d0d35e_paper-plane.png";
+}
+const mapIcon = document.querySelector('.map-btn .map-icon');
+if (mapIcon) {
+  mapIcon.src = "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68efa731bab109784845d316_people.png";
+}
 
 
 // Zobraz Home jako výchozí sekci
-document.getElementById('homeSection').style.display = "block";
-document.getElementById('exploreMap').style.display = "none";
-document.getElementById('mapContainer').style.display = "none";
-document.getElementById('chat').style.display = "none";
-document.getElementById('form').style.display = "none";
+const homeSectionEl = document.getElementById('homeSection');
+const exploreMapEl = document.getElementById('exploreMap');
+const mapContainerEl = document.getElementById('mapContainer');
+const chatDivEl = document.getElementById('chat');
+const formElEl = document.getElementById('form');
+
+if (homeSectionEl) homeSectionEl.style.display = "block";
+if (exploreMapEl) exploreMapEl.style.display = "none";
+if (mapContainerEl) mapContainerEl.style.display = "none";
+if (chatDivEl) chatDivEl.style.display = "none";
+if (formElEl) formElEl.style.display = "none";
 
 // ✅ Skryj Share Location tlačítko při načtení (jen People ho má mít)
 const shareBtn = document.getElementById('shareLocationBtn');
@@ -354,6 +359,12 @@ if (userData.photoURL && user.photoURL !== userData.photoURL) {
   await user.updateProfile({ photoURL: userData.photoURL });
 }
 
+// ✅ Aktualizuj Welcome text s jménem uživatele
+const homeWelcome = document.getElementById('homeWelcome');
+if (homeWelcome && userData.displayName) {
+  const firstName = userData.displayName.split(' ')[0];
+  homeWelcome.textContent = `Welcome, ${firstName}`;
+}
 
   // ✅ Zobraz vehicle photo nebo placeholder v profile editoru
   const vehiclePhotoPlaceholder = document.getElementById("vehiclePhotoPlaceholder");
