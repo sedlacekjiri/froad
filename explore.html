@@ -3227,15 +3227,25 @@ document.getElementById('rateButton').addEventListener('click', async () => {
     }
 
     // Show road name in modal
-    const roadName = document.querySelector('#roadDetails > h2').textContent;
-    document.getElementById('ratingRoadName').textContent = roadName;
+    const roadNameElement = document.querySelector('#roadDetails > h2');
+    const roadName = roadNameElement ? roadNameElement.textContent : 'Unknown Road';
+    const ratingRoadNameElement = document.getElementById('ratingRoadName');
+    if (ratingRoadNameElement) {
+      ratingRoadNameElement.textContent = roadName;
+    }
 
     // Open modal
-    document.getElementById('ratingModalBackdrop').classList.add('open');
-    document.getElementById('ratingModal').classList.add('open');
+    const modalBackdrop = document.getElementById('ratingModalBackdrop');
+    const modal = document.getElementById('ratingModal');
+    if (modalBackdrop && modal) {
+      modalBackdrop.classList.add('open');
+      modal.classList.add('open');
+    } else {
+      throw new Error('Modal elements not found');
+    }
   } catch (err) {
-    console.error('Error checking existing rating:', err);
-    alert('Failed to open rating modal');
+    console.error('Error opening rating modal:', err);
+    alert('Failed to open rating modal: ' + (err.message || 'Unknown error'));
   }
 });
 
