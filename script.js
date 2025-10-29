@@ -1935,5 +1935,104 @@ backBtn.addEventListener("click", () => {
   chatHeader.style.display = "none"; // skryj header
 });
 
+// ========================================
+// HOME PAGE - FAQ ACCORDION
+// ========================================
+document.querySelectorAll('.faq-question').forEach(button => {
+  button.addEventListener('click', () => {
+    const faqItem = button.parentElement;
+    const wasActive = faqItem.classList.contains('active');
+
+    // Close all other FAQs
+    document.querySelectorAll('.faq-item').forEach(item => {
+      item.classList.remove('active');
+    });
+
+    // Toggle current FAQ
+    if (!wasActive) {
+      faqItem.classList.add('active');
+    }
+  });
+});
+
+// ========================================
+// HOME PAGE - LIVE STATS
+// ========================================
+function updateLiveStats() {
+  // Count online users (users who updated location in last 5 minutes)
+  const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+
+  db.collection('users')
+    .where('lastSeen', '>', fiveMinutesAgo)
+    .get()
+    .then(snapshot => {
+      const onlineCount = snapshot.size;
+      document.getElementById('onlineUsers').textContent = onlineCount;
+    })
+    .catch(() => {
+      document.getElementById('onlineUsers').textContent = '0';
+    });
+
+  // Count users sharing location (visible = true)
+  db.collection('users')
+    .where('visible', '==', true)
+    .get()
+    .then(snapshot => {
+      const sharingCount = snapshot.size;
+      document.getElementById('sharingLocation').textContent = sharingCount;
+    })
+    .catch(() => {
+      document.getElementById('sharingLocation').textContent = '0';
+    });
+
+  // Count messages today
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  db.collection('messages')
+    .where('timestamp', '>', todayStart)
+    .get()
+    .then(snapshot => {
+      const messageCount = snapshot.size;
+      document.getElementById('messagesToday').textContent = messageCount;
+    })
+    .catch(() => {
+      document.getElementById('messagesToday').textContent = '0';
+    });
+}
+
+// ========================================
+// HOME PAGE - ROAD STATUS SUMMARY
+// ========================================
+function updateRoadStatus() {
+  // Provizorní data - později můžeš připojit na skutečná data
+  // Pro teď simuluji náhodná čísla
+  const totalRoads = 59;
+  const openRoads = Math.floor(Math.random() * 30) + 20; // 20-50
+  const closedRoads = Math.floor(Math.random() * 15) + 5; // 5-20
+  const unknownRoads = totalRoads - openRoads - closedRoads;
+
+  document.getElementById('roadsOpen').textContent = openRoads;
+  document.getElementById('roadsClosed').textContent = closedRoads;
+  document.getElementById('roadsUnknown').textContent = unknownRoads;
+}
+
+// Update stats when home page is visible
+auth.onAuthStateChanged(user => {
+  if (user) {
+    // Update stats immediately
+    updateLiveStats();
+    updateRoadStatus();
+
+    // Update stats every 30 seconds
+    setInterval(() => {
+      if (document.getElementById('homeSection').style.display !== 'none') {
+        updateLiveStats();
+        updateRoadStatus();
+      }
+    }, 30000);
+  }
+});
+
 
 
