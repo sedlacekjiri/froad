@@ -393,6 +393,12 @@ body.gallery-open .leaflet-control-container {
   border-color: #fecaca;
 }
 
+#roadStatusBadge.unknown {
+  color: #ffffff;
+  background-color: #9ca3af;
+  border-color: #6b7280;
+}
+
 #updatesPanel {
   position:absolute;
   left:0; bottom:-100%;
@@ -2299,12 +2305,25 @@ function locateOnce(){
       });
     }
 
-   function updateRoadStatus(isOpen){
+   function updateRoadStatus(rd){
   const badge = document.getElementById('roadStatusBadge');
   if(!badge) return;
-  badge.textContent = isOpen ? 'OPEN' : 'CLOSED';
-  badge.classList.toggle('open',  isOpen);
-  badge.classList.toggle('closed', !isOpen);
+
+  const status = getRoadStatus(rd);
+
+  // Nastaví text podle stavu
+  if (status === 'closed') {
+    badge.textContent = 'CLOSED';
+  } else if (status === 'unknown') {
+    badge.textContent = 'UNKNOWN';
+  } else {
+    badge.textContent = 'OPEN';
+  }
+
+  // Nastaví CSS třídy
+  badge.classList.toggle('open', status === 'open');
+  badge.classList.toggle('closed', status === 'closed');
+  badge.classList.toggle('unknown', status === 'unknown');
 }
  
 
@@ -2323,8 +2342,7 @@ function locateOnce(){
     wrapper.style.display = 'none';
   }
 
-   const isOpen = rd.isOpen !== false;
-  updateRoadStatus(isOpen);
+  updateRoadStatus(rd);
   
       document.getElementById('infoDifficulty').textContent=rd.difficulty;
 
@@ -2356,16 +2374,24 @@ renderRiverCrossings(rd);
 const ROAD_COLORS = {
   open:   '#3bed32',  // tvoje původní zelená
   closed: '#dc2626',  // červená (ladí s CLOSED badge)
+  unknown: '#d1d5db', // světle šedá pro unknown
   selected: '#000000' // černá (po kliku)
 };
 
-function isRoadClosed(rd){
-  // bereme jako "closed", když je open explicitně false nebo status === 'closed'
-  return rd?.isOpen === false || String(rd?.status).toLowerCase() === 'closed';
+function getRoadStatus(rd){
+  // Vrací: 'closed', 'unknown', nebo 'open'
+  if (rd?.isOpen === false || String(rd?.status).toLowerCase() === 'closed') {
+    return 'closed';
+  }
+  if (rd?.isOpen === 'unknown' || String(rd?.status).toLowerCase() === 'unknown') {
+    return 'unknown';
+  }
+  return 'open';
 }
 
 function baseRoadColor(rd){
-  return isRoadClosed(rd) ? ROAD_COLORS.closed : ROAD_COLORS.open;
+  const status = getRoadStatus(rd);
+  return ROAD_COLORS[status] || ROAD_COLORS.open;
 }
 
 // když rušíš zvýraznění vybrané čáry, vrať jí její "základní" barvu podle isOpen
