@@ -420,10 +420,14 @@ document.getElementById("instagramInput").value = userData.instagram || "";
 
   // === Zobrazení hlavní části ===
   loginScreen.style.display = "none";
-  mapContainer.style.display = "block";
+  mapContainer.style.display = "none";
   chatDiv.style.display = "none";
   formEl.style.display = "none";
   logoutBtn.style.display = "inline-block";
+
+  // Zobraz Home jako výchozí sekci po přihlášení
+  const homeSection = document.getElementById('homeSection');
+  if (homeSection) homeSection.style.display = "block";
 
   if (user.photoURL) {
     profileIcon.classList.remove("fallback");
