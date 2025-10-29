@@ -1268,11 +1268,11 @@ header {
 
   /* User detail panel (People marker popup) - vycentrovaný s 40% šířkou */
   #userDetailPanel {
-    width: 40%;
+    width: 30%;
     left: 50%;
     right: auto;
     transform: translateX(-50%);
-    margin: 0;
+    margin: 20px;
   }
 
   #userDetailPanel.active {
