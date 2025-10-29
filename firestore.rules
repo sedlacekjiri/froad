@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Existing rules for users, messages, liveLocations, etc...
+    // (keep your existing rules here)
+
+    // ===== RATING SYSTEM RULES =====
+
+    // Rating stats (read-only for everyone)
+    match /ratings/{roadId} {
+      allow read: if true;  // Anyone can read rating stats
+      allow write: if false; // Only Cloud Function can write
+    }
+
+    // User ratings (one rating per user per road)
+    match /ratings/{roadId}/userRatings/{userId} {
+      // Anyone can read ratings
+      allow read: if true;
+
+      // User can only write their own rating
+      allow create, update: if request.auth != null
+                           && request.auth.uid == userId
+                           && request.resource.data.rating is number
+                           && request.resource.data.rating >= 1
+                           && request.resource.data.rating <= 5;
+
+      // User can delete their own rating
+      allow delete: if request.auth != null
+                    && request.auth.uid == userId;
+    }
+  }
+}

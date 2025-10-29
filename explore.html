@@ -783,6 +783,172 @@ body.modal-open .leaflet-control-container{ display:block !important; }
 .leaflet-control-zoom-out:hover {
   background: #f3f3f3 !important;
 }
+
+/* === RATING SECTION === */
+.road-rating {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.rating-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.star-icon {
+  flex-shrink: 0;
+}
+
+.rating-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #000;
+}
+
+.rating-count {
+  font-size: 14px;
+  color: #666;
+}
+
+.rate-button {
+  width: 100%;
+  padding: 10px 16px;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.rate-button:hover {
+  background: #333;
+}
+
+/* === RATING MODAL === */
+#ratingModalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10000;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+#ratingModalBackdrop.open {
+  opacity: 1;
+  visibility: visible;
+}
+
+#ratingModal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.9);
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  max-width: 440px;
+  width: 90%;
+  z-index: 10001;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+#ratingModal.open {
+  opacity: 1;
+  visibility: visible;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+#ratingModal .closeBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #666;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s ease;
+}
+
+#ratingModal .closeBtn:hover {
+  background: #f3f3f3;
+}
+
+#ratingContent h2 {
+  margin: 0 0 8px 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.rating-stars {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.rating-star {
+  cursor: pointer;
+  fill: #e5e7eb;
+  transition: fill 0.2s ease, transform 0.2s ease;
+}
+
+.rating-star:hover {
+  transform: scale(1.1);
+}
+
+.rating-star.filled {
+  fill: #FFD700;
+}
+
+.rating-star.hovered {
+  fill: #FFC700;
+}
+
+#ratingFooter {
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+#ratingSubmit {
+  padding: 12px 32px;
+  background: #000;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+#ratingSubmit:hover:not(:disabled) {
+  background: #333;
+}
+
+#ratingSubmit:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
   </style>
 </head>
 
@@ -827,6 +993,40 @@ body.modal-open .leaflet-control-container{ display:block !important; }
   </div>
 </div>
 
+<!-- Rating Modal -->
+<div id="ratingModalBackdrop" aria-hidden="true"></div>
+<div id="ratingModal" role="dialog" aria-modal="true" aria-labelledby="ratingTitle">
+  <button id="ratingClose" class="closeBtn" aria-label="Close">✕</button>
+
+  <div id="ratingContent">
+    <h2 id="ratingTitle">Rate this F-road</h2>
+    <p id="ratingRoadName" style="color: #666; margin-bottom: 20px;"></p>
+
+    <div class="rating-stars">
+      <svg class="rating-star" data-value="1" width="48" height="48" viewBox="0 0 24 24">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+      <svg class="rating-star" data-value="2" width="48" height="48" viewBox="0 0 24 24">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+      <svg class="rating-star" data-value="3" width="48" height="48" viewBox="0 0 24 24">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+      <svg class="rating-star" data-value="4" width="48" height="48" viewBox="0 0 24 24">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+      <svg class="rating-star" data-value="5" width="48" height="48" viewBox="0 0 24 24">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+    </div>
+
+    <p id="ratingFeedback" style="text-align: center; margin-top: 16px; font-size: 14px; color: #666;"></p>
+  </div>
+
+  <div id="ratingFooter">
+    <button id="ratingSubmit" type="button" disabled>Submit Rating</button>
+  </div>
+</div>
 
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
 
@@ -900,6 +1100,18 @@ body.modal-open .leaflet-control-container{ display:block !important; }
 </div>
     <div id="roadDetails">
       <h2>F-road Details</h2>
+
+      <!-- Rating Section -->
+      <div id="roadRating" class="road-rating">
+        <div class="rating-display">
+          <svg class="star-icon" width="20" height="20" viewBox="0 0 24 24" fill="#FFD700">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+          </svg>
+          <span class="rating-value" id="ratingValue">--</span>
+          <span class="rating-count" id="ratingCount">(0)</span>
+        </div>
+        <button class="rate-button" id="rateButton">Rate this road</button>
+      </div>
 
       <!-- Weather card -->
       <div id="wxCard" class="wx-card" title="">
@@ -995,7 +1207,27 @@ body.modal-open .leaflet-control-container{ display:block !important; }
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
-  
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <script>
+    // Firebase init
+    const firebaseConfig = {
+      apiKey: "AIzaSyDDMNnJgtm-gK9OrVev7qmBRpaA8CAoDiM",
+      authDomain: "froad-7d561.firebaseapp.com",
+      projectId: "froad-7d561",
+      storageBucket: "froad-7d561.firebasestorage.app",
+      messagingSenderId: "1086299585443",
+      appId: "1:1086299585443:web:10bcb67effd6a89c24f816"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+  </script>
+
   <script>
     
     const minZoom = 6;
@@ -2069,6 +2301,10 @@ function locateOnce(){
       document.getElementById('infoSurface').textContent=rd.surface;
       document.getElementById('infoWatch').textContent=rd.watchOut;
       document.querySelector('#roadDetails > h2').textContent=rd.name;
+
+      // Load rating for this road
+      loadRoadRating(rd.id || rd.name);
+
       document.getElementById('sidePanel').classList.add('open');
 
       const [lat,lon]=getRoadMidLatLon(rd);
@@ -2937,6 +3173,175 @@ document.addEventListener('DOMContentLoaded', () => {
     // použij přesně tvůj systém zavírání
     closeBtn.click();
   });
+});
+
+// ===== RATING SYSTEM =====
+let currentRoadId = null;
+let selectedRating = 0;
+
+// Load rating for road
+async function loadRoadRating(roadId) {
+  currentRoadId = roadId;
+  try {
+    const ratingDoc = await db.collection('ratings').doc(roadId).get();
+    const ratingValue = document.getElementById('ratingValue');
+    const ratingCount = document.getElementById('ratingCount');
+
+    if (ratingDoc.exists) {
+      const data = ratingDoc.data();
+      ratingValue.textContent = (data.averageRating || 0).toFixed(1);
+      ratingCount.textContent = `(${data.totalRatings || 0})`;
+    } else {
+      ratingValue.textContent = '--';
+      ratingCount.textContent = '(0)';
+    }
+  } catch (err) {
+    console.error('Error loading rating:', err);
+    document.getElementById('ratingValue').textContent = '--';
+    document.getElementById('ratingCount').textContent = '(0)';
+  }
+}
+
+// Open rating modal
+document.getElementById('rateButton').addEventListener('click', async () => {
+  const user = auth.currentUser;
+  if (!user) {
+    alert('Please log in to rate roads');
+    return;
+  }
+
+  if (!currentRoadId) return;
+
+  // Check if user already rated
+  try {
+    const userRatingDoc = await db
+      .doc(`ratings/${currentRoadId}/userRatings/${user.uid}`)
+      .get();
+
+    if (userRatingDoc.exists) {
+      selectedRating = userRatingDoc.data().rating;
+      updateStarDisplay(selectedRating);
+    } else {
+      selectedRating = 0;
+      updateStarDisplay(0);
+    }
+
+    // Show road name in modal
+    const roadName = document.querySelector('#roadDetails > h2').textContent;
+    document.getElementById('ratingRoadName').textContent = roadName;
+
+    // Open modal
+    document.getElementById('ratingModalBackdrop').classList.add('open');
+    document.getElementById('ratingModal').classList.add('open');
+  } catch (err) {
+    console.error('Error checking existing rating:', err);
+    alert('Failed to open rating modal');
+  }
+});
+
+// Close modal
+function closeRatingModal() {
+  document.getElementById('ratingModalBackdrop').classList.remove('open');
+  document.getElementById('ratingModal').classList.remove('open');
+  selectedRating = 0;
+  updateStarDisplay(0);
+  document.getElementById('ratingFeedback').textContent = '';
+}
+
+document.getElementById('ratingClose').addEventListener('click', closeRatingModal);
+document.getElementById('ratingModalBackdrop').addEventListener('click', closeRatingModal);
+
+// Star interaction
+const stars = document.querySelectorAll('.rating-star');
+stars.forEach((star, index) => {
+  star.addEventListener('click', () => {
+    selectedRating = index + 1;
+    updateStarDisplay(selectedRating);
+    document.getElementById('ratingSubmit').disabled = false;
+
+    const labels = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
+    document.getElementById('ratingFeedback').textContent = labels[index];
+  });
+
+  star.addEventListener('mouseenter', () => {
+    const hoverValue = index + 1;
+    stars.forEach((s, i) => {
+      if (i < hoverValue) {
+        s.classList.add('hovered');
+      } else {
+        s.classList.remove('hovered');
+      }
+    });
+  });
+
+  star.addEventListener('mouseleave', () => {
+    stars.forEach(s => s.classList.remove('hovered'));
+  });
+});
+
+function updateStarDisplay(rating) {
+  stars.forEach((star, index) => {
+    if (index < rating) {
+      star.classList.add('filled');
+    } else {
+      star.classList.remove('filled');
+    }
+  });
+}
+
+// Submit rating
+document.getElementById('ratingSubmit').addEventListener('click', async () => {
+  const user = auth.currentUser;
+  if (!user || !currentRoadId || selectedRating === 0) return;
+
+  const submitBtn = document.getElementById('ratingSubmit');
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Submitting...';
+
+  try {
+    // Save user rating
+    await db.doc(`ratings/${currentRoadId}/userRatings/${user.uid}`).set({
+      rating: selectedRating,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Recalculate average (client-side for now)
+    const userRatingsSnap = await db
+      .collection(`ratings/${currentRoadId}/userRatings`)
+      .get();
+
+    let sum = 0;
+    let count = 0;
+    userRatingsSnap.forEach(doc => {
+      sum += doc.data().rating;
+      count++;
+    });
+
+    const average = count > 0 ? Math.round((sum / count) * 10) / 10 : 0;
+
+    // Update stats
+    await db.doc(`ratings/${currentRoadId}`).set({
+      averageRating: average,
+      totalRatings: count,
+      lastUpdated: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Reload rating display
+    await loadRoadRating(currentRoadId);
+
+    // Close modal
+    closeRatingModal();
+
+    // Show success
+    alert('Rating submitted successfully!');
+  } catch (err) {
+    console.error('Error submitting rating:', err);
+    alert('Failed to submit rating. Please try again.');
+  } finally {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Rating';
+  }
 });
 
 </script>
