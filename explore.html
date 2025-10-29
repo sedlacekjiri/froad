@@ -51,6 +51,137 @@
       -webkit-appearance:none; -moz-appearance:none; appearance:none;
     }
 
+    /* ---- F-Roads Search Box ---- */
+    #roadSearchContainer {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      width: 90%;
+      max-width: 400px;
+    }
+
+    #roadSearchBox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 8px 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      font-family: 'Poppins', sans-serif;
+    }
+
+    #searchIcon {
+      flex-shrink: 0;
+      color: #666;
+    }
+
+    #roadSearchInput {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      color: #000;
+      background: transparent;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    #roadSearchInput::placeholder {
+      color: #999;
+    }
+
+    #clearSearch {
+      flex-shrink: 0;
+      background: transparent;
+      border: none;
+      color: #666;
+      font-size: 18px;
+      cursor: pointer;
+      padding: 0;
+      width: 20px;
+      height: 20px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      transition: opacity 0.2s ease;
+    }
+
+    #clearSearch:hover {
+      color: #000;
+    }
+
+    #clearSearch.show {
+      display: flex;
+    }
+
+    #searchResults {
+      margin-top: 8px;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      display: none;
+    }
+
+    #searchResults.show {
+      display: block;
+    }
+
+    .search-result-item {
+      padding: 12px 16px;
+      cursor: pointer;
+      border-bottom: 1px solid #f0f0f0;
+      font-family: 'Poppins', sans-serif;
+      font-size: 14px;
+      color: #000;
+      transition: background 0.2s ease;
+    }
+
+    .search-result-item:last-child {
+      border-bottom: none;
+    }
+
+    .search-result-item:hover {
+      background: #f5f5f5;
+    }
+
+    .search-result-name {
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .search-result-info {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .search-no-results {
+      padding: 16px;
+      text-align: center;
+      color: #999;
+      font-size: 14px;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    /* Hide search on mobile when gallery is open */
+    body.gallery-open #roadSearchContainer {
+      display: none !important;
+    }
+
+    @media (max-width: 768px) {
+      #roadSearchContainer {
+        top: 15px;
+        width: calc(100% - 30px);
+        max-width: none;
+      }
+    }
+
     /* ---- Weather card (Temp + Wind) ---- */
     .wx-card{
       display:flex; align-items:center; gap:11px;
@@ -988,6 +1119,24 @@ body.modal-open .leaflet-control-container{ display:block !important; }
 <select id="vehicleSelect" style="display:none;">
   <option value="all" selected>All vehicles</option>
 </select>
+
+<!-- F-Roads Search Box -->
+<div id="roadSearchContainer">
+  <div id="roadSearchBox">
+    <svg id="searchIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="11" cy="11" r="8"/>
+      <path d="m21 21-4.35-4.35"/>
+    </svg>
+    <input
+      type="text"
+      id="roadSearchInput"
+      placeholder="Search F-roads..."
+      autocomplete="off"
+    />
+    <button id="clearSearch" title="Clear search">✕</button>
+  </div>
+  <div id="searchResults"></div>
+</div>
 
 <!-- Bottom-left info box (subtle) -->
 <div id="bottomInfoBox">
@@ -3414,6 +3563,163 @@ document.getElementById('ratingSubmit').addEventListener('click', async () => {
     submitBtn.textContent = 'Submit Rating';
   }
 });
+
+// ===== F-Roads Search Functionality =====
+(function initRoadSearch() {
+  const searchInput = document.getElementById('roadSearchInput');
+  const searchResults = document.getElementById('searchResults');
+  const clearBtn = document.getElementById('clearSearch');
+
+  if (!searchInput || !searchResults) return;
+
+  // Normalization functions
+  function removeDiacritics(str) {
+    return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  }
+
+  function normalizeText(str) {
+    return removeDiacritics(str).toLowerCase().replace(/\s+/g, '');
+  }
+
+  // Search and filter roads
+  function searchRoads(query) {
+    if (!query || query.trim().length < 1) return [];
+
+    const normalizedQuery = normalizeText(query);
+
+    return roadLayers
+      .filter(r => {
+        const roadName = r.data.name || '';
+        const normalizedName = normalizeText(roadName);
+
+        // Match full name or just the road number (e.g., "F229" or "214")
+        const roadNumber = roadName.split(' ')[0];
+        const normalizedNumber = normalizeText(roadNumber);
+
+        return normalizedName.includes(normalizedQuery) ||
+               normalizedNumber.includes(normalizedQuery);
+      })
+      .slice(0, 10); // Limit to 10 results
+  }
+
+  // Display search results
+  function displayResults(results) {
+    searchResults.innerHTML = '';
+
+    if (results.length === 0) {
+      searchResults.innerHTML = '<div class="search-no-results">No roads found</div>';
+      searchResults.classList.add('show');
+      return;
+    }
+
+    results.forEach(roadLayer => {
+      const road = roadLayer.data;
+      const item = document.createElement('div');
+      item.className = 'search-result-item';
+
+      const nameDiv = document.createElement('div');
+      nameDiv.className = 'search-result-name';
+      nameDiv.textContent = road.name;
+
+      const infoDiv = document.createElement('div');
+      infoDiv.className = 'search-result-info';
+      infoDiv.textContent = `${road.lengthKm || '--'} km · ${road.difficulty || '--'}`;
+
+      item.appendChild(nameDiv);
+      item.appendChild(infoDiv);
+
+      // Handle click
+      item.addEventListener('click', () => {
+        selectRoad(roadLayer);
+        searchInput.value = road.name;
+        clearBtn.classList.add('show'); // Keep clear button visible with result name
+        hideResults();
+      });
+
+      searchResults.appendChild(item);
+    });
+
+    searchResults.classList.add('show');
+  }
+
+  // Hide results dropdown
+  function hideResults() {
+    searchResults.classList.remove('show');
+  }
+
+  // Select and zoom to road
+  function selectRoad(roadLayer) {
+    // Simulate road click to show panel and highlight
+    if (roadLayer.onRoadClick) {
+      roadLayer.onRoadClick();
+    }
+
+    // Zoom to road bounds with slight zoom in
+    if (roadLayer.polyline) {
+      const bounds = roadLayer.polyline.getBounds();
+      map.fitBounds(bounds, {
+        padding: [50, 50],
+        maxZoom: 11 // Slight zoom in
+      });
+    }
+  }
+
+  // Event listeners
+  searchInput.addEventListener('input', (e) => {
+    const query = e.target.value;
+
+    // Show/hide clear button
+    if (query.length > 0) {
+      clearBtn.classList.add('show');
+    } else {
+      clearBtn.classList.remove('show');
+    }
+
+    if (query.trim().length === 0) {
+      hideResults();
+      return;
+    }
+
+    const results = searchRoads(query);
+    displayResults(results);
+  });
+
+  searchInput.addEventListener('focus', (e) => {
+    if (e.target.value.trim().length > 0) {
+      const results = searchRoads(e.target.value);
+      displayResults(results);
+    }
+  });
+
+  // Clear button
+  clearBtn.addEventListener('click', () => {
+    searchInput.value = '';
+    clearBtn.classList.remove('show');
+    hideResults();
+    searchInput.focus();
+  });
+
+  // Close results when clicking outside
+  document.addEventListener('click', (e) => {
+    const container = document.getElementById('roadSearchContainer');
+    if (container && !container.contains(e.target)) {
+      hideResults();
+    }
+  });
+
+  // Handle Enter key
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const results = searchRoads(searchInput.value);
+      if (results.length > 0) {
+        selectRoad(results[0]);
+        searchInput.value = results[0].data.name;
+        clearBtn.classList.add('show'); // Keep clear button visible with result name
+        hideResults();
+      }
+    }
+  });
+})();
 
 </script>
 
