@@ -1337,18 +1337,38 @@ header {
   margin-top: 40px;
 }
 
-.journal-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 20px;
+.journal-carousel {
+  position: relative;
+  overflow: hidden;
   margin-bottom: 24px;
+}
+
+.journal-grid {
+  display: flex;
+  gap: 20px;
+  overflow-x: scroll;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+  padding-bottom: 10px;
+}
+
+.journal-grid::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
 }
 
 .journal-card {
   cursor: pointer;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
   border-radius: 12px;
   overflow: hidden;
+  flex: 0 0 calc((100% - 60px) / 3.5); /* 3.5 cards visible */
+  min-width: calc((100% - 60px) / 3.5);
+}
+
+.journal-card:nth-child(4) {
+  opacity: 0.5; /* 4th card with opacity */
 }
 
 .journal-card:hover {
@@ -1406,43 +1426,6 @@ header {
   opacity: 0.9;
 }
 
-/* === LIVE STATS === */
-.stats-section {
-  margin-top: 40px;
-}
-
-.stats-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-}
-
-.stat-card {
-  background: var(--card);
-  border: 1px solid var(--ring);
-  border-radius: 12px;
-  padding: 20px;
-  text-align: center;
-}
-
-.stat-icon {
-  font-size: 32px;
-  margin-bottom: 8px;
-}
-
-.stat-value {
-  font-size: 28px;
-  font-weight: 700;
-  color: var(--fg);
-  margin-bottom: 4px;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: #666;
-  line-height: 1.3;
-}
-
 /* === ROAD STATUS === */
 .road-status-section {
   margin-top: 40px;
@@ -1470,8 +1453,8 @@ header {
 }
 
 .status-card.status-caution {
-  border-color: #f59e0b;
-  background: #fffbeb;
+  border-color: #9ca3af;
+  background: #9ca3af;
 }
 
 .status-card.status-closed {
@@ -1575,9 +1558,9 @@ header {
     margin-bottom: 32px;
   }
 
-  .journal-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 24px;
+  .journal-card {
+    flex: 0 0 calc((100% - 60px) / 3.5); /* Keep 3.5 cards visible on desktop */
+    min-width: calc((100% - 60px) / 3.5);
   }
 
   .journal-image {
@@ -1591,11 +1574,6 @@ header {
   .load-more-btn {
     max-width: 300px;
     margin: 0 auto;
-  }
-
-  .stats-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 20px;
   }
 
   .road-status-grid {

@@ -1985,89 +1985,6 @@ function initializeFAQ() {
 }
 
 // ========================================
-// HOME PAGE - LIVE STATS
-// ========================================
-function updateLiveStats() {
-  console.log('🔄 Initializing live stats...');
-
-  // ✅ 1. People online now = všichni přihlášení uživatelé (všichni v liveLocations)
-  db.collection('liveLocations')
-    .onSnapshot(snapshot => {
-      const onlineCount = snapshot.size;
-      const el = document.getElementById('onlineUsers');
-      if (el) {
-        el.textContent = onlineCount;
-        console.log('👥 People online now:', onlineCount);
-      }
-    }, err => {
-      console.error('❌ Error counting online users:', err);
-      const el = document.getElementById('onlineUsers');
-      if (el) el.textContent = '0';
-    });
-
-  // ✅ 2. Sharing location = pouze ti s isLive = true
-  db.collection('liveLocations')
-    .where('isLive', '==', true)
-    .onSnapshot(snapshot => {
-      const sharingCount = snapshot.size;
-      const el = document.getElementById('sharingLocation');
-      if (el) {
-        el.textContent = sharingCount;
-        console.log('🚗 Sharing location:', sharingCount);
-      }
-    }, err => {
-      console.error('❌ Error counting sharing location:', err);
-      const el = document.getElementById('sharingLocation');
-      if (el) el.textContent = '0';
-    });
-
-  // ✅ 3. Messages today - počítáme ze všech chat skupin
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const todayTimestamp = firebase.firestore.Timestamp.fromDate(todayStart);
-
-  const chatGroups = ['general', 'river', 'froads', 'weather', 'campsites', 'cars', 'alerts', 'photos', 'help', 'community'];
-
-  // Funkce pro přepočítání celkového počtu zpráv
-  async function updateMessageCount() {
-    try {
-      const promises = chatGroups.map(group =>
-        db.collection(`messages_${group}`)
-          .where('createdAt', '>', todayTimestamp)
-          .get()
-      );
-
-      const results = await Promise.all(promises);
-      const total = results.reduce((sum, snap) => sum + snap.size, 0);
-
-      const el = document.getElementById('messagesToday');
-      if (el) {
-        el.textContent = total;
-        console.log('💬 Messages today:', total);
-      }
-    } catch (err) {
-      console.error('❌ Error counting messages:', err);
-      const el = document.getElementById('messagesToday');
-      if (el) el.textContent = '0';
-    }
-  }
-
-  // První načtení
-  updateMessageCount();
-
-  // Listener na každé skupině (při změně přepočítáme vše)
-  chatGroups.forEach(group => {
-    db.collection(`messages_${group}`)
-      .where('createdAt', '>', todayTimestamp)
-      .onSnapshot(() => {
-        updateMessageCount();
-      }, err => {
-        console.error(`❌ Error listening to messages_${group}:`, err);
-      });
-  });
-}
-
-// ========================================
 // HOME PAGE - ROAD STATUS SUMMARY
 // ========================================
 function updateRoadStatus() {
@@ -2110,12 +2027,9 @@ function updateRoadStatus() {
   }, 2000);
 }
 
-// ✅ Initialize real-time stats when user logs in
+// ✅ Initialize road status when user logs in
 auth.onAuthStateChanged(user => {
   if (user) {
-    // ✅ Start real-time listeners (only called once - they auto-update)
-    updateLiveStats();
-
     // ✅ Road status updates less frequently (every 5 minutes)
     updateRoadStatus();
     setInterval(() => {
