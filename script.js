@@ -1806,6 +1806,8 @@ if (tab !== "chat" && chatHeader) {
     // Initialize FAQ when home tab is shown
     if (tab === "home") {
       setTimeout(() => initializeFAQ(), 50);
+      // ✅ Update road status when switching to home tab
+      setTimeout(() => updateRoadStatus(), 100);
     }
 
     // Explore map runs in iframe - no initialization needed here
@@ -1987,51 +1989,69 @@ function initializeFAQ() {
 // ========================================
 // HOME PAGE - ROAD STATUS SUMMARY
 // ========================================
+
+// ✅ Global flag to track if message listener is already set up
+let roadStatusListenerInitialized = false;
+
 function updateRoadStatus() {
   console.log('🗺️ Updating road status...');
 
-  // ✅ Request road status data from explore.html iframe
   const iframe = document.getElementById('froadsMap');
-  if (iframe && iframe.contentWindow) {
-    // Send request to iframe
-    iframe.contentWindow.postMessage({ type: 'GET_ROAD_STATUS' }, '*');
+  if (!iframe) {
+    console.warn('⚠️ Iframe froadsMap not found');
+    return;
   }
 
-  // ✅ Listen for response from iframe
-  window.addEventListener('message', function handleRoadStatus(event) {
-    if (event.data && event.data.type === 'ROAD_STATUS_RESPONSE') {
-      const { open, closed, unknown } = event.data;
+  // ✅ Set up message listener only once
+  if (!roadStatusListenerInitialized) {
+    window.addEventListener('message', function handleRoadStatus(event) {
+      if (event.data && event.data.type === 'ROAD_STATUS_RESPONSE') {
+        const { open, closed, unknown } = event.data;
 
-      const openEl = document.getElementById('roadsOpen');
-      const closedEl = document.getElementById('roadsClosed');
-      const unknownEl = document.getElementById('roadsUnknown');
+        const openEl = document.getElementById('roadsOpen');
+        const closedEl = document.getElementById('roadsClosed');
+        const unknownEl = document.getElementById('roadsUnknown');
 
-      if (openEl) openEl.textContent = open || 0;
-      if (closedEl) closedEl.textContent = closed || 0;
-      if (unknownEl) unknownEl.textContent = unknown || 0;
+        if (openEl) openEl.textContent = open || 0;
+        if (closedEl) closedEl.textContent = closed || 0;
+        if (unknownEl) unknownEl.textContent = unknown || 0;
 
-      console.log(`🗺️ Road status: ${open} open, ${closed} closed, ${unknown} unknown`);
-    }
-  });
+        console.log(`✅ Road status updated: ${open} open, ${closed} closed, ${unknown} unknown`);
+      }
+    });
+    roadStatusListenerInitialized = true;
+  }
 
-  // ✅ Fallback: Pokud iframe neodpoví do 2 sekund, použij výchozí hodnoty
-  setTimeout(() => {
-    const openEl = document.getElementById('roadsOpen');
-    const closedEl = document.getElementById('roadsClosed');
-    const unknownEl = document.getElementById('roadsUnknown');
-
-    // Pokud stále ukazují --, nastav výchozí hodnoty
-    if (openEl && openEl.textContent === '--') openEl.textContent = '0';
-    if (closedEl && closedEl.textContent === '--') closedEl.textContent = '0';
-    if (unknownEl && unknownEl.textContent === '--') unknownEl.textContent = '0';
-  }, 2000);
+  // ✅ Request road status data from explore.html iframe
+  if (iframe.contentWindow) {
+    iframe.contentWindow.postMessage({ type: 'GET_ROAD_STATUS' }, '*');
+    console.log('📤 Road status request sent to iframe');
+  }
 }
 
 // ✅ Initialize road status when user logs in
 auth.onAuthStateChanged(user => {
   if (user) {
-    // ✅ Road status updates less frequently (every 5 minutes)
-    updateRoadStatus();
+    // ✅ Set up iframe load listener
+    const froadsIframe = document.getElementById('froadsMap');
+    if (froadsIframe) {
+      // If iframe is already loaded, update immediately
+      if (froadsIframe.contentDocument && froadsIframe.contentDocument.readyState === 'complete') {
+        console.log('✅ Froads iframe already loaded');
+        setTimeout(() => updateRoadStatus(), 1000);
+      } else {
+        // Otherwise wait for load event
+        froadsIframe.addEventListener('load', function() {
+          console.log('✅ Froads iframe loaded');
+          setTimeout(() => updateRoadStatus(), 1000);
+        }, { once: true });
+      }
+    }
+
+    // Also try to update after a delay (backup)
+    setTimeout(() => updateRoadStatus(), 3000);
+
+    // ✅ Road status updates every 5 minutes
     setInterval(() => {
       if (document.getElementById('homeSection').style.display !== 'none') {
         updateRoadStatus();
