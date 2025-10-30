@@ -1363,12 +1363,7 @@ header {
   transition: transform 0.3s ease, box-shadow 0.3s ease, opacity 0.3s ease;
   border-radius: 12px;
   overflow: hidden;
-  flex: 0 0 calc((100% - 60px) / 3.5); /* 3.5 cards visible */
-  min-width: calc((100% - 60px) / 3.5);
-}
-
-.journal-card:nth-child(4) {
-  opacity: 0.5; /* 4th card with opacity */
+  min-width: 280px;
 }
 
 .journal-card:hover {
@@ -1407,25 +1402,6 @@ header {
   margin: 0;
 }
 
-.load-more-btn {
-  display: block;
-  width: 100%;
-  padding: 14px;
-  background: var(--fg);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-family: 'Poppins', sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: opacity 0.2s ease;
-}
-
-.load-more-btn:hover {
-  opacity: 0.9;
-}
-
 /* === ROAD STATUS === */
 .road-status-section {
   margin-top: 40px;
@@ -1454,7 +1430,7 @@ header {
 
 .status-card.status-caution {
   border-color: #9ca3af;
-  background: #9ca3af;
+  background: #f9fafb;
 }
 
 .status-card.status-closed {
