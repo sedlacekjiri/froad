@@ -1109,12 +1109,12 @@ header {
 .chat-groups {
   position: absolute;
   top: 60px;
-  bottom: calc(var(--footer-btn-height) + 10px);
+  bottom: var(--footer-btn-height);
   left: 0;
   right: 0;
   display: none;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   background: var(--bg);
   overflow-y: auto;
   z-index: 1;
@@ -1170,12 +1170,12 @@ header {
 
 .chat-groups h3 {
   width: 100%;
+  max-width: 600px;
+  margin: 0 auto 24px auto;
   text-align: left;
   font-size: 24px;
   font-weight: 600;
   color: var(--fg);
-  margin-top: 0;
-  margin-bottom: 24px;
 }
 
 
@@ -1584,6 +1584,7 @@ header {
 
   .chat-groups h3 {
     font-size: 32px;
+    max-width: 1380px;
     margin-bottom: 32px;
   }
 }
