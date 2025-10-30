@@ -1,5 +1,5 @@
     :root {
-  --bg: #fff;
+  --bg: #F7F7F7;
   --fg: #0b0b0b;
   --ring: #e5e7eb;
   --card: #ffffff;
@@ -1306,13 +1306,12 @@ header {
   font-size: 16px;
 }
 
-/* Desktop: wider layout, left-aligned */
+/* Desktop: wider layout, full width with spacing */
 @media (min-width: 768px) {
   .home-content {
-    max-width: 1200px;
-    padding: 60px 80px;
-    margin: 0; /* Remove centering */
-    margin-left: 40px; /* Align more to the left */
+    max-width: 100%;
+    padding: 60px 120px;
+    margin: 0 auto;
   }
 
   #homeWelcome {
@@ -1588,6 +1587,11 @@ header {
 
   .journal-title {
     font-size: 20px;
+  }
+
+  .load-more-btn {
+    max-width: 300px;
+    margin: 0 auto;
   }
 
   .stats-grid {

@@ -293,6 +293,11 @@ if (mapContainerEl) mapContainerEl.style.display = "none";
 if (chatDivEl) chatDivEl.style.display = "none";
 if (formElEl) formElEl.style.display = "none";
 
+// Initialize FAQ on home page load
+if (homeSectionEl) {
+  setTimeout(() => initializeFAQ(), 100);
+}
+
 // ✅ Skryj Share Location tlačítko při načtení (jen People ho má mít)
 const shareBtn = document.getElementById('shareLocationBtn');
 if (shareBtn) {
@@ -1792,6 +1797,11 @@ if (tab !== "chat" && chatHeader) {
     document.getElementById('chat').style.display = (tab === "chat") ? "flex" : "none";
     document.getElementById('form').style.display = (tab === "chat") ? "flex" : "none";
 
+    // Initialize FAQ when home tab is shown
+    if (tab === "home") {
+      initializeFAQ();
+    }
+
     // Explore map runs in iframe - no initialization needed here
 
     // ✅ Oprava Leaflet mapy po přepnutí na "People"
@@ -1938,22 +1948,33 @@ backBtn.addEventListener("click", () => {
 // ========================================
 // HOME PAGE - FAQ ACCORDION
 // ========================================
-document.querySelectorAll('.faq-question').forEach(button => {
-  button.addEventListener('click', () => {
-    const faqItem = button.parentElement;
-    const wasActive = faqItem.classList.contains('active');
+let faqInitialized = false;
 
-    // Close all other FAQs
-    document.querySelectorAll('.faq-item').forEach(item => {
-      item.classList.remove('active');
+function initializeFAQ() {
+  if (faqInitialized) return;
+
+  const faqButtons = document.querySelectorAll('.faq-question');
+  if (faqButtons.length === 0) return; // Elements not ready yet
+
+  faqButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const faqItem = button.parentElement;
+      const wasActive = faqItem.classList.contains('active');
+
+      // Close all other FAQs
+      document.querySelectorAll('.faq-item').forEach(item => {
+        item.classList.remove('active');
+      });
+
+      // Toggle current FAQ
+      if (!wasActive) {
+        faqItem.classList.add('active');
+      }
     });
-
-    // Toggle current FAQ
-    if (!wasActive) {
-      faqItem.classList.add('active');
-    }
   });
-});
+
+  faqInitialized = true;
+}
 
 // ========================================
 // HOME PAGE - LIVE STATS
