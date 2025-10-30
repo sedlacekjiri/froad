@@ -381,7 +381,7 @@ header {
   display: none;
   flex-direction: column;
   gap: 14px;
-  background: var(--bg);
+  background: #ffffff;
   z-index: 1;
 }
 
@@ -1113,13 +1113,22 @@ header {
   left: 0;
   right: 0;
   display: none;
-  flex-wrap: wrap; /* 🔥 zachová dva sloupce */
-  gap: 14px;
-  justify-content: center;
-  padding: 24px 16px;
-  background: #ffffff;
+  flex-direction: column;
+  align-items: center;
+  background: var(--bg);
   overflow-y: auto;
   z-index: 1;
+  padding: 40px 20px;
+}
+
+.chat-groups-container {
+  width: 100%;
+  max-width: 600px;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  justify-content: center;
 }
 
 .chat-group {
@@ -1161,13 +1170,12 @@ header {
 
 .chat-groups h3 {
   width: 100%;
-  text-align: center;
-  font-size: 20px;
-  font-weight: 700;
-  color: #111;
-  margin-bottom: 28px;
-  margin-top: 4px;
-  letter-spacing: 0.3px;
+  text-align: left;
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--fg);
+  margin-top: 0;
+  margin-bottom: 24px;
 }
 
 
@@ -1564,6 +1572,19 @@ header {
 
   .status-value {
     margin-right: 0;
+  }
+
+  .chat-groups {
+    padding: 60px 120px;
+  }
+
+  .chat-groups-container {
+    max-width: 1380px;
+  }
+
+  .chat-groups h3 {
+    font-size: 32px;
+    margin-bottom: 32px;
   }
 }
 
