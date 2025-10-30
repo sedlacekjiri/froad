@@ -1309,7 +1309,7 @@ header {
 /* Desktop: wider layout, full width with spacing */
 @media (min-width: 768px) {
   .home-content {
-    max-width: 100%;
+    max-width: 1380px;
     padding: 60px 120px;
     margin: 0 auto;
   }
