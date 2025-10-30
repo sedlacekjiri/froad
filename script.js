@@ -293,6 +293,11 @@ if (mapContainerEl) mapContainerEl.style.display = "none";
 if (chatDivEl) chatDivEl.style.display = "none";
 if (formElEl) formElEl.style.display = "none";
 
+// Initialize FAQ on home page load
+if (homeSectionEl) {
+  setTimeout(() => initializeFAQ(), 100);
+}
+
 // ✅ Skryj Share Location tlačítko při načtení (jen People ho má mít)
 const shareBtn = document.getElementById('shareLocationBtn');
 if (shareBtn) {
@@ -1792,6 +1797,11 @@ if (tab !== "chat" && chatHeader) {
     document.getElementById('chat').style.display = (tab === "chat") ? "flex" : "none";
     document.getElementById('form').style.display = (tab === "chat") ? "flex" : "none";
 
+    // Initialize FAQ when home tab is shown
+    if (tab === "home") {
+      initializeFAQ();
+    }
+
     // Explore map runs in iframe - no initialization needed here
 
     // ✅ Oprava Leaflet mapy po přepnutí na "People"
@@ -1933,6 +1943,116 @@ backBtn.addEventListener("click", () => {
   formEl.style.display = "none";
   chatGroups.style.display = "flex";
   chatHeader.style.display = "none"; // skryj header
+});
+
+// ========================================
+// HOME PAGE - FAQ ACCORDION
+// ========================================
+let faqInitialized = false;
+
+function initializeFAQ() {
+  if (faqInitialized) return;
+
+  const faqButtons = document.querySelectorAll('.faq-question');
+  if (faqButtons.length === 0) return; // Elements not ready yet
+
+  faqButtons.forEach(button => {
+    button.addEventListener('click', () => {
+      const faqItem = button.parentElement;
+      const wasActive = faqItem.classList.contains('active');
+
+      // Close all other FAQs
+      document.querySelectorAll('.faq-item').forEach(item => {
+        item.classList.remove('active');
+      });
+
+      // Toggle current FAQ
+      if (!wasActive) {
+        faqItem.classList.add('active');
+      }
+    });
+  });
+
+  faqInitialized = true;
+}
+
+// ========================================
+// HOME PAGE - LIVE STATS
+// ========================================
+function updateLiveStats() {
+  // Count online users (users who updated location in last 5 minutes)
+  const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+
+  db.collection('users')
+    .where('lastSeen', '>', fiveMinutesAgo)
+    .get()
+    .then(snapshot => {
+      const onlineCount = snapshot.size;
+      document.getElementById('onlineUsers').textContent = onlineCount;
+    })
+    .catch(() => {
+      document.getElementById('onlineUsers').textContent = '0';
+    });
+
+  // Count users sharing location (visible = true)
+  db.collection('users')
+    .where('visible', '==', true)
+    .get()
+    .then(snapshot => {
+      const sharingCount = snapshot.size;
+      document.getElementById('sharingLocation').textContent = sharingCount;
+    })
+    .catch(() => {
+      document.getElementById('sharingLocation').textContent = '0';
+    });
+
+  // Count messages today
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  db.collection('messages')
+    .where('timestamp', '>', todayStart)
+    .get()
+    .then(snapshot => {
+      const messageCount = snapshot.size;
+      document.getElementById('messagesToday').textContent = messageCount;
+    })
+    .catch(() => {
+      document.getElementById('messagesToday').textContent = '0';
+    });
+}
+
+// ========================================
+// HOME PAGE - ROAD STATUS SUMMARY
+// ========================================
+function updateRoadStatus() {
+  // Provizorní data - později můžeš připojit na skutečná data
+  // Pro teď simuluji náhodná čísla
+  const totalRoads = 59;
+  const openRoads = Math.floor(Math.random() * 30) + 20; // 20-50
+  const closedRoads = Math.floor(Math.random() * 15) + 5; // 5-20
+  const unknownRoads = totalRoads - openRoads - closedRoads;
+
+  document.getElementById('roadsOpen').textContent = openRoads;
+  document.getElementById('roadsClosed').textContent = closedRoads;
+  document.getElementById('roadsUnknown').textContent = unknownRoads;
+}
+
+// Update stats when home page is visible
+auth.onAuthStateChanged(user => {
+  if (user) {
+    // Update stats immediately
+    updateLiveStats();
+    updateRoadStatus();
+
+    // Update stats every 30 seconds
+    setInterval(() => {
+      if (document.getElementById('homeSection').style.display !== 'none') {
+        updateLiveStats();
+        updateRoadStatus();
+      }
+    }, 30000);
+  }
 });
 
 
