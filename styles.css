@@ -1555,7 +1555,7 @@ header {
 }
 
 .chat-groups .subtitle {
-  font-size: 18px;
+  font-size: 16px;
   color: #666;
   margin-bottom: 40px;
   line-height: 1.6;
@@ -1629,6 +1629,8 @@ header {
  
 }
 
-
+.chat-groups .subtitle {
+  font-size: 18px;
+}
 }
 
