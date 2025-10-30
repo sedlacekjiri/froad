@@ -1797,9 +1797,15 @@ if (tab !== "chat" && chatHeader) {
     document.getElementById('chat').style.display = (tab === "chat") ? "flex" : "none";
     document.getElementById('form').style.display = (tab === "chat") ? "flex" : "none";
 
+    // Ensure chat groups is hidden when not on chat tab
+    const chatGroups = document.getElementById('chatGroups');
+    if (chatGroups && tab !== "chat") {
+      chatGroups.style.display = "none";
+    }
+
     // Initialize FAQ when home tab is shown
     if (tab === "home") {
-      initializeFAQ();
+      setTimeout(() => initializeFAQ(), 50);
     }
 
     // Explore map runs in iframe - no initialization needed here
@@ -1948,16 +1954,20 @@ backBtn.addEventListener("click", () => {
 // ========================================
 // HOME PAGE - FAQ ACCORDION
 // ========================================
-let faqInitialized = false;
-
 function initializeFAQ() {
-  if (faqInitialized) return;
-
   const faqButtons = document.querySelectorAll('.faq-question');
   if (faqButtons.length === 0) return; // Elements not ready yet
 
   faqButtons.forEach(button => {
-    button.addEventListener('click', () => {
+    // Check if already initialized
+    if (button.hasAttribute('data-faq-initialized')) return;
+
+    button.setAttribute('data-faq-initialized', 'true');
+
+    button.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
       const faqItem = button.parentElement;
       const wasActive = faqItem.classList.contains('active');
 
@@ -1972,8 +1982,6 @@ function initializeFAQ() {
       }
     });
   });
-
-  faqInitialized = true;
 }
 
 // ========================================
