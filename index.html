@@ -201,26 +201,22 @@
     </div>
   </div>
 
-  <!-- Explore Map Iframe - always loaded but hidden when not in use -->
-  <iframe
-    id="froadsMap"
-    src="https://sedlacekjiri.github.io/froad/explore.html"
-    title="F-roads Map"
-    style="
-      position:absolute;
-      top:0; left:0;
-      width:100%; height:100%;
-      border:none;
-      overflow:hidden;
-      touch-action:none;
-      display:none;
-    "
-    allow="geolocation"
-    scrolling="no">
-  </iframe>
-
   <div id="exploreMap" style="display:none;">
-    <!-- Iframe moved outside to ensure it loads properly -->
+    <iframe
+      id="froadsMap"
+      src="https://sedlacekjiri.github.io/froad/explore.html"
+      title="F-roads Map"
+      style="
+        position:absolute;
+        top:0; left:0;
+        width:100%; height:100%;
+        border:none;
+        overflow:hidden;
+        touch-action:none;
+      "
+      allow="geolocation"
+      scrolling="no">
+    </iframe>
   </div>
   
 <div id="chatHeader" class="chat-header" style="display:none;">

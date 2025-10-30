@@ -293,10 +293,6 @@ if (mapContainerEl) mapContainerEl.style.display = "none";
 if (chatDivEl) chatDivEl.style.display = "none";
 if (formElEl) formElEl.style.display = "none";
 
-// ✅ Keep iframe loaded but hidden initially
-const froadsIframeInitial = document.getElementById('froadsMap');
-if (froadsIframeInitial) froadsIframeInitial.style.display = "none";
-
 // Initialize FAQ on home page load
 if (homeSectionEl) {
   setTimeout(() => initializeFAQ(), 100);
@@ -533,7 +529,6 @@ setInterval(loadGroupAvatars, 20000);
   document.getElementById("chat").style.display = "none";
   document.getElementById("form").style.display = "none";
   document.getElementById("exploreMap").style.display = "none";
-  document.getElementById("froadsMap").style.display = "none";
   document.getElementById("mapContainer").style.display = "none";
   document.getElementById("chatHeader").style.display = "none";
   document.getElementById("chatGroups").style.display = "none";
@@ -1802,12 +1797,6 @@ if (tab !== "chat" && chatHeader) {
     document.getElementById('chat').style.display = (tab === "chat") ? "flex" : "none";
     document.getElementById('form').style.display = (tab === "chat") ? "flex" : "none";
 
-    // ✅ Control iframe visibility (iframe is always loaded, just shown/hidden)
-    const froadsIframeEl = document.getElementById('froadsMap');
-    if (froadsIframeEl) {
-      froadsIframeEl.style.display = (tab === "explore") ? "block" : "none";
-    }
-
     // Ensure chat groups is hidden when not on chat tab
     const chatGroups = document.getElementById('chatGroups');
     if (chatGroups && tab !== "chat") {
@@ -2001,23 +1990,15 @@ function initializeFAQ() {
 // HOME PAGE - ROAD STATUS SUMMARY
 // ========================================
 
-// ✅ Global flag to track if message listener is already set up
 let roadStatusListenerInitialized = false;
+let iframeLoadAttempted = false;
 
 function updateRoadStatus() {
   console.log('🗺️ Updating road status...');
 
-  const iframe = document.getElementById('froadsMap');
-  if (!iframe) {
-    console.warn('⚠️ Iframe froadsMap not found');
-    return;
-  }
-
   // ✅ Set up message listener only once
   if (!roadStatusListenerInitialized) {
-    window.addEventListener('message', function handleRoadStatus(event) {
-      console.log('📨 Message received:', event.data);
-
+    window.addEventListener('message', function(event) {
       if (event.data && event.data.type === 'ROAD_STATUS_RESPONSE') {
         const { open, closed, unknown } = event.data;
 
@@ -2029,54 +2010,69 @@ function updateRoadStatus() {
         if (closedEl) closedEl.textContent = closed || 0;
         if (unknownEl) unknownEl.textContent = unknown || 0;
 
-        console.log(`✅ Road status updated: ${open} open, ${closed} closed, ${unknown} unknown`);
+        console.log(`✅ Road status: ${open} open, ${closed} closed, ${unknown} unknown`);
       }
     });
     roadStatusListenerInitialized = true;
-    console.log('✅ Road status listener initialized');
   }
 
-  // ✅ Request road status data from explore.html iframe
-  if (iframe.contentWindow) {
+  // ✅ Load iframe temporarily to get data
+  const exploreMapDiv = document.getElementById('exploreMap');
+  const iframe = document.getElementById('froadsMap');
+
+  if (!iframe || !exploreMapDiv) {
+    console.warn('⚠️ Iframe or container not found');
+    return;
+  }
+
+  // Temporarily show iframe with visibility hidden (loads but not visible)
+  const wasHidden = exploreMapDiv.style.display === 'none';
+  if (wasHidden) {
+    exploreMapDiv.style.visibility = 'hidden';
+    exploreMapDiv.style.display = 'block';
+  }
+
+  // Wait for iframe to load and request data
+  function requestData() {
     try {
       iframe.contentWindow.postMessage({ type: 'GET_ROAD_STATUS' }, '*');
-      console.log('📤 Road status request sent to iframe');
+      console.log('📤 Road status request sent');
     } catch (err) {
-      console.error('❌ Error sending message to iframe:', err);
+      console.error('❌ Error:', err);
     }
+
+    // Hide iframe again after request
+    if (wasHidden) {
+      setTimeout(() => {
+        exploreMapDiv.style.display = 'none';
+        exploreMapDiv.style.visibility = 'visible';
+      }, 100);
+    }
+  }
+
+  if (!iframeLoadAttempted) {
+    iframe.addEventListener('load', function() {
+      console.log('✅ Iframe loaded');
+      setTimeout(requestData, 500);
+    }, { once: true });
+    iframeLoadAttempted = true;
   } else {
-    console.warn('⚠️ Iframe contentWindow not available');
+    requestData();
   }
 }
 
-// ✅ Initialize road status when user logs in
+// ✅ Initialize when user logs in
 auth.onAuthStateChanged(user => {
   if (user) {
-    // ✅ Set up iframe load listener
-    const froadsIframe = document.getElementById('froadsMap');
-    if (froadsIframe) {
-      // If iframe is already loaded, update immediately
-      if (froadsIframe.contentDocument && froadsIframe.contentDocument.readyState === 'complete') {
-        console.log('✅ Froads iframe already loaded');
-        setTimeout(() => updateRoadStatus(), 1000);
-      } else {
-        // Otherwise wait for load event
-        froadsIframe.addEventListener('load', function() {
-          console.log('✅ Froads iframe loaded');
-          setTimeout(() => updateRoadStatus(), 1000);
-        }, { once: true });
-      }
-    }
+    // Try after 2 seconds
+    setTimeout(() => updateRoadStatus(), 2000);
 
-    // Also try to update after a delay (backup)
-    setTimeout(() => updateRoadStatus(), 3000);
-
-    // ✅ Road status updates every 5 minutes
+    // Update every 5 minutes
     setInterval(() => {
       if (document.getElementById('homeSection').style.display !== 'none') {
         updateRoadStatus();
       }
-    }, 5 * 60 * 1000); // 5 minutes
+    }, 5 * 60 * 1000);
   }
 });
 
