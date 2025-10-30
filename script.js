@@ -1985,137 +1985,51 @@ function initializeFAQ() {
 }
 
 // ========================================
-// HOME PAGE - LIVE STATS
-// ========================================
-function updateLiveStats() {
-  // ✅ Real-time count of People online now (isLive = true)
-  db.collection('liveLocations')
-    .where('isLive', '==', true)
-    .onSnapshot(snapshot => {
-      const onlineCount = snapshot.size;
-      document.getElementById('onlineUsers').textContent = onlineCount;
-    }, err => {
-      console.error('Error counting online users:', err);
-      document.getElementById('onlineUsers').textContent = '0';
-    });
-
-  // ✅ Real-time count of users Sharing location (active locations with coordinates)
-  db.collection('liveLocations')
-    .onSnapshot(snapshot => {
-      let sharingCount = 0;
-      snapshot.forEach(doc => {
-        const data = doc.data();
-        // Count only users with valid coordinates and not hidden
-        if (data.lat && data.lng && !data.hidden) {
-          sharingCount++;
-        }
-      });
-      document.getElementById('sharingLocation').textContent = sharingCount;
-    }, err => {
-      console.error('Error counting sharing location:', err);
-      document.getElementById('sharingLocation').textContent = '0';
-    });
-
-  // ✅ Real-time count of Messages today from ALL chat groups
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const todayTimestamp = firebase.firestore.Timestamp.fromDate(todayStart);
-
-  const chatGroups = ['general', 'river', 'froads', 'weather', 'campsites', 'cars', 'alerts', 'photos', 'help', 'community'];
-  let totalMessages = 0;
-
-  chatGroups.forEach(group => {
-    db.collection(`messages_${group}`)
-      .where('createdAt', '>', todayTimestamp)
-      .onSnapshot(snapshot => {
-        // Recalculate total from all groups
-        Promise.all(
-          chatGroups.map(g =>
-            db.collection(`messages_${g}`)
-              .where('createdAt', '>', todayTimestamp)
-              .get()
-          )
-        ).then(results => {
-          const total = results.reduce((sum, snap) => sum + snap.size, 0);
-          document.getElementById('messagesToday').textContent = total;
-        }).catch(err => {
-          console.error('Error counting messages:', err);
-        });
-      }, err => {
-        console.error(`Error listening to messages_${group}:`, err);
-      });
-  });
-}
-
-// ========================================
 // HOME PAGE - ROAD STATUS SUMMARY
 // ========================================
 function updateRoadStatus() {
-  // ✅ Seasonal road status estimation (Iceland F-roads typically open June-September)
-  const now = new Date();
-  const month = now.getMonth(); // 0 = Jan, 5 = Jun, 8 = Sep
-  const totalRoads = 59;
+  console.log('🗺️ Updating road status...');
 
-  let openRoads, closedRoads, unknownRoads;
-
-  // Summer season (June-August): Most roads open
-  if (month >= 5 && month <= 7) {
-    openRoads = 52;
-    unknownRoads = 5;
-    closedRoads = 2;
-  }
-  // Spring transition (April-May): Roads opening
-  else if (month >= 3 && month < 5) {
-    openRoads = 15;
-    unknownRoads = 30;
-    closedRoads = 14;
-  }
-  // Fall transition (September-October): Roads closing
-  else if (month >= 8 && month < 10) {
-    openRoads = 25;
-    unknownRoads = 20;
-    closedRoads = 14;
-  }
-  // Winter (November-March): Most roads closed
-  else {
-    openRoads = 0;
-    unknownRoads = 3;
-    closedRoads = 56;
+  // ✅ Request road status data from explore.html iframe
+  const iframe = document.getElementById('froadsMap');
+  if (iframe && iframe.contentWindow) {
+    // Send request to iframe
+    iframe.contentWindow.postMessage({ type: 'GET_ROAD_STATUS' }, '*');
   }
 
-  document.getElementById('roadsOpen').textContent = openRoads;
-  document.getElementById('roadsClosed').textContent = closedRoads;
-  document.getElementById('roadsUnknown').textContent = unknownRoads;
+  // ✅ Listen for response from iframe
+  window.addEventListener('message', function handleRoadStatus(event) {
+    if (event.data && event.data.type === 'ROAD_STATUS_RESPONSE') {
+      const { open, closed, unknown } = event.data;
 
-  // ✅ Optional: Try to fetch real road data from Firebase (if collection exists)
-  // This allows future integration with real road status data
-  db.collection('roadStatus').get()
-    .then(snapshot => {
-      if (snapshot.size > 0) {
-        let open = 0, closed = 0, unknown = 0;
-        snapshot.forEach(doc => {
-          const status = doc.data().status;
-          if (status === 'open') open++;
-          else if (status === 'closed') closed++;
-          else unknown++;
-        });
-        document.getElementById('roadsOpen').textContent = open;
-        document.getElementById('roadsClosed').textContent = closed;
-        document.getElementById('roadsUnknown').textContent = unknown;
-      }
-    })
-    .catch(err => {
-      // If roadStatus collection doesn't exist, keep seasonal estimates
-      console.log('Using seasonal road status estimates');
-    });
+      const openEl = document.getElementById('roadsOpen');
+      const closedEl = document.getElementById('roadsClosed');
+      const unknownEl = document.getElementById('roadsUnknown');
+
+      if (openEl) openEl.textContent = open || 0;
+      if (closedEl) closedEl.textContent = closed || 0;
+      if (unknownEl) unknownEl.textContent = unknown || 0;
+
+      console.log(`🗺️ Road status: ${open} open, ${closed} closed, ${unknown} unknown`);
+    }
+  });
+
+  // ✅ Fallback: Pokud iframe neodpoví do 2 sekund, použij výchozí hodnoty
+  setTimeout(() => {
+    const openEl = document.getElementById('roadsOpen');
+    const closedEl = document.getElementById('roadsClosed');
+    const unknownEl = document.getElementById('roadsUnknown');
+
+    // Pokud stále ukazují --, nastav výchozí hodnoty
+    if (openEl && openEl.textContent === '--') openEl.textContent = '0';
+    if (closedEl && closedEl.textContent === '--') closedEl.textContent = '0';
+    if (unknownEl && unknownEl.textContent === '--') unknownEl.textContent = '0';
+  }, 2000);
 }
 
-// ✅ Initialize real-time stats when user logs in
+// ✅ Initialize road status when user logs in
 auth.onAuthStateChanged(user => {
   if (user) {
-    // ✅ Start real-time listeners (only called once - they auto-update)
-    updateLiveStats();
-
     // ✅ Road status updates less frequently (every 5 minutes)
     updateRoadStatus();
     setInterval(() => {

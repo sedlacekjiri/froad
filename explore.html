@@ -3726,6 +3726,35 @@ document.getElementById('ratingSubmit').addEventListener('click', async () => {
   });
 })();
 
+// ✅ PostMessage listener for road status communication with parent window
+window.addEventListener('message', function(event) {
+  if (event.data && event.data.type === 'GET_ROAD_STATUS') {
+    // Count roads by isOpen status
+    let open = 0, closed = 0, unknown = 0;
+
+    roadLayers.forEach(layer => {
+      const road = layer.data;
+      if (road.isOpen === true) {
+        open++;
+      } else if (road.isOpen === false) {
+        closed++;
+      } else if (road.isOpen === 'unknown' || road.isOpen === undefined) {
+        unknown++;
+      }
+    });
+
+    // Send response back to parent window
+    event.source.postMessage({
+      type: 'ROAD_STATUS_RESPONSE',
+      open: open,
+      closed: closed,
+      unknown: unknown
+    }, '*');
+
+    console.log(`📊 Road status sent: ${open} open, ${closed} closed, ${unknown} unknown`);
+  }
+});
+
 </script>
 
 
