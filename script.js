@@ -368,7 +368,7 @@ if (userData.photoURL && user.photoURL !== userData.photoURL) {
 const homeWelcome = document.getElementById('homeWelcome');
 if (homeWelcome && userData.displayName) {
   const firstName = userData.displayName.split(' ')[0];
-  homeWelcome.textContent = `Welcome, ${firstName}`;
+  homeWelcome.textContent = `Welcome, ${firstName} 👋`;
 }
 
   // ✅ Zobraz vehicle photo nebo placeholder v profile editoru
