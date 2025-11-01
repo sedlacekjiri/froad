@@ -295,7 +295,10 @@ if (formElEl) formElEl.style.display = "none";
 
 // Initialize FAQ on home page load
 if (homeSectionEl) {
-  setTimeout(() => initializeFAQ(), 100);
+  setTimeout(() => {
+    initializeFAQ();
+    initJournalSlider();
+  }, 100);
 }
 
 // ✅ Skryj Share Location tlačítko při načtení (jen People ho má mít)
@@ -1805,7 +1808,10 @@ if (tab !== "chat" && chatHeader) {
 
     // Initialize FAQ when home tab is shown
     if (tab === "home") {
-      setTimeout(() => initializeFAQ(), 50);
+      setTimeout(() => {
+        initializeFAQ();
+        initJournalSlider();
+      }, 50);
       // ✅ Update road status when switching to home tab
       setTimeout(() => updateRoadStatus(), 100);
     }
@@ -2060,5 +2066,75 @@ auth.onAuthStateChanged(user => {
   }
 });
 
+// ========================================
+// HOME PAGE - JOURNAL SLIDER NAVIGATION
+// ========================================
+function initJournalSlider() {
+  const journalGrid = document.getElementById('journalGrid');
+  const prevBtn = document.getElementById('journalPrev');
+  const nextBtn = document.getElementById('journalNext');
 
+  if (!journalGrid || !prevBtn || !nextBtn) {
+    console.warn('⚠️ Journal slider elements not found');
+    return;
+  }
 
+  // Check if already initialized
+  if (prevBtn.hasAttribute('data-slider-initialized')) {
+    console.log('✅ Journal slider already initialized');
+    return;
+  }
+
+  console.log('🎯 Initializing journal slider...');
+
+  // Mark as initialized
+  prevBtn.setAttribute('data-slider-initialized', 'true');
+  nextBtn.setAttribute('data-slider-initialized', 'true');
+
+  // Update button disabled states based on scroll position
+  function updateButtonStates() {
+    const isAtStart = journalGrid.scrollLeft <= 0;
+    const isAtEnd = journalGrid.scrollLeft + journalGrid.clientWidth >= journalGrid.scrollWidth - 1;
+
+    prevBtn.disabled = isAtStart;
+    nextBtn.disabled = isAtEnd;
+
+    console.log(`Scroll position: ${journalGrid.scrollLeft}, isAtStart: ${isAtStart}, isAtEnd: ${isAtEnd}`);
+  }
+
+  // Scroll one card width at a time
+  function scrollSlider(direction) {
+    const cardWidth = journalGrid.querySelector('.journal-card').offsetWidth;
+    const gap = 20; // gap between cards
+    const scrollAmount = cardWidth + gap;
+
+    console.log(`Scrolling ${direction}, amount: ${scrollAmount}`);
+
+    if (direction === 'next') {
+      journalGrid.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    } else {
+      journalGrid.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+    }
+
+    // Update button states after scroll
+    setTimeout(updateButtonStates, 300);
+  }
+
+  // Event listeners
+  prevBtn.addEventListener('click', () => {
+    console.log('⬅️ Previous button clicked');
+    scrollSlider('prev');
+  });
+
+  nextBtn.addEventListener('click', () => {
+    console.log('➡️ Next button clicked');
+    scrollSlider('next');
+  });
+
+  journalGrid.addEventListener('scroll', updateButtonStates);
+
+  // Initial state
+  updateButtonStates();
+
+  console.log('✅ Journal slider initialized successfully');
+}

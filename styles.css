@@ -1410,6 +1410,42 @@ header {
   margin: 0;
 }
 
+/* === JOURNAL NAVIGATION ARROWS === */
+.journal-nav {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.journal-arrow {
+  background: #ffffff;
+  border: none;
+  border-radius: 10px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 28px;
+  font-weight: 300;
+  color: #000;
+}
+
+.journal-arrow:hover {
+  background: #f3f3f3;
+}
+
+.journal-arrow:active {
+  transform: translateY(0);
+}
+
+.journal-arrow:disabled {
+  opacity: 0.3;
+  transform: none;
+}
+
 /* === ROAD STATUS === */
 .road-status-section {
   margin-top: 40px;
