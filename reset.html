@@ -72,6 +72,13 @@
         return;
       }
 
+      // Client-side validation
+      if (newPassword.length < 6) {
+        errorElement.style.color = "red";
+        errorElement.textContent = "Password must be at least 6 characters long.";
+        return;
+      }
+
       // Clear any previous errors
       errorElement.textContent = "";
 
@@ -83,8 +90,29 @@
           window.location.href = "index.html";
         }, 1500);
       } catch (err) {
+        console.error("Password reset error:", err);
         errorElement.style.color = "red";
-        errorElement.textContent = "Error resetting password: " + err.message;
+
+        // User-friendly error messages
+        switch (err.code) {
+          case "auth/weak-password":
+            errorElement.textContent = "Password is too weak. Please use at least 6 characters.";
+            break;
+          case "auth/invalid-action-code":
+            errorElement.textContent = "This reset link is invalid or has expired. Please request a new one.";
+            break;
+          case "auth/expired-action-code":
+            errorElement.textContent = "This reset link has expired. Please request a new one.";
+            break;
+          case "auth/user-disabled":
+            errorElement.textContent = "This account has been disabled.";
+            break;
+          case "auth/user-not-found":
+            errorElement.textContent = "Account not found.";
+            break;
+          default:
+            errorElement.textContent = "Error resetting password. Please try again or request a new reset link.";
+        }
       }
     }
 
@@ -136,6 +164,9 @@
         <!-- Password reset form (when coming from email link) -->
         <form id="resetForm" style="display: none; flex-direction: column; gap: 14px;">
           <input type="password" id="newPassword" placeholder="New Password *" required />
+          <div style="font-size: 13px; color: #666; margin: -8px 0 0 0; padding: 8px 12px; background: #f9f9f9; border-radius: 6px; line-height: 1.5;">
+            Password must be at least 6 characters
+          </div>
           <input type="password" id="confirmPassword" placeholder="Confirm Password *" required />
           <button type="submit" class="btn login-email-btn">Reset Password</button>
         </form>
