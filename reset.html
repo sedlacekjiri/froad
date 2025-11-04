@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Reset Password</title>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, verifyPasswordResetCode, confirmPasswordReset } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "froad-7d561.firebaseapp.com",
+      projectId: "froad-7d561",
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const params = new URLSearchParams(window.location.search);
+    const oobCode = params.get("oobCode");
+
+    async function handleReset(e) {
+      e.preventDefault();
+      const newPassword = document.getElementById("newPassword").value;
+      try {
+        await confirmPasswordReset(auth, oobCode, newPassword);
+        alert("Password reset successful!");
+        window.location.href = "index.html";
+      } catch (err) {
+        alert("Error resetting password: " + err.message);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const email = await verifyPasswordResetCode(auth, oobCode);
+        document.getElementById("emailInfo").textContent = `Reset password for: ${email}`;
+      } catch (err) {
+        alert("Invalid or expired link.");
+      }
+    });
+  </script>
+</head>
+<body>
+  <h2 id="emailInfo">Reset Password</h2>
+  <form onsubmit="handleReset(event)">
+    <input type="password" id="newPassword" placeholder="Enter new password" required>
+    <button type="submit">Set New Password</button>
+  </form>
+</body>
+</html>
