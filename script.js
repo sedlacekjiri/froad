@@ -156,29 +156,6 @@ toLogin.querySelector("a").addEventListener("click", e => {
       }
     });
 
-    // Forgot password
-document.getElementById("forgotPasswordLink").addEventListener("click", async (e) => {
-  e.preventDefault();
-  const email = emailInput.value.trim();
-  const errorEl = document.getElementById("loginError");
-
-  if (!email) {
-    errorEl.textContent = "Please enter your email first.";
-    return;
-  }
-
-  try {
-    await auth.sendPasswordResetEmail(email);
-    errorEl.style.color = "green";
-    errorEl.textContent = "Password reset link has been sent to your email.";
-  } catch (err) {
-    console.error("Password reset error:", err);
-    errorEl.style.color = "red";
-    errorEl.textContent = "Couldn't send reset link. Please check your email.";
-  }
-});
-
-
   // Signup
 signupForm.addEventListener("submit", async e => {
   e.preventDefault();

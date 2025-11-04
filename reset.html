@@ -6,14 +6,23 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
   <title>Reset Password</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Override login-left background to light gray */
+    .login-left {
+      background: #e5e5e5 !important;
+    }
+  </style>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, verifyPasswordResetCode, confirmPasswordReset } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getAuth, verifyPasswordResetCode, confirmPasswordReset, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
+      apiKey: "AIzaSyDDMNnJgtm-gK9OrVev7qmBRpaA8CAoDiM",
       authDomain: "froad-7d561.firebaseapp.com",
       projectId: "froad-7d561",
+      storageBucket: "froad-7d561.firebasestorage.app",
+      messagingSenderId: "1086299585443",
+      appId: "1:1086299585443:web:10bcb67effd6a89c24f816"
     };
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -21,6 +30,34 @@
     const params = new URLSearchParams(window.location.search);
     const oobCode = params.get("oobCode");
 
+    // Handle email form submission (forgot password)
+    async function handleEmailSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById("emailInput").value.trim();
+      const errorElement = document.getElementById("resetError");
+
+      if (!email) {
+        errorElement.style.color = "red";
+        errorElement.textContent = "Please enter your email.";
+        return;
+      }
+
+      try {
+        await sendPasswordResetEmail(auth, email);
+        errorElement.style.color = "green";
+        errorElement.textContent = "Password reset link has been sent to your email!";
+        // Optionally redirect after a delay
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 3000);
+      } catch (err) {
+        console.error("Password reset error:", err);
+        errorElement.style.color = "red";
+        errorElement.textContent = "Couldn't send reset link. Please check your email.";
+      }
+    }
+
+    // Handle password reset form submission
     async function handleReset(e) {
       e.preventDefault();
 
@@ -30,6 +67,7 @@
 
       // Validate passwords match
       if (newPassword !== confirmPassword) {
+        errorElement.style.color = "red";
         errorElement.textContent = "Passwords do not match!";
         return;
       }
@@ -39,24 +77,44 @@
 
       try {
         await confirmPasswordReset(auth, oobCode, newPassword);
-        alert("Password reset successful!");
-        window.location.href = "index.html";
+        errorElement.style.color = "green";
+        errorElement.textContent = "Password reset successful!";
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 1500);
       } catch (err) {
+        errorElement.style.color = "red";
         errorElement.textContent = "Error resetting password: " + err.message;
       }
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
-      try {
-        const email = await verifyPasswordResetCode(auth, oobCode);
-        console.log(`Resetting password for: ${email}`);
-      } catch (err) {
-        alert("Invalid or expired link.");
-        window.location.href = "index.html";
-      }
+      const emailForm = document.getElementById("emailForm");
+      const resetForm = document.getElementById("resetForm");
+      const authTitle = document.getElementById("authTitle");
+      const authDescription = document.getElementById("authDescription");
 
-      // Attach form handler
-      document.getElementById("resetForm").addEventListener("submit", handleReset);
+      if (oobCode) {
+        // We have a reset code - show password reset form
+        console.log("oobCode found:", oobCode);
+
+        // Show form immediately without pre-verification
+        emailForm.style.display = "none";
+        resetForm.style.display = "flex";
+        authTitle.textContent = "Reset your password";
+        authDescription.style.display = "none";
+
+        resetForm.addEventListener("submit", handleReset);
+      } else {
+        // No reset code - show email form
+        emailForm.style.display = "flex";
+        resetForm.style.display = "none";
+        authTitle.textContent = "Forgot your password?";
+        authDescription.textContent = "Enter your email to get help logging in";
+        authDescription.style.display = "block";
+
+        emailForm.addEventListener("submit", handleEmailSubmit);
+      }
     });
   </script>
 </head>
@@ -66,13 +124,28 @@
     <div class="login-right">
       <div class="login-box">
         <img id="logoImg" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ea50150761950e794dd2bb_logo-black.png" alt="Logo" />
-        <h2 id="authTitle">Reset your password</h2>
-        <form id="resetForm" style="display: flex; flex-direction: column; gap: 14px;">
+        <h2 id="authTitle">Forgot your password?</h2>
+        <p id="authDescription" style="font-size: 15px; color: #666; margin: -10px 0 10px 0; line-height: 1.5;">Enter your email to get help logging in</p>
+
+        <!-- Email form (for forgot password) -->
+        <form id="emailForm" style="display: flex; flex-direction: column; gap: 14px;">
+          <input type="email" id="emailInput" placeholder="Email address *" required />
+          <button type="submit" class="btn login-email-btn">Send Reset Link</button>
+        </form>
+
+        <!-- Password reset form (when coming from email link) -->
+        <form id="resetForm" style="display: none; flex-direction: column; gap: 14px;">
           <input type="password" id="newPassword" placeholder="New Password *" required />
           <input type="password" id="confirmPassword" placeholder="Confirm Password *" required />
           <button type="submit" class="btn login-email-btn">Reset Password</button>
         </form>
+
         <p id="resetError" style="color: red; font-size: 14px; margin: 0;"></p>
+
+        <p class="toggle-auth" style="margin-top: 10px;">
+          <a href="index.html">Back to login</a>
+        </p>
+
         <p class="legal-text">
           By continuing to use Froad, you agree to our
           <a href="/terms" target="_blank">Terms of Service</a> and
