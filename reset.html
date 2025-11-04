@@ -2,7 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
   <title>Reset Password</title>
+  <link rel="stylesheet" href="styles.css" />
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, verifyPasswordResetCode, confirmPasswordReset } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -20,31 +23,63 @@
 
     async function handleReset(e) {
       e.preventDefault();
+
       const newPassword = document.getElementById("newPassword").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+      const errorElement = document.getElementById("resetError");
+
+      // Validate passwords match
+      if (newPassword !== confirmPassword) {
+        errorElement.textContent = "Passwords do not match!";
+        return;
+      }
+
+      // Clear any previous errors
+      errorElement.textContent = "";
+
       try {
         await confirmPasswordReset(auth, oobCode, newPassword);
         alert("Password reset successful!");
         window.location.href = "index.html";
       } catch (err) {
-        alert("Error resetting password: " + err.message);
+        errorElement.textContent = "Error resetting password: " + err.message;
       }
     }
 
     document.addEventListener("DOMContentLoaded", async () => {
       try {
         const email = await verifyPasswordResetCode(auth, oobCode);
-        document.getElementById("emailInfo").textContent = `Reset password for: ${email}`;
+        console.log(`Resetting password for: ${email}`);
       } catch (err) {
         alert("Invalid or expired link.");
+        window.location.href = "index.html";
       }
+
+      // Attach form handler
+      document.getElementById("resetForm").addEventListener("submit", handleReset);
     });
   </script>
 </head>
 <body>
-  <h2 id="emailInfo">Reset Password</h2>
-  <form onsubmit="handleReset(event)">
-    <input type="password" id="newPassword" placeholder="Enter new password" required>
-    <button type="submit">Set New Password</button>
-  </form>
+  <div id="loginScreen">
+    <div class="login-left"></div>
+    <div class="login-right">
+      <div class="login-box">
+        <img id="logoImg" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ea50150761950e794dd2bb_logo-black.png" alt="Logo" />
+        <h2 id="authTitle">Reset your password</h2>
+        <form id="resetForm" style="display: flex; flex-direction: column; gap: 14px;">
+          <input type="password" id="newPassword" placeholder="New Password *" required />
+          <input type="password" id="confirmPassword" placeholder="Confirm Password *" required />
+          <button type="submit" class="btn login-email-btn">Reset Password</button>
+        </form>
+        <p id="resetError" style="color: red; font-size: 14px; margin: 0;"></p>
+        <p class="legal-text">
+          By continuing to use Froad, you agree to our
+          <a href="/terms" target="_blank">Terms of Service</a> and
+          <a href="/privacy" target="_blank">Privacy Policy</a>.
+        </p>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
