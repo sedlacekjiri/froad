@@ -36,6 +36,23 @@
       z-index:1; color:#000;
     }
 
+    #minimizePanel{
+      position:absolute; top:12px; right:52px; background:rgba(255,255,255,.9); border:1px solid #000;
+      padding:0; border-radius:4px; cursor:pointer; width:32px; height:32px;
+      z-index:1; display:flex; align-items:center; justify-content:center;
+      transition:background 0.2s ease;
+    }
+    #minimizePanel:hover{
+      background:rgba(243,244,246,0.9);
+    }
+    #minimizePanel img{
+      width:18px; height:18px; margin:0; border-radius:0;
+    }
+
+    #sidePanel.minimized{
+      bottom:calc(-55vh + 100px) !important;
+    }
+
     /* Locate control (current position) */
     .leaflet-control-locate{ margin-top:10px !important; }
     .leaflet-control-locate a{
@@ -1250,6 +1267,9 @@ body.modal-open .leaflet-control-container{ display:block !important; }
 </div>
 
   <div id="sidePanel">
+    <button id="minimizePanel">
+      <img id="minimizeIcon" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690a0f92d5143a6013395190_minimize.png" alt="Minimize" />
+    </button>
     <button id="closePanel">✕</button>
     <div id="roadStatusBadge" class="open">OPEN</div>
     <div id="roadImageWrapper" style="display:none;">
@@ -2612,10 +2632,28 @@ roadLayers.push({ polyline:visibleLine, data:rd, hitbox:bufferLine, onRoadClick 
 
     document.getElementById('closePanel').addEventListener('click', ()=>{
       document.getElementById('sidePanel').classList.remove('open');
+      document.getElementById('sidePanel').classList.remove('minimized');
       crossingLayer.clearLayers();
       if (selectedLayer) resetPolylineStyle(selectedLayer);
     });
-    
+
+    document.getElementById('minimizePanel').addEventListener('click', ()=>{
+      const sidePanel = document.getElementById('sidePanel');
+      const minimizeIcon = document.getElementById('minimizeIcon');
+
+      if (sidePanel.classList.contains('minimized')) {
+        // Maximize - expand panel
+        sidePanel.classList.remove('minimized');
+        minimizeIcon.src = 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690a0f92d5143a6013395190_minimize.png';
+        minimizeIcon.alt = 'Minimize';
+      } else {
+        // Minimize - collapse panel
+        sidePanel.classList.add('minimized');
+        minimizeIcon.src = 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690a100ca607c84905802f36_maximize%20(2).png';
+        minimizeIcon.alt = 'Maximize';
+      }
+    });
+
 
     document.getElementById('vehicleSelect').addEventListener('change', e=>{
   const selected = e.target.value;
