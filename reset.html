@@ -96,20 +96,15 @@
 
       if (oobCode) {
         // We have a reset code - show password reset form
-        try {
-          const email = await verifyPasswordResetCode(auth, oobCode);
-          console.log(`Resetting password for: ${email}`);
+        console.log("oobCode found:", oobCode);
 
-          emailForm.style.display = "none";
-          resetForm.style.display = "flex";
-          authTitle.textContent = "Reset your password";
-          authDescription.style.display = "none";
+        // Show form immediately without pre-verification
+        emailForm.style.display = "none";
+        resetForm.style.display = "flex";
+        authTitle.textContent = "Reset your password";
+        authDescription.style.display = "none";
 
-          resetForm.addEventListener("submit", handleReset);
-        } catch (err) {
-          alert("Invalid or expired link.");
-          window.location.href = "index.html";
-        }
+        resetForm.addEventListener("submit", handleReset);
       } else {
         // No reset code - show email form
         emailForm.style.display = "flex";
