@@ -1125,18 +1125,12 @@ header {
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 14px;
-  justify-content: center;
-  align-items: stretch;
 }
 
 .chat-group {
-  flex: 1 1 calc(50% - 14px);
-  min-width: 160px;
-  max-width: 300px;
-  min-height: 140px;
   background: linear-gradient(145deg, #818181, #3a3a3a);
   border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.05);
@@ -1149,6 +1143,7 @@ header {
   justify-content: flex-start;
   transition: all 0.2s ease;
   box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  overflow: hidden;
 }
 
 .chat-group:hover {
@@ -1160,6 +1155,8 @@ header {
   font-size: 18px;
   font-weight: 500;
   margin-bottom: 5px;
+  word-wrap: break-word;
+  width: 100%;
 }
 
 .chat-group .desc {
@@ -1602,18 +1599,6 @@ header {
   padding: 0 ; /* ✅ stejné odsazení */
 }
 
-/* Zajistí stejné chování gridu jako Home sekce */
-.chat-groups-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  justify-content: flex-start;
-  max-width: 1320px;
-  margin: 0 auto;
-}
-
-
-
 /* Desktop styles */
 @media (min-width: 768px) {
   .section-title {
@@ -1665,11 +1650,18 @@ header {
 
 .chat-groups h3 {
   font-size: 36px;
- 
+
 }
 
 .chat-groups .subtitle {
   font-size: 18px;
+}
+
+/* Desktop: Zajistí stejné chování gridu jako Home sekce */
+.chat-groups-container {
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  max-width: 1320px;
 }
 }
 
