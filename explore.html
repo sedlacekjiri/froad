@@ -17,10 +17,47 @@
       background:#fdfbfb; padding:20px; box-sizing:border-box;
       box-shadow:0 -2px 6px rgba(0,0,0,.3);
       display:flex; flex-direction:column; overflow-y:auto;
-      transition:bottom .25s ease-out; z-index:1500; overscroll-behavior:contain;
+      transition:bottom .3s cubic-bezier(0.4, 0, 0.2, 1); z-index:1500; overscroll-behavior:contain;
+      border-radius: 16px 16px 0 0;
     }
     #sidePanel.open{ bottom:0; display:block; }
     #sidePanel img{ width:100%; height:200px; object-fit:cover; border-radius:8px; margin-bottom:16px; }
+
+    /* Drag handle */
+    #dragHandle {
+      position: absolute;
+      top: 8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 40px;
+      height: 4px;
+      background: #d1d5db;
+      border-radius: 2px;
+      cursor: grab;
+      z-index: 10;
+    }
+    #dragHandle:active {
+      cursor: grabbing;
+    }
+
+    /* Three panel states */
+    #sidePanel.panel-minimized {
+      bottom: calc(-55vh + 100px) !important;
+      height: 55vh;
+    }
+    #sidePanel.panel-half {
+      bottom: 0 !important;
+      height: 55vh;
+    }
+    #sidePanel.panel-full {
+      bottom: 0 !important;
+      height: 90vh;
+    }
+
+    /* Dragging state - disable transition for smooth drag */
+    #sidePanel.dragging {
+      transition: none;
+    }
 
     @media (max-width:768px){ #sidePanel{ width:100vw; left:0; right:0; max-width:none; overflow-x:hidden; } }
 
@@ -43,23 +80,6 @@
       width:18px; height:18px; margin:0; border-radius:0;
     }
 
-    #minimizePanel{
-      position:absolute; top:12px; right:52px; background:rgba(255,255,255,.9); border:1px solid #000;
-      padding:0; border-radius:4px; cursor:pointer; width:32px; height:32px;
-      z-index:1; display:none; align-items:center; justify-content:center;
-      transition:background 0.2s ease;
-    }
-    #minimizePanel:hover{
-      background:rgba(243,244,246,0.9);
-    }
-    #minimizePanel img{
-      width:18px; height:18px; margin:0; border-radius:0;
-    }
-
-    @media (max-width:768px){
-      #minimizePanel{ display:flex; }
-      #sidePanel.minimized{ bottom:calc(-55vh + 100px) !important; }
-    }
 
     /* Locate control (current position) */
     .leaflet-control-locate{ margin-top:10px !important; }
@@ -1275,9 +1295,7 @@ body.modal-open .leaflet-control-container{ display:block !important; }
 </div>
 
   <div id="sidePanel">
-    <button id="minimizePanel">
-      <img id="minimizeIcon" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690a0f92d5143a6013395190_minimize.png" alt="Minimize" />
-    </button>
+    <div id="dragHandle"></div>
     <button id="closePanel">
       <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690a15526a53a461ffbec252_close%20(2).png" alt="Close" />
     </button>
@@ -2585,14 +2603,9 @@ function locateOnce(){
       const sidePanel = document.getElementById('sidePanel');
       sidePanel.classList.add('open');
 
-      // Reset to minimized state on mobile when panel opens
+      // Reset to half state on mobile when panel opens
       if (window.innerWidth <= 768) {
-        sidePanel.classList.add('minimized');
-        const minimizeIcon = document.getElementById('minimizeIcon');
-        if (minimizeIcon) {
-          minimizeIcon.src = 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690a100ca607c84905802f36_maximize%20(2).png';
-          minimizeIcon.alt = 'Maximize';
-        }
+        sidePanel.classList.add('panel-half');
       }
 
       const [lat,lon]=getRoadMidLatLon(rd);
@@ -2693,28 +2706,188 @@ roadLayers.push({ polyline:visibleLine, data:rd, hitbox:bufferLine, onRoadClick 
     updateLabels();
 
     document.getElementById('closePanel').addEventListener('click', ()=>{
-      document.getElementById('sidePanel').classList.remove('open');
-      document.getElementById('sidePanel').classList.remove('minimized');
+      const sidePanel = document.getElementById('sidePanel');
+      sidePanel.classList.remove('open');
+      sidePanel.classList.remove('panel-minimized', 'panel-half', 'panel-full');
       crossingLayer.clearLayers();
       if (selectedLayer) resetPolylineStyle(selectedLayer);
     });
 
-    document.getElementById('minimizePanel').addEventListener('click', ()=>{
+    // Touch drag handling for side panel
+    (function() {
       const sidePanel = document.getElementById('sidePanel');
-      const minimizeIcon = document.getElementById('minimizeIcon');
+      const dragHandle = document.getElementById('dragHandle');
 
-      if (sidePanel.classList.contains('minimized')) {
-        // Maximize - expand panel
-        sidePanel.classList.remove('minimized');
-        minimizeIcon.src = 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690a3e445e159ea855867818_minus.png';
-        minimizeIcon.alt = 'Minimize';
-      } else {
-        // Minimize - collapse panel
-        sidePanel.classList.add('minimized');
-        minimizeIcon.src = 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690a100ca607c84905802f36_maximize%20(2).png';
-        minimizeIcon.alt = 'Maximize';
+      let startY = 0;
+      let startTime = 0;
+      let currentY = 0;
+      let isDragging = false;
+      let currentState = 'half'; // 'minimized', 'half', 'full'
+
+      const SNAP_STATES = {
+        minimized: { bottom: 'calc(-55vh + 100px)', height: '55vh' },
+        half: { bottom: '0', height: '55vh' },
+        full: { bottom: '0', height: '90vh' }
+      };
+
+      function getCurrentState() {
+        if (sidePanel.classList.contains('panel-minimized')) return 'minimized';
+        if (sidePanel.classList.contains('panel-full')) return 'full';
+        return 'half';
       }
-    });
+
+      function setState(state) {
+        sidePanel.classList.remove('panel-minimized', 'panel-half', 'panel-full');
+        sidePanel.classList.add('panel-' + state);
+        currentState = state;
+      }
+
+      function handleTouchStart(e) {
+        // Only handle on mobile
+        if (window.innerWidth > 768) return;
+        if (!sidePanel.classList.contains('open')) return;
+
+        startY = e.touches[0].clientY;
+        startTime = Date.now();
+        currentY = startY;
+        isDragging = true;
+        currentState = getCurrentState();
+
+        sidePanel.classList.add('dragging');
+      }
+
+      function handleTouchMove(e) {
+        if (!isDragging) return;
+
+        currentY = e.touches[0].clientY;
+        const deltaY = currentY - startY;
+
+        // Calculate new bottom position based on current state and drag distance
+        const viewportHeight = window.innerHeight;
+        let currentBottom = 0;
+
+        if (currentState === 'minimized') {
+          currentBottom = viewportHeight * 0.55 - 100;
+        } else if (currentState === 'half') {
+          currentBottom = 0;
+        } else if (currentState === 'full') {
+          currentBottom = 0;
+        }
+
+        // Apply drag with some resistance
+        let newBottom = currentBottom - deltaY;
+
+        // Limit dragging range
+        const minBottom = 0; // Full position
+        const maxBottom = viewportHeight * 0.55 - 100; // Minimized position
+
+        newBottom = Math.max(minBottom, Math.min(maxBottom, newBottom));
+
+        // For full state, we need to change height instead
+        if (currentState === 'full' && deltaY > 0) {
+          const fullHeight = viewportHeight * 0.9;
+          const halfHeight = viewportHeight * 0.55;
+          const newHeight = Math.max(halfHeight, fullHeight - deltaY);
+          sidePanel.style.height = newHeight + 'px';
+          sidePanel.style.bottom = '0';
+        } else if (currentState === 'minimized' && deltaY < 0) {
+          // Dragging up from minimized
+          sidePanel.style.bottom = newBottom + 'px';
+        } else if (currentState === 'half') {
+          if (deltaY > 0) {
+            // Dragging down from half to minimized
+            sidePanel.style.bottom = -deltaY + 'px';
+          } else {
+            // Dragging up from half to full
+            const halfHeight = viewportHeight * 0.55;
+            const fullHeight = viewportHeight * 0.9;
+            const progress = Math.min(1, Math.abs(deltaY) / (fullHeight - halfHeight));
+            const newHeight = halfHeight + (fullHeight - halfHeight) * progress;
+            sidePanel.style.height = newHeight + 'px';
+            sidePanel.style.bottom = '0';
+          }
+        }
+
+        // Prevent scrolling the page
+        e.preventDefault();
+      }
+
+      function handleTouchEnd(e) {
+        if (!isDragging) return;
+
+        isDragging = false;
+        sidePanel.classList.remove('dragging');
+
+        // Reset inline styles
+        sidePanel.style.bottom = '';
+        sidePanel.style.height = '';
+
+        const deltaY = currentY - startY;
+        const deltaTime = Date.now() - startTime;
+        const velocity = deltaY / deltaTime; // pixels per ms
+
+        // Determine next state based on drag distance and velocity
+        let nextState = currentState;
+
+        const VELOCITY_THRESHOLD = 0.5; // Swipe threshold
+        const DISTANCE_THRESHOLD = 100; // Minimum drag distance to trigger state change
+
+        if (Math.abs(velocity) > VELOCITY_THRESHOLD) {
+          // Fast swipe - move in the direction of swipe
+          if (velocity < 0) {
+            // Swiping up
+            if (currentState === 'minimized') nextState = 'half';
+            else if (currentState === 'half') nextState = 'full';
+          } else {
+            // Swiping down
+            if (currentState === 'full') nextState = 'half';
+            else if (currentState === 'half') nextState = 'minimized';
+          }
+        } else if (Math.abs(deltaY) > DISTANCE_THRESHOLD) {
+          // Slow drag - snap to nearest state
+          if (deltaY < -DISTANCE_THRESHOLD) {
+            // Dragged up
+            if (currentState === 'minimized') nextState = 'half';
+            else if (currentState === 'half') nextState = 'full';
+          } else if (deltaY > DISTANCE_THRESHOLD) {
+            // Dragged down
+            if (currentState === 'full') nextState = 'half';
+            else if (currentState === 'half') nextState = 'minimized';
+          }
+        }
+
+        setState(nextState);
+      }
+
+      // Add event listeners to drag handle and top portion of panel
+      dragHandle.addEventListener('touchstart', handleTouchStart, { passive: false });
+      dragHandle.addEventListener('touchmove', handleTouchMove, { passive: false });
+      dragHandle.addEventListener('touchend', handleTouchEnd);
+
+      // Also allow dragging from the top portion of the panel (first 60px)
+      sidePanel.addEventListener('touchstart', (e) => {
+        const rect = sidePanel.getBoundingClientRect();
+        const touchY = e.touches[0].clientY;
+        const relativeY = touchY - rect.top;
+
+        // Only trigger if touching within first 60px
+        if (relativeY <= 60) {
+          handleTouchStart(e);
+        }
+      }, { passive: false });
+
+      sidePanel.addEventListener('touchmove', (e) => {
+        if (isDragging) {
+          handleTouchMove(e);
+        }
+      }, { passive: false });
+
+      sidePanel.addEventListener('touchend', (e) => {
+        if (isDragging) {
+          handleTouchEnd(e);
+        }
+      });
+    })();
 
 
     document.getElementById('vehicleSelect').addEventListener('change', e=>{
