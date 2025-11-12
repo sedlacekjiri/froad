@@ -3042,86 +3042,193 @@ campsites.forEach(camp=>{
 });
 
 
-    // Huts data - loaded from Firebase
-    let huts = [];
+    const huts = [
+  {
+    name: "Skagfjörðsskáli Hut",
+    lat: 63.6849449,
+    lng: -19.5126214,
+    link: "https://example.com/hut-info",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ae0ff249c12184e1865dd2_68801a4989de05ba76b8416f_Langidalur%20thorsmrok7035-p-800.jpg"
+  },
+  {
+    name: "Blágil Hut",
+    lat: 63.9666976,
+    lng: -18.3219473,
+    link: "https://example.com/hut-info",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68b84d0210496000a2be05fa_blagil-hut.jpg"
+  },
+  {
+    name: "Strútur Hut",
+    lat: 63.83905,
+    lng: -18.97444,
+    link: "https://example.com/hut-info",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68d2fa0b5debc742b87c93c5_strutur-hut.jpg"
+  },
+  {
+    name: "Nyidalur FI Mountain Hut",
+    lat: 64.734942,
+    lng: -18.072574,
+    link: "https://www.fi.is/en/mountain-huts/all-mountain-huts/nyidalur",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68d312f811a8886b8ba28814_nyidalur-hut.jpg"
+  },
+  {
+    name: "Þorsteinsskáli",
+    lat: 65.19287,
+    lng: -16.22264,
+    link: "https://www.fi.is/is/skalar/skalar-ferdafelags-islands/thorsteinsskali",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68de7bdedbd383c39dcdf325_%C3%BEorsteinsskali.jpg"
+  },
+  {
+    name: "Jökulheimar Hut",
+    lat: 64.310308,
+    lng: -18.238683,
+    link: "https://jorfi.is/skalar/",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68debb983343ba71692c3230_jokulhemair-hut.jpg"
+  },
+  {
+    name: "Hagavatn Hut",
+    lat: 64.462549,
+    lng: -20.243930,
+    link: "https://www.fi.is/en/mountain-huts/all-mountain-huts/hagavatn",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68deddb6dc2b4952ac55fff3_hagavatn-hut.jpg"
+  },
+  {
+    name: "Þjófadalir Hut",
+    lat: 64.814895,
+    lng: -19.708942,
+    link: "https://www.fi.is/is/skalar/skalar-ferdafelags-islands/thjofadalir",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68e189b1cf566080a196e157_thjofadalir-hut.jpg"
+  },
+  {
+    name: "Laugafell Hut",
+    lat: 65.027588,
+    lng: -18.332083,
+    link: "https://www.fi.is/is/skalar/skalar-ferdafelags-islands/laugafell",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68e19ded309f06bd2d82b748_laugafell-hut.jpg"
+  },
+  {
+    name: "Húsavík Hut",
+    lat: 65.395086,
+    lng: -13.735203,
+    link: "https://www.fi.is/en/mountain-huts/all-mountain-huts/husavik",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68e59ffa08f06c7e5eb7bfa5_husavikurskalli-hut.jpg"
+  },
+  {
+    name: "Loðmundarfjarðarskáli Hut",
+    lat: 65.365173,
+    lng: -13.896074,
+    link: "https://www.east.is/en/service/ferdafelag-fljotsdalsherads-lodmundarfjordur-klyppstadur",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68e5a24dd6d78a1717fb1328_lodmundarfjardarskalli.webp"
+  },
+  {
+    name: "Múlaskáli Hut",
+    lat: 64.552585,
+    lng: -15.151429,
+    link: "https://gonguferdir.is/mulaskali/",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68e91fa34a83e3b8795a882c_mulaskali-hut.jpg"
+  },
+  {
+    name: "Hólaskjól",
+    lat: 63.907473,
+    lng: -18.604534,
+    link: "https://www.eldgja.is/",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690e4b6d8835097d4f6a74dd_holaskjol.jpg"
+  },
+  {
+    name: "Álftavatn Hut",
+    lat: 63.857772,
+    lng: -19.227372,
+    link: "https://www.fi.is/en/mountain-huts/all-mountain-huts/alftavatn",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690fa74678d5969fded1584e_alftavatn-hut.webp"
+  },
+  {
+    name: "Áfangagil Hut",
+    lat: 64.101053,
+    lng: -19.575073,
+    link: "https://www.afangagil.is/",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690fb41dd72653d601c7d1ab_afangagil-hut.avif"
+  },
+  {
+    name: "Tjarnarkot Hut",
+    lat: 64.13357,
+    lng: -18.78825,
+    link: "https://veidivotn.is/veidileyfi-og-gisting/",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690fccb69a5d8e0436ae8d0e_tjarnarkot-hut.webp"
+  },
+  {
+    name: "Árbúðir Hut",
+    lat: 64.609206,
+    lng: -19.703609,
+    link: "https://islandshestar.is/kjolur-nature-escape/",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690fd7760dc7f93e80efe01d_arbudir.avif"
+  },
+  {
+    name: "Hvítárnes Hut",
+    lat: 64.617945,
+    lng: -19.757752,
+    link: "https://www.fi.is/en/mountain-huts/all-mountain-huts/hvitarnes",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690fd58f9314bb340d7a0930_hvitarnes-hut.jpg"
+  },
+  {
+    name: "Gíslaskáli Hut",
+    lat: 64.743487,
+    lng: -19.431748,
+    link: "https://islandshestar.is/kjolur-nature-escape/",
+    photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690fd7d837dad6ad2875a9f0_gislaskali-hut.avif"
+  },
 
-// Load and render huts from Firebase
-async function loadAndRenderHuts() {
-  if (typeof map === 'undefined' || typeof db === 'undefined') {
-    console.warn('Map or Firestore not initialized yet');
-    return;
-  }
+];
 
-  try {
-    // Fetch huts from Firebase
-    const hutsSnapshot = await db.collection('huts').orderBy('order').get();
-    huts = [];
 
-    hutsSnapshot.forEach(doc => {
-      huts.push(doc.data());
-    });
+if (typeof map !== 'undefined' && Array.isArray(huts)) {
+  window.hutsLayer = window.hutsLayer || L.layerGroup().addTo(map);
 
-    console.log(`Loaded ${huts.length} huts from Firebase`);
+  const hutIcon = L.icon({
+    iconUrl: 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/689d0a3c12784f92cf6a0fe9_hut.png',
+    iconSize: [24, 24],
+    iconAnchor: [12, 24],
+    popupAnchor: [0, -24]
+  });
 
-    // Initialize layer
-    window.hutsLayer = window.hutsLayer || L.layerGroup().addTo(map);
+  huts.forEach(hut => {
+    if (!hut.lat || !hut.lng) return;
 
-    const hutIcon = L.icon({
-      iconUrl: 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/689d0a3c12784f92cf6a0fe9_hut.png',
-      iconSize: [24, 24],
-      iconAnchor: [12, 24],
-      popupAnchor: [0, -24]
-    });
+    const cover = hut.photo || 'https://images.unsplash.com/photo-1523413651479-597eb2da0ad9?q=80&w=1200&auto=format&fit=crop';
 
-    // Render each hut
-    huts.forEach(hut => {
-      if (!hut.lat || !hut.lng) return;
-
-      const cover = hut.photo || 'https://images.unsplash.com/photo-1523413651479-597eb2da0ad9?q=80&w=1200&auto=format&fit=crop';
-
-      const html = `
-        <div class="poi-card">
-          <img class="poi-cover" src="${cover}" alt="${hut.name}" />
-          <div class="poi-body">
-            <h3 class="poi-title">${hut.name}</h3>
-            <p class="poi-desc">${hut.desc || ''}</p>
-            <div class="poi-actions">
-              ${hut.link ? `
-                <a class="poi-btn" href="${hut.link}" target="_blank" rel="noopener">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
-                    <path d="M7 13l6-6M9 5h6v6" stroke="#111" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                  More info
-                </a>
-              ` : ''}
-            </div>
+    const html = `
+      <div class="poi-card">
+        <img class="poi-cover" src="${cover}" alt="${hut.name}" />
+        <div class="poi-body">
+          <h3 class="poi-title">${hut.name}</h3>
+          <p class="poi-desc">${hut.desc || ''}</p>
+          <div class="poi-actions">
+            ${hut.link ? `
+              <a class="poi-btn" href="${hut.link}" target="_blank" rel="noopener">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+                  <path d="M7 13l6-6M9 5h6v6" stroke="#111" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                More info
+              </a>
+            ` : ''}
           </div>
         </div>
-      `;
+      </div>
+    `;
 
-      L.marker([hut.lat, hut.lng], {
-        icon: hutIcon,
-        title: hut.name
-      })
-      .addTo(window.hutsLayer)
-      .bindPopup(html, {
-        className: 'poi-popup',
-        maxWidth: 380,
-        minWidth: 260,
-        autoPan: true,
-        autoPanPadding: [20, 20],
-        closeButton: true
-      });
+    L.marker([hut.lat, hut.lng], {
+      icon: hutIcon,
+      title: hut.name
+    })
+    .addTo(window.hutsLayer)
+    .bindPopup(html, {
+      className: 'poi-popup',
+      maxWidth: 380,
+      minWidth: 260,
+      autoPan: true,
+      autoPanPadding: [20, 20],
+      closeButton: true
     });
-
-  } catch (error) {
-    console.error('Error loading huts from Firebase:', error);
-  }
-}
-
-// Load huts when page is ready
-if (typeof map !== 'undefined' && typeof db !== 'undefined') {
-  loadAndRenderHuts();
+  });
 }
 
 
