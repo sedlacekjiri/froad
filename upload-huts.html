@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Upload Huts to Firebase</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; margin-top: 0; }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover { background: #0056b3; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    #status {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 6px;
+      display: none;
+    }
+    #status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    #status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    #status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    .log { margin-top: 10px; font-family: monospace; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🏔️ Upload Huts to Firebase</h1>
+    <p>This will upload all huts data to Firebase Firestore in the <code>huts</code> collection.</p>
+    <button id="uploadBtn" onclick="uploadHuts()">Upload Huts to Firebase</button>
+    <div id="status"></div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDDMNnJgtm-gK9OrVev7qmBRpaA8CAoDiM",
+      authDomain: "froad-7d561.firebaseapp.com",
+      projectId: "froad-7d561",
+      storageBucket: "froad-7d561.firebasestorage.app",
+      messagingSenderId: "1086299585443",
+      appId: "1:1086299585443:web:10bcb67effd6a89c24f816"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Huts data
+    const huts = [
+      {
+        name: "Skagfjörðsskáli Hut",
+        lat: 63.6849449,
+        lng: -19.5126214,
+        link: "https://example.com/hut-info",
+        photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ae0ff249c12184e1865dd2_68801a4989de05ba76b8416f_Langidalur%20thorsmork7035-p-800.jpg"
+      },
+      {
+        name: "Blágil Hut",
+        lat: 63.9666976,
+        lng: -18.3219473,
+        link: "https://example.com/hut-info",
+        photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68b84d0210496000a2be05fa_blagil-hut.jpg"
+      },
+      {
+        name: "Strútur Hut",
+        lat: 63.83905,
+        lng: -18.97444,
+        link: "https://example.com/hut-info",
+        photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68d2fa0b5debc742b87c93c5_strutur-hut.jpg"
+      },
+      {
+        name: "Nyidalur FI Mountain Hut",
+        lat: 64.734942,
+        lng: -18.072574,
+        link: "https://www.fi.is/en/mountain-huts/all-mountain-huts/nyidalur",
+        photo: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68d312f811a8886b8ba28814_nyidalur-hut.jpg"
+      },
+      {
+        name: "Þorsteinsskáli",
+        lat: 65.19287,
+        lng: -16.22264,
+        link: "https://www.fi.is/is/skalar/skalar-ferdafelags-islands/thorsteinsskali",
+        photo: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/68de7bdedbd383c39dcdf325_%C3%BEorsteinsskali.jpg"
+      },
+      {
+        name: "Jökulheimar Hut",
+        lat: 64.310308,
+        lng: -18.238683,
+        link: "https://jorfi.is/skalar/",
+        photo: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/68debb983343ba71692c3230_jokulhemair-hut.jpg"
+      },
+      {
+        name: "Hagavatn Hut",
+        lat: 64.462549,
+        lng: -20.243930,
+        link: "https://www.fi.is/en/mountain-huts/all-mountain-huts/hagavatn",
+        photo: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/68deddb6dc2b4952ac55fff3_hagavatn-hut.jpg"
+      },
+      {
+        name: "Þjófadalir Hut",
+        lat: 64.814895,
+        lng: -19.708942,
+        link: "https://www.fi.is/is/skalar/skalar-ferdafelags-islands/thjofadalir",
+        photo: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/68e189b1cf566080a196e157_thjofadalir-hut.jpg"
+      },
+      {
+        name: "Laugafell Hut",
+        lat: 65.027588,
+        lng: -18.332083,
+        link: "https://www.fi.is/is/skalar/skalar-ferdafelags-islands/laugafell",
+        photo: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/68e19ded309f06bd2d82b748_laugafell-hut.jpg"
+      },
+      {
+        name: "Húsavík Hut",
+        lat: 65.395086,
+        lng: -13.735203,
+        link: "https://www.fi.is/en/mountain-huts/all-mountain-huts/husavik",
+        photo: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/68e59ffa08f06c7e5eb7bfa5_husavikurskalli-hut.jpg"
+      },
+      {
+        name: "Loðmundarfjarðarskáli Hut",
+        lat: 65.365173,
+        lng: -13.896074,
+        link: "https://www.east.is/en/service/ferdafelag-fljotsdalsherads-lodmundarfjordur-klyppstadur",
+        photo: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/68e5a24dd6d78a1717fb1328_lodmundarfjardarskalli.webp"
+      },
+      {
+        name: "Múlaskáli Hut",
+        lat: 64.552585,
+        lng: -15.151429,
+        link: "https://gonguferdir.is/mulaskali/",
+        photo: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/68e91fa34a83e3b8795a882c_mulaskali-hut.jpg"
+      },
+      {
+        name: "Hólaskjól",
+        lat: 63.907473,
+        lng: -18.604534,
+        link: "https://www.eldgja.is/",
+        photo: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/690e4b6d8835097d4f6a74dd_holaskjol.jpg"
+      },
+      {
+        name: "Álftavatn Hut",
+        lat: 63.857772,
+        lng: -19.227372,
+        link: "https://www.fi.is/en/mountain-huts/all-mountain-huts/alftavatn",
+        photo: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/690fa74678d5969fded1584e_alftavatn-hut.webp"
+      },
+      {
+        name: "Áfangagil Hut",
+        lat: 64.101053,
+        lng: -19.575073,
+        link: "https://www.afangagil.is/",
+        photo: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/690fb41dd72653d601c7d1ab_afangagil-hut.avif"
+      },
+      {
+        name: "Tjarnarkot Hut",
+        lat: 64.13357,
+        lng: -18.78825,
+        link: "https://veidivotn.is/veidileyfi-og-gisting/",
+        photo: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/690fccb69a5d8e0436ae8d0e_tjarnarkot-hut.webp"
+      },
+      {
+        name: "Árbúðir Hut",
+        lat: 64.609206,
+        lng: -19.703609,
+        link: "https://islandshestar.is/kjolur-nature-escape/",
+        photo: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/690fd7760dc7f93e80efe01d_arbudir.avif"
+      },
+      {
+        name: "Hvítárnes Hut",
+        lat: 64.617945,
+        lng: -19.757752,
+        link: "https://www.fi.is/en/mountain-huts/all-mountain-huts/hvitarnes",
+        photo: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/690fd58f9314bb340d7a0930_hvitarnes-hut.jpg"
+      },
+      {
+        name: "Gíslaskáli Hut",
+        lat: 64.743487,
+        lng: -19.431748,
+        link: "https://islandshestar.is/kjolur-nature-escape/",
+        photo: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/690fd7d837dad6ad2875a9f0_gislaskali-hut.avif"
+      }
+    ];
+
+    function showStatus(message, type) {
+      const status = document.getElementById('status');
+      status.textContent = message;
+      status.className = type;
+      status.style.display = 'block';
+    }
+
+    async function uploadHuts() {
+      const btn = document.getElementById('uploadBtn');
+      btn.disabled = true;
+      showStatus('Uploading huts to Firebase...', 'info');
+
+      try {
+        const batch = db.batch();
+        let successCount = 0;
+
+        huts.forEach((hut, index) => {
+          // Create a document ID based on sanitized name
+          const docId = hut.name.toLowerCase()
+            .replace(/[^a-z0-9\s]/g, '')
+            .replace(/\s+/g, '-')
+            .substring(0, 50);
+
+          const hutRef = db.collection('huts').doc(docId);
+          batch.set(hutRef, {
+            name: hut.name,
+            lat: hut.lat,
+            lng: hut.lng,
+            link: hut.link || '',
+            photo: hut.photo || '',
+            desc: hut.desc || '',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+            order: index
+          });
+          successCount++;
+        });
+
+        await batch.commit();
+
+        showStatus(`✅ Successfully uploaded ${successCount} huts to Firebase!`, 'success');
+
+        setTimeout(() => {
+          const statusEl = document.getElementById('status');
+          statusEl.innerHTML += '<div class="log">You can now close this page and update explore.html to load from Firebase.</div>';
+        }, 1000);
+
+      } catch (error) {
+        console.error('Error uploading huts:', error);
+        showStatus(`❌ Error: ${error.message}`, 'error');
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
