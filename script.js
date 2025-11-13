@@ -275,6 +275,7 @@ if (homeSectionEl) {
   setTimeout(() => {
     initializeFAQ();
     initJournalSlider();
+    renderUpdates(); // Initialize updates display
   }, 100);
 }
 
@@ -2181,8 +2182,15 @@ function getRelativeTime(date) {
 
 // Render updates to the home section
 function renderUpdates() {
+  console.log('🔄 renderUpdates() called');
   const container = document.getElementById('updatesContainer');
-  if (!container) return;
+
+  if (!container) {
+    console.log('❌ updatesContainer not found');
+    return;
+  }
+
+  console.log('✅ updatesContainer found, rendering', UPDATES.length, 'updates');
 
   const html = UPDATES.map(update => {
     const date = parseUpdateTime(update.time);
@@ -2202,8 +2210,3 @@ function renderUpdates() {
   container.innerHTML = html;
   console.log('✅ Updates rendered successfully');
 }
-
-// Initialize updates when home section is visible
-document.addEventListener('DOMContentLoaded', () => {
-  renderUpdates();
-});
