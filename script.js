@@ -25,6 +25,100 @@
     const vehiclePhotoInput = document.getElementById("vehiclePhoto");
     const vehiclePhotoPreview = document.getElementById("vehiclePhotoPreview");
 
+// =====================================================
+// UPDATES SECTION WITH RELATIVE TIME
+// =====================================================
+
+const UPDATES = [
+  {
+    type: 'warning',
+    time: '21:32, 30.8.2025',
+    text: 'Please notice that due to weather and extreme water level, the southern highlands, including Fjallabak south and north, as well as the Laki area. Travellers are strongly advised not to travel in the area.'
+  },
+  {
+    type: 'info',
+    time: '14:10, 20.8.2025',
+    text: 'F249 Þórsmerkurvegur is open, but river levels are above average. Drive with caution.'
+  },
+  {
+    type: 'notice',
+    time: '09:05, 27.8.2025',
+    text: 'General reminder: Always check road.is before traveling on F-roads.'
+  },
+];
+
+// Parse update time string to Date object
+function parseUpdateTime(str) {
+  const m = String(str).match(/^\s*(\d{1,2}):(\d{2})\s*,\s*(\d{1,2})\.(\d{1,2})\.(\d{4})\s*$/);
+  if (!m) return null;
+  const hh = +m[1], mm = +m[2], d = +m[3], mon = +m[4], y = +m[5];
+  return new Date(y, mon - 1, d, hh, mm);
+}
+
+// Calculate relative time (e.g., "2 days ago", "30 days ago")
+function getRelativeTime(date) {
+  const now = new Date();
+  const diffMs = now - date;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+  const diffWeek = Math.floor(diffDay / 7);
+  const diffMonth = Math.floor(diffDay / 30);
+  const diffYear = Math.floor(diffDay / 365);
+
+  if (diffYear > 0) {
+    return diffYear === 1 ? '1 year ago' : `${diffYear} years ago`;
+  }
+  if (diffMonth > 0) {
+    return diffMonth === 1 ? '1 month ago' : `${diffMonth} months ago`;
+  }
+  if (diffWeek > 0) {
+    return diffWeek === 1 ? '1 week ago' : `${diffWeek} weeks ago`;
+  }
+  if (diffDay > 0) {
+    return diffDay === 1 ? '1 day ago' : `${diffDay} days ago`;
+  }
+  if (diffHour > 0) {
+    return diffHour === 1 ? '1 hour ago' : `${diffHour} hours ago`;
+  }
+  if (diffMin > 0) {
+    return diffMin === 1 ? '1 minute ago' : `${diffMin} minutes ago`;
+  }
+  return 'Just now';
+}
+
+// Render updates to the home section
+function renderUpdates() {
+  console.log('🔄 renderUpdates() called');
+  const container = document.getElementById('updatesContainer');
+
+  if (!container) {
+    console.log('❌ updatesContainer not found');
+    return;
+  }
+
+  console.log('✅ updatesContainer found, rendering', UPDATES.length, 'updates');
+
+  const html = UPDATES.map(update => {
+    const date = parseUpdateTime(update.time);
+    const relativeTime = date ? getRelativeTime(date) : update.time;
+
+    return `
+      <div class="update-item">
+        <div class="update-header">
+          <span class="update-type type-${update.type}">${update.type}</span>
+          <span class="update-time">${relativeTime}</span>
+        </div>
+        <div class="update-text">${update.text}</div>
+      </div>
+    `;
+  }).join('');
+
+  container.innerHTML = html;
+  console.log('✅ Updates rendered successfully');
+}
+
     // ✅ Avatar preview po výběru fotky
 avatarInput.addEventListener("change", e => {
   const file = e.target.files[0];
@@ -2115,98 +2209,4 @@ function initJournalSlider() {
   updateButtonStates();
 
   console.log('✅ Journal slider initialized successfully');
-}
-
-// =====================================================
-// UPDATES SECTION WITH RELATIVE TIME
-// =====================================================
-
-const UPDATES = [
-  {
-    type: 'warning',
-    time: '21:32, 30.8.2025',
-    text: 'Please notice that due to weather and extreme water level, the southern highlands, including Fjallabak south and north, as well as the Laki area. Travellers are strongly advised not to travel in the area.'
-  },
-  {
-    type: 'info',
-    time: '14:10, 20.8.2025',
-    text: 'F249 Þórsmerkurvegur is open, but river levels are above average. Drive with caution.'
-  },
-  {
-    type: 'notice',
-    time: '09:05, 27.8.2025',
-    text: 'General reminder: Always check road.is before traveling on F-roads.'
-  },
-];
-
-// Parse update time string to Date object
-function parseUpdateTime(str) {
-  const m = String(str).match(/^\s*(\d{1,2}):(\d{2})\s*,\s*(\d{1,2})\.(\d{1,2})\.(\d{4})\s*$/);
-  if (!m) return null;
-  const hh = +m[1], mm = +m[2], d = +m[3], mon = +m[4], y = +m[5];
-  return new Date(y, mon - 1, d, hh, mm);
-}
-
-// Calculate relative time (e.g., "2 days ago", "30 days ago")
-function getRelativeTime(date) {
-  const now = new Date();
-  const diffMs = now - date;
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHour = Math.floor(diffMin / 60);
-  const diffDay = Math.floor(diffHour / 24);
-  const diffWeek = Math.floor(diffDay / 7);
-  const diffMonth = Math.floor(diffDay / 30);
-  const diffYear = Math.floor(diffDay / 365);
-
-  if (diffYear > 0) {
-    return diffYear === 1 ? '1 year ago' : `${diffYear} years ago`;
-  }
-  if (diffMonth > 0) {
-    return diffMonth === 1 ? '1 month ago' : `${diffMonth} months ago`;
-  }
-  if (diffWeek > 0) {
-    return diffWeek === 1 ? '1 week ago' : `${diffWeek} weeks ago`;
-  }
-  if (diffDay > 0) {
-    return diffDay === 1 ? '1 day ago' : `${diffDay} days ago`;
-  }
-  if (diffHour > 0) {
-    return diffHour === 1 ? '1 hour ago' : `${diffHour} hours ago`;
-  }
-  if (diffMin > 0) {
-    return diffMin === 1 ? '1 minute ago' : `${diffMin} minutes ago`;
-  }
-  return 'Just now';
-}
-
-// Render updates to the home section
-function renderUpdates() {
-  console.log('🔄 renderUpdates() called');
-  const container = document.getElementById('updatesContainer');
-
-  if (!container) {
-    console.log('❌ updatesContainer not found');
-    return;
-  }
-
-  console.log('✅ updatesContainer found, rendering', UPDATES.length, 'updates');
-
-  const html = UPDATES.map(update => {
-    const date = parseUpdateTime(update.time);
-    const relativeTime = date ? getRelativeTime(date) : update.time;
-
-    return `
-      <div class="update-item">
-        <div class="update-header">
-          <span class="update-type type-${update.type}">${update.type}</span>
-          <span class="update-time">${relativeTime}</span>
-        </div>
-        <div class="update-text">${update.text}</div>
-      </div>
-    `;
-  }).join('');
-
-  container.innerHTML = html;
-  console.log('✅ Updates rendered successfully');
 }
