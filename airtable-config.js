@@ -50,6 +50,14 @@ class AirtableService {
     }
 
     try {
+      // 🐛 Debug logging
+      console.log('🔍 API Request:', {
+        url: url.toString(),
+        baseId: this.config.BASE_ID,
+        apiKeyPrefix: this.config.API_KEY.substring(0, 10) + '...',
+        apiKeyLength: this.config.API_KEY.length
+      });
+
       const response = await fetch(url.toString(), {
         headers: {
           'Authorization': `Bearer ${this.config.API_KEY}`,
@@ -58,6 +66,13 @@ class AirtableService {
       });
 
       if (!response.ok) {
+        // Enhanced error with response details
+        const errorText = await response.text();
+        console.error('❌ Airtable API Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          body: errorText
+        });
         throw new Error(`Airtable API error: ${response.status} ${response.statusText}`);
       }
 
@@ -231,7 +246,87 @@ async function refreshHutsData() {
   }
 }
 
+// ==========================================
+// DEBUG & TESTING FUNCTIONS
+// ==========================================
+
+/**
+ * Test Airtable connection with detailed diagnostics
+ */
+async function testAirtableConnection() {
+  console.log('🧪 Testing Airtable connection...\n');
+
+  // Check config
+  console.log('1️⃣ Configuration check:');
+  console.log('   Base ID:', AIRTABLE_CONFIG.BASE_ID);
+  console.log('   API Key starts with:', AIRTABLE_CONFIG.API_KEY.substring(0, 10));
+  console.log('   API Key length:', AIRTABLE_CONFIG.API_KEY.length);
+  console.log('   Expected format: pat[12-14 chars].[rest]');
+
+  // Validate token format
+  if (!AIRTABLE_CONFIG.API_KEY.startsWith('pat')) {
+    console.error('❌ API Key should start with "pat" (Personal Access Token)');
+    console.error('   If you have an old API key starting with "key", you need to create a new Personal Access Token');
+    console.error('   Go to: https://airtable.com/create/tokens');
+    return;
+  }
+
+  if (!AIRTABLE_CONFIG.API_KEY.includes('.')) {
+    console.error('❌ API Key should contain a dot (.) - it might be incomplete');
+    return;
+  }
+
+  console.log('   ✅ Token format looks valid\n');
+
+  // Test API call
+  console.log('2️⃣ Testing API call...');
+  try {
+    const url = `https://api.airtable.com/v0/${AIRTABLE_CONFIG.BASE_ID}/${AIRTABLE_CONFIG.TABLES.HUTS}?maxRecords=1`;
+    console.log('   URL:', url);
+
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': `Bearer ${AIRTABLE_CONFIG.API_KEY}`
+      }
+    });
+
+    console.log('   Response status:', response.status);
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('   ✅ SUCCESS! Records found:', data.records?.length || 0);
+      if (data.records?.length > 0) {
+        console.log('   Sample record:', data.records[0].fields);
+      }
+    } else {
+      const errorText = await response.text();
+      console.error('   ❌ FAILED!');
+      console.error('   Status:', response.status, response.statusText);
+      console.error('   Response:', errorText);
+
+      if (response.status === 401) {
+        console.error('\n   💡 401 Unauthorized means:');
+        console.error('      - Token is invalid or expired');
+        console.error('      - Token might be incomplete (copied only part of it)');
+        console.error('      - Check you copied the ENTIRE token including part after the dot');
+      } else if (response.status === 403) {
+        console.error('\n   💡 403 Forbidden means:');
+        console.error('      - Token does not have access to this base');
+        console.error('      - Go to https://airtable.com/create/tokens');
+        console.error('      - Edit your token → Add access to base:', AIRTABLE_CONFIG.BASE_ID);
+      } else if (response.status === 404) {
+        console.error('\n   💡 404 Not Found means:');
+        console.error('      - Base ID is wrong, or');
+        console.error('      - Table name "Huts" does not exist (case-sensitive!)');
+      }
+    }
+  } catch (error) {
+    console.error('   ❌ Network error:', error.message);
+  }
+}
+
 // Expose functions globally for testing
 window.airtableService = airtableService;
 window.loadHutsFromAirtable = loadHutsFromAirtable;
 window.refreshHutsData = refreshHutsData;
+window.testAirtableConnection = testAirtableConnection;
