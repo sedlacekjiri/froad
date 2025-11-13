@@ -5,7 +5,7 @@
 const AIRTABLE_CONFIG = {
   // ⚠️ REPLACE WITH YOUR ACTUAL VALUES:
   BASE_ID: 'appvrYTLBc9U97WgZ',  // Example: 'app'
-  API_KEY: 'patNGFgurrihYcdFi.956f712ce150833270a05237baddb1c5a816b5482a868d29095b1ceae5883701',  // Example: 'pat'
+  API_KEY: 'pat8rqI3MuD9U1rZN.50132f136f68b48666f9f51158c37e55818d6c91f4da7708c11f1562db5611f6',  // Example: 'pat'
 
   TABLES: {
     HUTS: 'Huts',
