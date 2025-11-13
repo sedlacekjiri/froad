@@ -40,6 +40,13 @@
       cursor: grabbing;
     }
 
+    /* Hide drag handle on desktop */
+    @media (min-width: 992px) {
+      #dragHandle {
+        display: none;
+      }
+    }
+
     /* Three panel states */
     #sidePanel.panel-minimized {
       bottom: calc(-55vh + 100px) !important;
