@@ -29,23 +29,8 @@
 // UPDATES SECTION WITH RELATIVE TIME
 // =====================================================
 
-const UPDATES = [
-  {
-    type: 'warning',
-    time: '21:32, 30.8.2025',
-    text: 'Please notice that due to weather and extreme water level, the southern highlands, including Fjallabak south and north, as well as the Laki area. Travellers are strongly advised not to travel in the area.'
-  },
-  {
-    type: 'info',
-    time: '14:10, 20.8.2025',
-    text: 'F249 Þórsmerkurvegur is open, but river levels are above average. Drive with caution.'
-  },
-  {
-    type: 'notice',
-    time: '09:05, 27.8.2025',
-    text: 'General reminder: Always check road.is before traveling on F-roads.'
-  },
-];
+// Updates will be loaded from Firestore in real-time
+let UPDATES = [];
 
 // Parse update time string to Date object
 function parseUpdateTime(str) {
@@ -98,6 +83,11 @@ function renderUpdates() {
     return;
   }
 
+  if (UPDATES.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">No updates at the moment.</div>';
+    return;
+  }
+
   console.log('✅ updatesContainer found, rendering', UPDATES.length, 'updates');
 
   const html = UPDATES.map(update => {
@@ -118,6 +108,30 @@ function renderUpdates() {
   container.innerHTML = html;
   console.log('✅ Updates rendered successfully');
 }
+
+// Load updates from Firestore in real-time
+function loadUpdatesFromFirestore() {
+  console.log('🔄 Setting up Firestore listener for updates...');
+
+  db.collection('updates')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snapshot => {
+      console.log('📡 Updates snapshot received:', snapshot.size, 'documents');
+
+      UPDATES = [];
+      snapshot.forEach(doc => {
+        UPDATES.push(doc.data());
+      });
+
+      console.log('✅ UPDATES array updated:', UPDATES.length, 'updates');
+      renderUpdates();
+    }, err => {
+      console.error('❌ Error loading updates from Firestore:', err);
+    });
+}
+
+// Initialize updates listener
+loadUpdatesFromFirestore();
 
     // ✅ Avatar preview po výběru fotky
 avatarInput.addEventListener("change", e => {
@@ -369,7 +383,7 @@ if (homeSectionEl) {
   setTimeout(() => {
     initializeFAQ();
     initJournalSlider();
-    renderUpdates(); // Initialize updates display
+    // Updates are loaded automatically via Firestore listener
   }, 100);
 }
 
