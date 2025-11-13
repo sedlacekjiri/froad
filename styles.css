@@ -1272,6 +1272,7 @@ header {
     top: 61px;
     border-left: 1px solid #e0e0e0;
     box-shadow: -2px 0 8px rgba(0, 0, 0, 0.1);
+    border-radius: 0; /* ✅ bez zaoblených rohů na desktopu */
   }
 
   /* User detail panel (People marker popup) - vycentrovaný s 40% šířkou */
@@ -1281,6 +1282,7 @@ header {
     right: auto;
     transform: translateX(-50%);
     margin: 20px;
+    border-radius: 0; /* ✅ bez zaoblených rohů na desktopu */
   }
 
   #userDetailPanel.active {
