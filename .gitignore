@@ -11,3 +11,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Airtable config with sensitive API keys
+airtable-config.js
