@@ -600,26 +600,84 @@ body.gallery-open .leaflet-control-container {
 }
 #updatesPanel.open { bottom:0; }
 
-#updatesPanel h2 { margin-top:0; font-size:18px; }
+#updatesPanel h2 { margin-top:0; font-size:24px; font-weight:600; margin-bottom:16px; }
 
 #closeUpdates {
   position:absolute; top:12px; right:12px;
   background:#fff; border:1px solid #111; border-radius:4px;
   font-size:1.2em; padding:2px 8px; cursor:pointer;
-  color:#111; /* černá ikonka/text */
+  color:#111;
 }
 #closeUpdates:hover { background:#f3f4f6; }
 
-.updates-list { list-style:none; margin:0; padding:0; display:grid; gap:10px; }
-.update-item {
-  padding:10px;
-  border:1px solid #e5e7eb; border-radius:8px;
-  background:#fff;
+/* Modern Updates Design - matching home section */
+.updates-list {
+  list-style:none;
+  margin:0;
+  padding:0;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
 }
-.update-item.warning { border-left:4px solid #dc2626; }
-.update-item.info    { border-left:4px solid #2563eb; }
-.update-item.notice  { border-left:4px solid #ffe600; }
-.update-time { font-size:12px; color:#6b7280; margin-bottom:4px; }
+
+.update-item {
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border: none;
+}
+
+.update-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.update-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.update-type {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.type-warning {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.type-info {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.type-notice {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.update-time {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.update-text {
+  font-size: 14px;
+  color: #374151;
+  line-height: 1.5;
+  margin: 0;
+}
 
 #updatesBtn {
   position: absolute;
@@ -3476,56 +3534,112 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 
 <script>
-const UPDATES = [
-  { type:'warning', time:'21:32, 30.8.2025', text:'Please notice that due to weather and extreme water level, the southern highlands, including Fjallabak south and north, as well as the Laki area. Travellers are strongly advised not to travel in the area.' },
-  { type:'info',    time:'14:10, 20.8.2025', text:'F249 Þórsmerkurvegur is open, but river levels are above average. Drive with caution.' },
-  { type:'notice',  time:'09:05, 27.8.2025', text:'General reminder: Always check road.is before traveling on F-roads.' },
-];
+// =====================================================
+// UPDATES SECTION WITH FIREBASE INTEGRATION
+// =====================================================
 
-function parseUpdateTime(str){
+// Updates will be loaded from Firestore in real-time
+let UPDATES = [];
+
+// Parse update time string to Date object
+function parseUpdateTime(str) {
   const m = String(str).match(/^\s*(\d{1,2}):(\d{2})\s*,\s*(\d{1,2})\.(\d{1,2})\.(\d{4})\s*$/);
   if (!m) return null;
-  const hh=+m[1], mm=+m[2], d=+m[3], mon=+m[4], y=+m[5];
-  return new Date(Date.UTC(y, mon-1, d, hh, mm));
-}
-function pad2(n){ return (n<10?'0':'')+n; }
-function formatRelativeLabel(dateUtc){
-  if (!(dateUtc instanceof Date)) return '--';
-  const now=new Date();
-  const todayMid = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  const dateMid  = Date.UTC(dateUtc.getUTCFullYear(), dateUtc.getUTCMonth(), dateUtc.getUTCDate());
-  const diffDays = Math.floor((todayMid - dateMid)/86400000);
-  const hhmm = `${pad2(dateUtc.getUTCHours())}:${pad2(dateUtc.getUTCMinutes())}`;
-  if (diffDays===0) return `Today · ${hhmm}`;
-  if (diffDays===1) return `Yesterday · ${hhmm}`;
-  return `${diffDays} days ago · ${hhmm}`;
+  const hh = +m[1], mm = +m[2], d = +m[3], mon = +m[4], y = +m[5];
+  return new Date(y, mon - 1, d, hh, mm);
 }
 
-function renderUpdates(){
-  const list = document.getElementById('updatesList');
-  if (!list) return;
-  list.innerHTML = '';
-  const items = [...UPDATES].sort((a,b)=>{
-    const da = parseUpdateTime(a.time)?.getTime() ?? 0;
-    const db = parseUpdateTime(b.time)?.getTime() ?? 0;
-    return db - da;
-  });
-  items.forEach(u=>{
-    const when = parseUpdateTime(u.time);
-    const li = document.createElement('li');
-    li.className = `update-item ${u.type||'info'}`;
-    li.innerHTML = `
-      <div class="update-time" title="${when ? when.toUTCString().replace('GMT','UTC') : ''}">
-        ${when ? formatRelativeLabel(when) : u.time}
-      </div>
-      <div class="update-text">${u.text}</div>
+// Calculate relative time (e.g., "2 days ago", "30 days ago")
+function getRelativeTime(date) {
+  const now = new Date();
+  const diffMs = now - date;
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+  const diffWeek = Math.floor(diffDay / 7);
+  const diffMonth = Math.floor(diffDay / 30);
+  const diffYear = Math.floor(diffDay / 365);
+
+  if (diffYear > 0) {
+    return diffYear === 1 ? '1 year ago' : `${diffYear} years ago`;
+  }
+  if (diffMonth > 0) {
+    return diffMonth === 1 ? '1 month ago' : `${diffMonth} months ago`;
+  }
+  if (diffWeek > 0) {
+    return diffWeek === 1 ? '1 week ago' : `${diffWeek} weeks ago`;
+  }
+  if (diffDay > 0) {
+    return diffDay === 1 ? '1 day ago' : `${diffDay} days ago`;
+  }
+  if (diffHour > 0) {
+    return diffHour === 1 ? '1 hour ago' : `${diffHour} hours ago`;
+  }
+  if (diffMin > 0) {
+    return diffMin === 1 ? '1 minute ago' : `${diffMin} minutes ago`;
+  }
+  return 'Just now';
+}
+
+// Render updates to the explore updates panel
+function renderUpdates() {
+  console.log('🔄 renderUpdates() called');
+  const container = document.getElementById('updatesList');
+
+  if (!container) {
+    console.log('❌ updatesList not found');
+    return;
+  }
+
+  if (UPDATES.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">No updates at the moment.</div>';
+    return;
+  }
+
+  console.log('✅ updatesList found, rendering', UPDATES.length, 'updates');
+
+  const html = UPDATES.map(update => {
+    const date = parseUpdateTime(update.time);
+    const relativeTime = date ? getRelativeTime(date) : update.time;
+
+    return `
+      <li class="update-item">
+        <div class="update-header">
+          <span class="update-type type-${update.type}">${update.type}</span>
+          <span class="update-time">${relativeTime}</span>
+        </div>
+        <p class="update-text">${update.text}</p>
+      </li>
     `;
-    list.appendChild(li);
-  });
+  }).join('');
+
+  container.innerHTML = html;
+  console.log('✅ Updates rendered successfully');
+}
+
+// Load updates from Firestore in real-time
+function loadUpdatesFromFirestore() {
+  console.log('🔄 Setting up Firestore listener for updates...');
+
+  db.collection('updates')
+    .orderBy('createdAt', 'desc')
+    .onSnapshot(snapshot => {
+      console.log('📡 Updates snapshot received:', snapshot.size, 'documents');
+
+      UPDATES = [];
+      snapshot.forEach(doc => {
+        UPDATES.push(doc.data());
+      });
+
+      console.log('✅ UPDATES array updated:', UPDATES.length, 'updates');
+      renderUpdates();
+    }, err => {
+      console.error('❌ Error loading updates from Firestore:', err);
+    });
 }
 
 function openUpdatesPanel(){
-  renderUpdates();
   document.getElementById('updatesPanel')?.classList.add('open');
 }
 function closeUpdatesPanel(){
@@ -3533,23 +3647,20 @@ function closeUpdatesPanel(){
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{
-  const AUTO_OPEN_ON_LOAD = true; // ← nastav na false, pokud nechceš auto-open
+  const AUTO_OPEN_ON_LOAD = false; // Set to false to not auto-open on load
 
-  // zapojení tlačítek (podle tvého HTML může být #updatesBtn nebo #updatesBtn a > a)
+  // Connect buttons
   const btnWrap = document.getElementById('updatesBtn');
-  const btn = btnWrap?.querySelector('a') || btnWrap; 
+  const btn = btnWrap?.querySelector('a') || btnWrap;
   btn?.addEventListener('click', (e)=>{ e.preventDefault(); openUpdatesPanel(); });
 
   document.getElementById('closeUpdates')?.addEventListener('click', closeUpdatesPanel);
 
-  // první render
-  renderUpdates();
+  // Initialize updates listener from Firebase
+  loadUpdatesFromFirestore();
 
-  // AUTO-OPEN hned po načtení (to ti chybělo)
+  // AUTO-OPEN on load (optional)
   if (AUTO_OPEN_ON_LOAD) openUpdatesPanel();
-
-  // přepočet relativních štítků každou minutu
-  setInterval(renderUpdates, 60*1000);
 });
 
 
