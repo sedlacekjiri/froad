@@ -477,6 +477,10 @@
               </div>
             </div>
             <div class="form-group">
+              <label for="hutLink">Info Link (URL)</label>
+              <input type="url" id="hutLink" placeholder="https://..." />
+            </div>
+            <div class="form-group">
               <label for="hutPhotoURL">Photo URL</label>
               <input type="url" id="hutPhotoURL" placeholder="https://..." />
             </div>
@@ -889,6 +893,7 @@
         description: document.getElementById('hutDescription').value,
         price: parseInt(document.getElementById('hutPrice').value) || null,
         contact: document.getElementById('hutContact').value,
+        link: document.getElementById('hutLink').value,
         photoURL: document.getElementById('hutPhotoURL').value,
       };
 
@@ -922,6 +927,7 @@
       document.getElementById('hutDescription').value = data.description || '';
       document.getElementById('hutPrice').value = data.price || '';
       document.getElementById('hutContact').value = data.contact || '';
+      document.getElementById('hutLink').value = data.link || '';
       document.getElementById('hutPhotoURL').value = data.photoURL || '';
       document.getElementById('hutSubmitBtn').textContent = 'Update';
       window.scrollTo({ top: 0, behavior: 'smooth' });
