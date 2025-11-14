@@ -490,6 +490,18 @@
         </div>
 
         <div class="section">
+          <h2>Import Huts from CSV</h2>
+          <div style="margin-bottom: 16px;">
+            <p style="font-size: 13px; color: #6b7280; margin-bottom: 12px;">
+              CSV format: name,lat,lng,link,photoURL,status,description,price,contact
+            </p>
+            <input type="file" id="csvFileInput" accept=".csv" style="margin-bottom: 12px;" />
+            <button class="btn-primary" id="importCsvBtn" style="margin-right: 8px;">Import CSV</button>
+          </div>
+          <div id="importLog" style="background: #f9fafb; padding: 12px; border-radius: 4px; border: 1px solid #e5e7eb; font-size: 13px; max-height: 200px; overflow-y: auto; display: none;"></div>
+        </div>
+
+        <div class="section">
           <h2>All Huts</h2>
           <div id="hutsList" class="items-list">
             <div class="loading">Loading...</div>
@@ -941,6 +953,102 @@
         console.error('Error deleting:', err);
       }
     };
+
+    // CSV Import
+    document.getElementById('importCsvBtn').addEventListener('click', async () => {
+      const fileInput = document.getElementById('csvFileInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('Please select a CSV file first');
+        return;
+      }
+
+      const logEl = document.getElementById('importLog');
+      logEl.style.display = 'block';
+      logEl.innerHTML = '<div style="color: #3b82f6;">🚀 Starting import...</div>';
+
+      try {
+        const text = await file.text();
+        const lines = text.split('\n').filter(line => line.trim());
+
+        // Skip header if present
+        const startIndex = lines[0].toLowerCase().includes('name') ? 1 : 0;
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let i = startIndex; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          try {
+            // Parse CSV line (handle quoted fields)
+            const fields = parseCSVLine(line);
+
+            if (fields.length < 3) {
+              logEl.innerHTML += `<div style="color: #ef4444;">❌ Line ${i+1}: Not enough fields</div>`;
+              errorCount++;
+              continue;
+            }
+
+            const hutData = {
+              name: fields[0] || '',
+              lat: parseFloat(fields[1]) || 0,
+              lng: parseFloat(fields[2]) || 0,
+              link: fields[3] || '',
+              photoURL: fields[4] || '',
+              status: fields[5] || 'open',
+              description: fields[6] || '',
+              price: fields[7] ? parseInt(fields[7]) : null,
+              contact: fields[8] || '',
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await db.collection('huts').add(hutData);
+            successCount++;
+            logEl.innerHTML += `<div style="color: #10b981;">✅ Imported: ${hutData.name}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+
+            // Small delay to avoid overwhelming Firebase
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+          } catch (err) {
+            errorCount++;
+            logEl.innerHTML += `<div style="color: #ef4444;">❌ Line ${i+1}: ${err.message}</div>`;
+          }
+        }
+
+        logEl.innerHTML += `<div style="color: #3b82f6; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">✨ Import complete! Success: ${successCount}, Errors: ${errorCount}</div>`;
+        fileInput.value = '';
+
+      } catch (err) {
+        logEl.innerHTML += `<div style="color: #ef4444;">❌ Error reading file: ${err.message}</div>`;
+      }
+    });
+
+    // Simple CSV parser that handles quoted fields
+    function parseCSVLine(line) {
+      const fields = [];
+      let current = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          fields.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+
+      fields.push(current.trim());
+      return fields;
+    }
 
     // ========================================
     // CAMPSITES
