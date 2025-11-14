@@ -503,6 +503,21 @@
 
         <div class="section">
           <h2>All Huts</h2>
+          <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+            <input
+              type="text"
+              id="hutSearchInput"
+              placeholder="Search huts..."
+              style="flex: 1; min-width: 200px; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; font-family: 'Poppins', sans-serif;"
+            />
+            <select
+              id="hutSortSelect"
+              style="padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; font-family: 'Poppins', sans-serif; background: white;"
+            >
+              <option value="a-z">Sort: A-Z</option>
+              <option value="z-a">Sort: Z-A</option>
+            </select>
+          </div>
           <div id="hutsList" class="items-list">
             <div class="loading">Loading...</div>
           </div>
@@ -863,37 +878,86 @@
     // ========================================
     // HUTS
     // ========================================
+    let allHuts = [];
+
     function loadHuts() {
       db.collection('huts')
         .orderBy('name')
         .onSnapshot(snapshot => {
-          const list = document.getElementById('hutsList');
-          if (snapshot.empty) {
-            list.innerHTML = '<div class="empty-state">No huts yet.</div>';
-            return;
-          }
-
-          list.innerHTML = '';
+          allHuts = [];
           snapshot.forEach(doc => {
-            const data = doc.data();
-            const card = document.createElement('div');
-            card.className = 'item-card';
-            card.innerHTML = `
-              <div class="item-header">
-                <span class="item-title">${data.name}</span>
-                <span class="badge badge-${data.status}">${data.status}</span>
-              </div>
-              <div class="item-meta">📍 ${data.lat}, ${data.lng} ${data.price ? `• ${data.price} ISK/night` : ''}</div>
-              <div class="item-text">${data.description || 'No description'}</div>
-              <div class="item-actions">
-                <button class="btn-edit" onclick="editHut('${doc.id}', ${JSON.stringify(data).replace(/"/g, '&quot;')})">Edit</button>
-                <button class="btn-delete" onclick="deleteHut('${doc.id}')">Delete</button>
-              </div>
-            `;
-            list.appendChild(card);
+            allHuts.push({ id: doc.id, ...doc.data() });
           });
+          displayHuts();
         });
     }
+
+    function displayHuts() {
+      const list = document.getElementById('hutsList');
+      const searchTerm = document.getElementById('hutSearchInput')?.value.toLowerCase() || '';
+      const sortOrder = document.getElementById('hutSortSelect')?.value || 'a-z';
+
+      if (allHuts.length === 0) {
+        list.innerHTML = '<div class="empty-state">No huts yet.</div>';
+        return;
+      }
+
+      // Filter huts based on search term
+      let filteredHuts = allHuts.filter(hut => {
+        const searchString = `${hut.name} ${hut.description || ''} ${hut.status}`.toLowerCase();
+        return searchString.includes(searchTerm);
+      });
+
+      // Sort huts
+      filteredHuts.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        if (sortOrder === 'a-z') {
+          return nameA.localeCompare(nameB);
+        } else {
+          return nameB.localeCompare(nameA);
+        }
+      });
+
+      // Display filtered and sorted huts
+      if (filteredHuts.length === 0) {
+        list.innerHTML = '<div class="empty-state">No huts found.</div>';
+        return;
+      }
+
+      list.innerHTML = '';
+      filteredHuts.forEach(hut => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.innerHTML = `
+          <div class="item-header">
+            <span class="item-title">${hut.name}</span>
+            <span class="badge badge-${hut.status}">${hut.status}</span>
+          </div>
+          <div class="item-meta">📍 ${hut.lat}, ${hut.lng} ${hut.price ? `• ${hut.price} ISK/night` : ''}</div>
+          <div class="item-text">${hut.description || 'No description'}</div>
+          <div class="item-actions">
+            <button class="btn-edit" onclick="editHut('${hut.id}', ${JSON.stringify(hut).replace(/"/g, '&quot;')})">Edit</button>
+            <button class="btn-delete" onclick="deleteHut('${hut.id}')">Delete</button>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    // Add event listeners for search and sort
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('hutSearchInput');
+      const sortSelect = document.getElementById('hutSortSelect');
+
+      if (searchInput) {
+        searchInput.addEventListener('input', displayHuts);
+      }
+
+      if (sortSelect) {
+        sortSelect.addEventListener('change', displayHuts);
+      }
+    });
 
     document.getElementById('hutForm').addEventListener('submit', async (e) => {
       e.preventDefault();
