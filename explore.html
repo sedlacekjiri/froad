@@ -3507,7 +3507,33 @@ function renderUpdates() {
 
   console.log('✅ updatesList found, rendering', UPDATES.length, 'updates');
 
-  const html = UPDATES.map(update => {
+  // Filter updates to show only those from the last 14 days
+  const fourteenDaysAgo = new Date();
+  fourteenDaysAgo.setDate(fourteenDaysAgo.getDate() - 14);
+
+  const recentUpdates = UPDATES.filter(update => {
+    // Use createdAt timestamp if available
+    if (update.createdAt && update.createdAt.toDate) {
+      const updateDate = update.createdAt.toDate();
+      return updateDate >= fourteenDaysAgo;
+    }
+    // Fallback to parsing the time string
+    const date = parseUpdateTime(update.time);
+    if (date) {
+      return date >= fourteenDaysAgo;
+    }
+    // If no valid date, exclude the update
+    return false;
+  });
+
+  console.log(`📅 Filtered to ${recentUpdates.length} updates from last 14 days (from ${UPDATES.length} total)`);
+
+  if (recentUpdates.length === 0) {
+    container.innerHTML = '<div style="text-align:center; padding:20px; color:#6b7280;">No updates in the last 14 days.</div>';
+    return;
+  }
+
+  const html = recentUpdates.map(update => {
     const date = parseUpdateTime(update.time);
     const relativeTime = date ? getRelativeTime(date) : update.time;
 
