@@ -339,7 +339,15 @@ signupForm.addEventListener("submit", async e => {
     await auth.signOut();
   } catch (err) {
     console.error("Signup error:", err);
-    errorEl.textContent = "Looks like you already have an account! Try logging in.";
+    if (err.code === "auth/email-already-in-use") {
+      errorEl.textContent = "Looks like you already have an account! Try logging in.";
+    } else if (err.code === "auth/weak-password") {
+      errorEl.textContent = "Password is too weak. Please use at least 6 characters.";
+    } else if (err.code === "auth/invalid-email") {
+      errorEl.textContent = "Invalid email address.";
+    } else {
+      errorEl.textContent = "Registration failed. Please try again.";
+    }
   }
 });
 
@@ -443,6 +451,7 @@ const userDoc = await userRef.get({ source: 'server' });
 if (!userDoc.exists) {
   await userRef.set({
     displayName: user.displayName || "User",
+    email: user.email || "",
     photoURL: "",
     bio: "",
     instagram: "",
@@ -459,10 +468,10 @@ if (!userDoc.exists) {
   // 🧹 Reset cizích dat při novém přihlášení (bez access)
   const existingData = userDoc.data();
   if (existingData && !existingData.access) {
-    // 🔒 BEZPEČNOSTNÍ FIX: Přepiš VŠECHNA pole na výchozí hodnoty
+    // 🔒 BEZPEČNOSTNÍ FIX: Přepiš pole na výchozí hodnoty, ale zachovej displayName a email
     await userRef.set({
-      displayName: user.displayName || "User",
-      email: user.email || "",
+      displayName: existingData.displayName || user.displayName || "User",
+      email: existingData.email || user.email || "",
       bio: "",
       instagram: "",
       vehicle: "",
@@ -472,7 +481,7 @@ if (!userDoc.exists) {
       ranger: false,
       access: false,
       emailVerified: user.emailVerified || false, // ✅ Synchronizace z Firebase Auth
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp()
     });
     console.log("🧼 Reset profile data for user without access:", user.uid);
   } else {
