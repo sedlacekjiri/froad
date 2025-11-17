@@ -672,71 +672,40 @@
           <form class="form" id="froadForm">
             <div class="form-row">
               <div class="form-group">
-                <label for="froadName">Name</label>
-                <input type="text" id="froadName" placeholder="F207 or F249 Þórsmerkurvegur" required />
+                <label for="froadId">Road ID</label>
+                <input type="text" id="froadId" placeholder="F208" required />
               </div>
               <div class="form-group">
-                <label for="froadIsOpen">Status (isOpen)</label>
-                <select id="froadIsOpen">
-                  <option value="">Not specified</option>
-                  <option value="true">Open (true)</option>
-                  <option value="false">Closed (false)</option>
+                <label for="froadName">Name</label>
+                <input type="text" id="froadName" placeholder="Fjallabak Route" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="froadStatus">Status</label>
+                <select id="froadStatus" required>
+                  <option value="open">Open</option>
+                  <option value="closed">Closed</option>
                   <option value="unknown">Unknown</option>
                 </select>
               </div>
-            </div>
-            <div class="form-group">
-              <label for="froadCoords">Coordinates (JSON array of [lat,lng] pairs)</label>
-              <textarea id="froadCoords" placeholder='[[64.062633,-18.245282],[64.06267,-18.24523],...]' required style="min-height: 80px; font-family: monospace; font-size: 12px;"></textarea>
-              <small style="color: #6b7280;">Format: [[lat,lng],[lat,lng],...]</small>
-            </div>
-            <div class="form-row">
               <div class="form-group">
                 <label for="froadDifficulty">Difficulty</label>
                 <select id="froadDifficulty" required>
-                  <option value="Easy">Easy</option>
-                  <option value="Easy-Medium">Easy-Medium</option>
-                  <option value="Medium">Medium</option>
-                  <option value="Medium-Hard">Medium-Hard</option>
-                  <option value="Hard">Hard</option>
+                  <option value="easy">Easy</option>
+                  <option value="moderate">Moderate</option>
+                  <option value="hard">Hard</option>
+                  <option value="extreme">Extreme</option>
                 </select>
               </div>
-              <div class="form-group">
-                <label for="froadLengthKm">Length (km)</label>
-                <input type="number" step="0.1" id="froadLengthKm" placeholder="39" required />
-              </div>
-            </div>
-            <div class="form-row">
-              <div class="form-group">
-                <label for="froadApproxTime">Approx Time</label>
-                <input type="text" id="froadApproxTime" placeholder="1-2 hours" required />
-              </div>
-              <div class="form-group">
-                <label for="froadSurface">Surface</label>
-                <input type="text" id="froadSurface" placeholder="Rocky, Gravel, etc." required />
-              </div>
             </div>
             <div class="form-group">
-              <label for="froadWatchOut">Watch Out / Hazards</label>
-              <input type="text" id="froadWatchOut" placeholder="Lava dirt, gravel, loose stones..." required />
-            </div>
-            <div class="form-group">
-              <label for="froadDescription">Description (optional)</label>
+              <label for="froadDescription">Description</label>
               <textarea id="froadDescription" placeholder="Road description..."></textarea>
             </div>
             <div class="form-group">
-              <label for="froadPhoto">Photo URL</label>
-              <input type="url" id="froadPhoto" placeholder="https://..." required />
-            </div>
-            <div class="form-group">
-              <label for="froadGallery">Gallery URLs (optional JSON array)</label>
-              <textarea id="froadGallery" placeholder='["https://url1.jpg","https://url2.jpg"]' style="min-height: 60px; font-family: monospace; font-size: 12px;"></textarea>
-              <small style="color: #6b7280;">Format: ["url1","url2",...]  Leave empty if no gallery</small>
-            </div>
-            <div class="form-group">
-              <label for="froadCrossings">River Crossings (optional JSON array)</label>
-              <textarea id="froadCrossings" placeholder='[{"id":"F207-X1","coord":[63.998,-18.414],"depth_m_est":0.4,"difficulty":"Medium","note":"..."}]' style="min-height: 80px; font-family: monospace; font-size: 12px;"></textarea>
-              <small style="color: #6b7280;">Format: [{"id":"...","coord":[lat,lng],"depth_m_est":0.4,"difficulty":"...","note":"..."}]  Leave empty if none</small>
+              <label for="froadPhotoURL">Photo URL</label>
+              <input type="url" id="froadPhotoURL" placeholder="https://..." />
             </div>
             <input type="hidden" id="froadDocId" />
             <button type="submit" class="btn-primary" id="froadSubmitBtn">Add F-Road</button>
@@ -744,35 +713,7 @@
         </div>
 
         <div class="section">
-          <h2>Import F-Roads from CSV</h2>
-          <div style="margin-bottom: 16px;">
-            <p style="font-size: 13px; color: #6b7280; margin-bottom: 12px;">
-              CSV format: name,coords,isOpen,photo,gallery,description,difficulty,lengthKm,approxTime,surface,watchOut,crossings<br>
-              Complex fields (coords, gallery, crossings) should be JSON-encoded strings.
-            </p>
-            <input type="file" id="froadCsvFileInput" accept=".csv" style="margin-bottom: 8px;" />
-            <button class="btn-secondary" id="importFRoadCsvBtn">Import CSV</button>
-          </div>
-        </div>
-
-        <div class="section">
           <h2>All F-Roads</h2>
-          <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
-            <input
-              type="text"
-              id="froadSearchInput"
-              placeholder="Search F-roads..."
-              style="flex: 1; min-width: 200px; padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 6px;"
-            />
-            <select
-              id="froadSortSelect"
-              style="padding: 8px 12px; border: 1px solid #e5e7eb; border-radius: 6px;"
-            >
-              <option value="name">Sort by Name</option>
-              <option value="difficulty">Sort by Difficulty</option>
-              <option value="length">Sort by Length</option>
-            </select>
-          </div>
           <div id="froadsList" class="items-list">
             <div class="loading">Loading...</div>
           </div>
@@ -1514,145 +1455,59 @@
     // ========================================
     // F-ROADS
     // ========================================
-    // F-Roads Management
-    let allFRoads = [];
-
     function loadFRoads() {
       db.collection('froads')
-        .orderBy('name')
+        .orderBy('roadId')
         .onSnapshot(snapshot => {
-          allFRoads = [];
+          const list = document.getElementById('froadsList');
+          if (snapshot.empty) {
+            list.innerHTML = '<div class="empty-state">No F-roads yet.</div>';
+            return;
+          }
+
+          list.innerHTML = '';
           snapshot.forEach(doc => {
-            allFRoads.push({ id: doc.id, ...doc.data() });
+            const data = doc.data();
+            const card = document.createElement('div');
+            card.className = 'item-card';
+            card.innerHTML = `
+              <div class="item-header">
+                <span class="item-title">${data.roadId} - ${data.name}</span>
+                <span class="badge badge-${data.status}">${data.status}</span>
+              </div>
+              <div class="item-meta">Difficulty: ${data.difficulty}</div>
+              <div class="item-text">${data.description || 'No description'}</div>
+              <div class="item-actions">
+                <button class="btn-edit" onclick="editFRoad('${doc.id}', ${JSON.stringify(data).replace(/"/g, '&quot;')})">Edit</button>
+                <button class="btn-delete" onclick="deleteFRoad('${doc.id}')">Delete</button>
+              </div>
+            `;
+            list.appendChild(card);
           });
-          displayFRoads();
         });
-    }
-
-    function displayFRoads() {
-      const list = document.getElementById('froadsList');
-      const searchTerm = document.getElementById('froadSearchInput')?.value.toLowerCase() || '';
-      const sortBy = document.getElementById('froadSortSelect')?.value || 'name';
-
-      if (allFRoads.length === 0) {
-        list.innerHTML = '<div class="empty-state">No F-roads yet.</div>';
-        return;
-      }
-
-      // Filter
-      let filteredFRoads = allFRoads.filter(froad => {
-        const searchString = `${froad.name} ${froad.description || ''} ${froad.difficulty} ${froad.surface}`.toLowerCase();
-        return searchString.includes(searchTerm);
-      });
-
-      // Sort
-      filteredFRoads.sort((a, b) => {
-        const nameA = a.name.toLowerCase();
-        const nameB = b.name.toLowerCase();
-        if (sortBy === 'name') {
-          return nameA.localeCompare(nameB);
-        } else if (sortBy === 'difficulty') {
-          const diffOrder = {'Easy': 1, 'Easy-Medium': 2, 'Medium': 3, 'Medium-Hard': 4, 'Hard': 5};
-          return (diffOrder[a.difficulty] || 3) - (diffOrder[b.difficulty] || 3);
-        } else if (sortBy === 'length') {
-          return (a.lengthKm || 0) - (b.lengthKm || 0);
-        }
-        return 0;
-      });
-
-      if (filteredFRoads.length === 0) {
-        list.innerHTML = '<div class="empty-state">No F-roads found.</div>';
-        return;
-      }
-
-      list.innerHTML = '';
-      filteredFRoads.forEach(froad => {
-        const card = document.createElement('div');
-        card.className = 'item-card';
-        const isOpenBadge = froad.isOpen === true ? '<span class="badge badge-open">Open</span>' :
-                            froad.isOpen === false ? '<span class="badge badge-closed">Closed</span>' :
-                            froad.isOpen === 'unknown' ? '<span class="badge badge-unknown">Unknown</span>' : '';
-        card.innerHTML = `
-          <div class="item-header">
-            <span class="item-title">${froad.name}</span>
-            ${isOpenBadge}
-          </div>
-          <div class="item-meta">📍 ${(froad.coords || []).length} points • ${froad.lengthKm} km • ${froad.difficulty} • ${froad.approxTime}</div>
-          <div class="item-text">${froad.description || 'No description'}</div>
-          <div class="item-meta">Surface: ${froad.surface} | Watch out: ${froad.watchOut}</div>
-          ${(froad.crossings || []).length > 0 ? `<div class="item-meta">🌊 ${froad.crossings.length} river crossing(s)</div>` : ''}
-          <div class="item-actions">
-            <button class="btn-edit" onclick="editFRoad('${froad.id}')">Edit</button>
-            <button class="btn-delete" onclick="deleteFRoad('${froad.id}')">Delete</button>
-          </div>
-        `;
-        list.appendChild(card);
-      });
-
-      // Setup event listeners
-      const froadSearchInput = document.getElementById('froadSearchInput');
-      if (froadSearchInput && !froadSearchInput.dataset.listenerAdded) {
-        froadSearchInput.dataset.listenerAdded = 'true';
-        froadSearchInput.addEventListener('input', displayFRoads);
-      }
-
-      const froadSortSelect = document.getElementById('froadSortSelect');
-      if (froadSortSelect && !froadSortSelect.dataset.listenerAdded) {
-        froadSortSelect.dataset.listenerAdded = 'true';
-        froadSortSelect.addEventListener('change', displayFRoads);
-      }
     }
 
     document.getElementById('froadForm').addEventListener('submit', async (e) => {
       e.preventDefault();
+      const data = {
+        roadId: document.getElementById('froadId').value,
+        name: document.getElementById('froadName').value,
+        status: document.getElementById('froadStatus').value,
+        difficulty: document.getElementById('froadDifficulty').value,
+        description: document.getElementById('froadDescription').value,
+        photoURL: document.getElementById('froadPhotoURL').value,
+      };
+
+      const froadDocId = document.getElementById('froadDocId').value;
 
       try {
-        // Parse JSON fields
-        const coordsStr = document.getElementById('froadCoords').value.trim();
-        const coords = JSON.parse(coordsStr);
-        if (!Array.isArray(coords) || coords.length === 0) {
-          throw new Error('Coordinates must be a non-empty array');
-        }
-
-        const galleryStr = document.getElementById('froadGallery').value.trim();
-        const gallery = galleryStr ? JSON.parse(galleryStr) : null;
-
-        const crossingsStr = document.getElementById('froadCrossings').value.trim();
-        const crossings = crossingsStr ? JSON.parse(crossingsStr) : null;
-
-        const isOpenVal = document.getElementById('froadIsOpen').value;
-        let isOpen = undefined;
-        if (isOpenVal === 'true') isOpen = true;
-        else if (isOpenVal === 'false') isOpen = false;
-        else if (isOpenVal === 'unknown') isOpen = 'unknown';
-
-        const data = {
-          name: document.getElementById('froadName').value,
-          coords: coords,
-          photo: document.getElementById('froadPhoto').value,
-          difficulty: document.getElementById('froadDifficulty').value,
-          lengthKm: parseFloat(document.getElementById('froadLengthKm').value),
-          approxTime: document.getElementById('froadApproxTime').value,
-          surface: document.getElementById('froadSurface').value,
-          watchOut: document.getElementById('froadWatchOut').value,
-          description: document.getElementById('froadDescription').value || '',
-        };
-
-        if (isOpen !== undefined) data.isOpen = isOpen;
-        if (gallery) data.gallery = gallery;
-        if (crossings) data.crossings = crossings;
-
-        const froadDocId = document.getElementById('froadDocId').value;
-
         if (froadDocId) {
           await db.collection('froads').doc(froadDocId).update(data);
-          alert('F-road updated successfully!');
         } else {
           await db.collection('froads').add({
             ...data,
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
           });
-          alert('F-road added successfully!');
         }
 
         document.getElementById('froadForm').reset();
@@ -1660,34 +1515,19 @@
         document.getElementById('froadSubmitBtn').textContent = 'Add F-Road';
       } catch (err) {
         console.error('Error saving F-road:', err);
-        alert('Error saving F-road: ' + err.message);
+        alert('Error saving F-road');
       }
     });
 
-    window.editFRoad = (id) => {
-      const froad = allFRoads.find(f => f.id === id);
-      if (!froad) return;
-
+    window.editFRoad = (id, data) => {
       document.getElementById('froadDocId').value = id;
-      document.getElementById('froadName').value = froad.name;
-      document.getElementById('froadCoords').value = JSON.stringify(froad.coords || []);
-
-      if (froad.isOpen === true) document.getElementById('froadIsOpen').value = 'true';
-      else if (froad.isOpen === false) document.getElementById('froadIsOpen').value = 'false';
-      else if (froad.isOpen === 'unknown') document.getElementById('froadIsOpen').value = 'unknown';
-      else document.getElementById('froadIsOpen').value = '';
-
-      document.getElementById('froadDifficulty').value = froad.difficulty;
-      document.getElementById('froadLengthKm').value = froad.lengthKm || 0;
-      document.getElementById('froadApproxTime').value = froad.approxTime || '';
-      document.getElementById('froadSurface').value = froad.surface || '';
-      document.getElementById('froadWatchOut').value = froad.watchOut || '';
-      document.getElementById('froadDescription').value = froad.description || '';
-      document.getElementById('froadPhoto').value = froad.photo || '';
-      document.getElementById('froadGallery').value = froad.gallery ? JSON.stringify(froad.gallery) : '';
-      document.getElementById('froadCrossings').value = froad.crossings ? JSON.stringify(froad.crossings) : '';
-
-      document.getElementById('froadSubmitBtn').textContent = 'Update F-Road';
+      document.getElementById('froadId').value = data.roadId;
+      document.getElementById('froadName').value = data.name;
+      document.getElementById('froadStatus').value = data.status;
+      document.getElementById('froadDifficulty').value = data.difficulty;
+      document.getElementById('froadDescription').value = data.description || '';
+      document.getElementById('froadPhotoURL').value = data.photoURL || '';
+      document.getElementById('froadSubmitBtn').textContent = 'Update';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -1695,116 +1535,10 @@
       if (!confirm('Delete this F-road?')) return;
       try {
         await db.collection('froads').doc(id).delete();
-        alert('F-road deleted successfully!');
       } catch (err) {
         console.error('Error deleting:', err);
-        alert('Error deleting F-road');
       }
     };
-
-    // CSV Import for F-Roads
-    document.getElementById('importFRoadCsvBtn').addEventListener('click', async () => {
-      const fileInput = document.getElementById('froadCsvFileInput');
-      if (!fileInput.files.length) {
-        alert('Please select a CSV file');
-        return;
-      }
-
-      const file = fileInput.files[0];
-      const text = await file.text();
-      const lines = text.split('\n').filter(l => l.trim());
-
-      if (lines.length < 2) {
-        alert('CSV file is empty');
-        return;
-      }
-
-      const header = lines[0].split(',');
-      let imported = 0;
-      let errors = 0;
-
-      for (let i = 1; i < lines.length; i++) {
-        try {
-          const fields = parseCSVLine(lines[i]);
-          if (fields.length < 11) continue;
-
-          const coords = JSON.parse(fields[1] || '[]');
-          if (!Array.isArray(coords) || coords.length === 0) {
-            console.error(`Line ${i+1}: Invalid coords`);
-            errors++;
-            continue;
-          }
-
-          // Validate that coords are in the correct format: [[lat, lng], ...]
-          if (!Array.isArray(coords[0]) || coords[0].length !== 2) {
-            console.error(`Line ${i+1}: Invalid coords format - expected [[lat,lng],...]`);
-            errors++;
-            continue;
-          }
-
-          let isOpen = undefined;
-          if (fields[2] === 'true') isOpen = true;
-          else if (fields[2] === 'false') isOpen = false;
-          else if (fields[2] === 'unknown') isOpen = 'unknown';
-
-          const gallery = fields[4] && fields[4].trim() ? JSON.parse(fields[4]) : null;
-          const crossings = fields[11] && fields[11].trim() ? JSON.parse(fields[11]) : null;
-
-          const data = {
-            name: fields[0] || '',
-            coords: coords,
-            photo: fields[3] || '',
-            description: fields[5] || '',
-            difficulty: fields[6] || 'Medium',
-            lengthKm: parseFloat(fields[7]) || 0,
-            approxTime: fields[8] || '',
-            surface: fields[9] || '',
-            watchOut: fields[10] || '',
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-          };
-
-          if (isOpen !== undefined) data.isOpen = isOpen;
-          if (gallery) data.gallery = gallery;
-          if (crossings) data.crossings = crossings;
-
-          await db.collection('froads').add(data);
-          imported++;
-        } catch (err) {
-          console.error(`Error importing line ${i+1}:`, err);
-          errors++;
-        }
-      }
-
-      alert(`Import complete!\nImported: ${imported}\nErrors: ${errors}`);
-      fileInput.value = '';
-    });
-
-    function parseCSVLine(line) {
-      const result = [];
-      let current = '';
-      let inQuotes = false;
-
-      for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-        const nextChar = line[i + 1];
-
-        if (char === '"') {
-          if (inQuotes && nextChar === '"') {
-            current += '"';
-            i++;
-          } else {
-            inQuotes = !inQuotes;
-          }
-        } else if (char === ',' && !inQuotes) {
-          result.push(current);
-          current = '';
-        } else {
-          current += char;
-        }
-      }
-      result.push(current);
-      return result;
-    }
   </script>
 </body>
 </html>
