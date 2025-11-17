@@ -2536,8 +2536,8 @@ function locateOnce(){
     // midpoint (lat, lon)
     function getRoadMidLatLon(rd){
       if(!rd.coords || !rd.coords.length) return [64.1466, -21.9426];
-      // coords is now {lat, lng} objects instead of [lat, lng] arrays
-      const line=turf.lineString(rd.coords.map(c=>[c.lng, c.lat]));
+      // coords is in [lat, lng] format, convert to [lng, lat] for turf.js
+      const line=turf.lineString(rd.coords.map(c=>[c[1], c[0]]));
       const lenKm=turf.length(line,{units:'kilometers'});
       const mid=turf.along(line, lenKm/2, {units:'kilometers'});
       const [lon,lat]=mid.geometry.coordinates; return [lat,lon];
@@ -2563,8 +2563,8 @@ function locateOnce(){
     function resolveCrossingCoord(rd,x){
       if(x.coord && x.coord.length===2) return x.coord; // [lat,lon]
       if(typeof x.alongKm==='number'){
-        // coords is now {lat, lng} objects instead of [lat, lng] arrays
-        const line=turf.lineString(rd.coords.map(c=>[c.lng, c.lat]));
+        // coords is in [lat, lng] format, convert to [lng, lat] for turf.js
+        const line=turf.lineString(rd.coords.map(c=>[c[1], c[0]]));
         const pt=turf.along(line, x.alongKm, {units:'kilometers'});
         return [pt.geometry.coordinates[1], pt.geometry.coordinates[0]];
       }
@@ -2744,10 +2744,15 @@ function resetPolylineStyle(polyline){
       roadLayers = [];
 
       froadData.forEach(rd=>{
-        // coords is already in [lat, lng] format, ready for Leaflet
-        const coordsArray = rd.coords;
+        // Handle both formats: [lat, lng] arrays OR {lat, lng} objects
+        const coordsArray = rd.coords.map(c =>
+          Array.isArray(c) ? c : [c.lat, c.lng]
+        );
+        // Store normalized coords for use throughout the app
+        const normalizedData = { ...rd, coords: coordsArray };
+
         const visibleLine = L.polyline(coordsArray, {
-          color: baseRoadColor(rd),
+          color: baseRoadColor(normalizedData),
           weight: 4,
           className: 'road-main-line'
         }).addTo(map);
@@ -2757,13 +2762,13 @@ function resetPolylineStyle(polyline){
           if (selectedLayer && selectedLayer !== visibleLine) resetPolylineStyle(selectedLayer);
           visibleLine.setStyle({ color:'#000', weight:6 });
           selectedLayer=visibleLine;
-          showPanel(rd);
+          showPanel(normalizedData);
         };
         bufferLine.on('click', onRoadClick);
         visibleLine.on('click', onRoadClick);
 
         // ⬇️ ULOŽIT si handler do struktury:
-        roadLayers.push({ polyline:visibleLine, data:rd, hitbox:bufferLine, onRoadClick });
+        roadLayers.push({ polyline:visibleLine, data:normalizedData, hitbox:bufferLine, onRoadClick });
       });
 
       console.log('✅ F-roads initialized on map');
