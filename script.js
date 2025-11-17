@@ -313,6 +313,10 @@ signupForm.addEventListener("submit", async e => {
     // Nastav displayName v Auth
     await user.updateProfile({ displayName: fullName });
 
+    // ✅ Odeslání confirmation emailu
+    await user.sendEmailVerification();
+    console.log("✅ Confirmation email sent to:", email);
+
     // Vytvoř výchozí profil ve Firestore
     await db.collection("users").doc(user.uid).set({
       displayName: fullName,
@@ -325,10 +329,12 @@ signupForm.addEventListener("submit", async e => {
       verified: false,
       ranger: false,
       access: false,
+      emailVerified: false, // ✅ Stav potvrzení emailu
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
 
     errorEl.textContent = "";
+    alert("✅ Registration successful! Please check your email to confirm your account.");
     showAccessDeniedModal();
     await auth.signOut();
   } catch (err) {
@@ -445,6 +451,7 @@ if (!userDoc.exists) {
     verified: false,
     ranger: false,
     access: false,
+    emailVerified: user.emailVerified || false, // ✅ Synchronizace z Firebase Auth
     createdAt: firebase.firestore.FieldValue.serverTimestamp()
   });
   console.log("✅ New clean profile created for:", user.uid);
@@ -464,9 +471,16 @@ if (!userDoc.exists) {
       verified: false,
       ranger: false,
       access: false,
+      emailVerified: user.emailVerified || false, // ✅ Synchronizace z Firebase Auth
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
     console.log("🧼 Reset profile data for user without access:", user.uid);
+  } else {
+    // ✅ Aktualizuj emailVerified při každém přihlášení
+    await userRef.update({
+      emailVerified: user.emailVerified || false
+    });
+    console.log("✅ Email verification status updated:", user.emailVerified);
   }
 }
 
