@@ -117,7 +117,10 @@ function renderUpdates() {
   }
 
   const html = recentUpdates.map(update => {
-    const date = parseUpdateTime(update.time);
+    // Use createdAt timestamp first, fallback to parsing time string
+    const date = update.createdAt && update.createdAt.toDate
+      ? update.createdAt.toDate()
+      : parseUpdateTime(update.time);
     const relativeTime = date ? getRelativeTime(date) : update.time;
 
     return `
