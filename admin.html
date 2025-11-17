@@ -566,9 +566,15 @@
                 <input type="text" id="campsiteFacilities" placeholder="Shower, Toilet, Kitchen" />
               </div>
             </div>
-            <div class="form-group">
-              <label for="campsitePhotoURL">Photo URL</label>
-              <input type="url" id="campsitePhotoURL" placeholder="https://..." />
+            <div class="form-row">
+              <div class="form-group">
+                <label for="campsiteLink">Info Link (URL)</label>
+                <input type="url" id="campsiteLink" placeholder="https://..." />
+              </div>
+              <div class="form-group">
+                <label for="campsitePhotoURL">Photo URL</label>
+                <input type="url" id="campsitePhotoURL" placeholder="https://..." />
+              </div>
             </div>
             <input type="hidden" id="campsiteId" />
             <button type="submit" class="btn-primary" id="campsiteSubmitBtn">Add Campsite</button>
@@ -576,7 +582,34 @@
         </div>
 
         <div class="section">
+          <h2>Import Campsites from CSV</h2>
+          <div style="margin-bottom: 16px;">
+            <p style="font-size: 13px; color: #6b7280; margin-bottom: 12px;">
+              CSV format: name,lat,lng,link,photo,status,description,price,facilities
+            </p>
+            <input type="file" id="campsiteCsvFileInput" accept=".csv" style="margin-bottom: 12px;" />
+            <button class="btn-primary" id="importCampsiteCsvBtn" style="margin-right: 8px;">Import CSV</button>
+          </div>
+          <div id="campsiteImportLog" style="background: #f9fafb; padding: 12px; border-radius: 4px; border: 1px solid #e5e7eb; font-size: 13px; max-height: 200px; overflow-y: auto; display: none;"></div>
+        </div>
+
+        <div class="section">
           <h2>All Campsites</h2>
+          <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+            <input
+              type="text"
+              id="campsiteSearchInput"
+              placeholder="Search campsites..."
+              style="flex: 1; min-width: 200px; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; font-family: 'Poppins', sans-serif;"
+            />
+            <select
+              id="campsiteSortSelect"
+              style="padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; font-family: 'Poppins', sans-serif; background: white;"
+            >
+              <option value="a-z">Sort: A-Z</option>
+              <option value="z-a">Sort: Z-A</option>
+            </select>
+          </div>
           <div id="campsitesList" class="items-list">
             <div class="loading">Loading...</div>
           </div>
@@ -1117,38 +1150,87 @@
     // ========================================
     // CAMPSITES
     // ========================================
+    let allCampsites = [];
+
     function loadCampsites() {
       db.collection('campsites')
         .orderBy('name')
         .onSnapshot(snapshot => {
-          const list = document.getElementById('campsitesList');
-          if (snapshot.empty) {
-            list.innerHTML = '<div class="empty-state">No campsites yet.</div>';
-            return;
-          }
-
-          list.innerHTML = '';
+          allCampsites = [];
           snapshot.forEach(doc => {
-            const data = doc.data();
-            const card = document.createElement('div');
-            card.className = 'item-card';
-            card.innerHTML = `
-              <div class="item-header">
-                <span class="item-title">${data.name}</span>
-                <span class="badge badge-${data.status}">${data.status}</span>
-              </div>
-              <div class="item-meta">📍 ${data.lat}, ${data.lng} ${data.price ? `• ${data.price} ISK/night` : ''}</div>
-              <div class="item-text">${data.description || 'No description'}</div>
-              ${data.facilities ? `<div class="item-meta">🏕️ ${data.facilities}</div>` : ''}
-              <div class="item-actions">
-                <button class="btn-edit" onclick="editCampsite('${doc.id}', ${JSON.stringify(data).replace(/"/g, '&quot;')})">Edit</button>
-                <button class="btn-delete" onclick="deleteCampsite('${doc.id}')">Delete</button>
-              </div>
-            `;
-            list.appendChild(card);
+            allCampsites.push({ id: doc.id, ...doc.data() });
           });
+          displayCampsites();
         });
     }
+
+    function displayCampsites() {
+      const list = document.getElementById('campsitesList');
+      const searchTerm = document.getElementById('campsiteSearchInput')?.value.toLowerCase() || '';
+      const sortOrder = document.getElementById('campsiteSortSelect')?.value || 'a-z';
+
+      if (allCampsites.length === 0) {
+        list.innerHTML = '<div class="empty-state">No campsites yet.</div>';
+        return;
+      }
+
+      // Filter campsites based on search term
+      let filteredCampsites = allCampsites.filter(campsite => {
+        const searchString = `${campsite.name} ${campsite.description || ''} ${campsite.facilities || ''} ${campsite.status}`.toLowerCase();
+        return searchString.includes(searchTerm);
+      });
+
+      // Sort campsites
+      filteredCampsites.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        if (sortOrder === 'a-z') {
+          return nameA.localeCompare(nameB);
+        } else {
+          return nameB.localeCompare(nameA);
+        }
+      });
+
+      // Display filtered and sorted campsites
+      if (filteredCampsites.length === 0) {
+        list.innerHTML = '<div class="empty-state">No campsites found.</div>';
+        return;
+      }
+
+      list.innerHTML = '';
+      filteredCampsites.forEach(campsite => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.innerHTML = `
+          <div class="item-header">
+            <span class="item-title">${campsite.name}</span>
+            <span class="badge badge-${campsite.status}">${campsite.status}</span>
+          </div>
+          <div class="item-meta">📍 ${campsite.lat}, ${campsite.lng} ${campsite.price ? `• ${campsite.price} ISK/night` : ''}</div>
+          <div class="item-text">${campsite.description || 'No description'}</div>
+          ${campsite.facilities ? `<div class="item-meta">🏕️ ${campsite.facilities}</div>` : ''}
+          <div class="item-actions">
+            <button class="btn-edit" onclick="editCampsite('${campsite.id}', ${JSON.stringify(campsite).replace(/"/g, '&quot;')})">Edit</button>
+            <button class="btn-delete" onclick="deleteCampsite('${campsite.id}')">Delete</button>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    // Add event listeners for campsite search and sort
+    document.addEventListener('DOMContentLoaded', () => {
+      const campsiteSearchInput = document.getElementById('campsiteSearchInput');
+      const campsiteSortSelect = document.getElementById('campsiteSortSelect');
+
+      if (campsiteSearchInput) {
+        campsiteSearchInput.addEventListener('input', displayCampsites);
+      }
+
+      if (campsiteSortSelect) {
+        campsiteSortSelect.addEventListener('change', displayCampsites);
+      }
+    });
 
     document.getElementById('campsiteForm').addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1160,6 +1242,7 @@
         description: document.getElementById('campsiteDescription').value,
         price: parseInt(document.getElementById('campsitePrice').value) || null,
         facilities: document.getElementById('campsiteFacilities').value,
+        link: document.getElementById('campsiteLink').value,
         photoURL: document.getElementById('campsitePhotoURL').value,
       };
 
@@ -1193,6 +1276,7 @@
       document.getElementById('campsiteDescription').value = data.description || '';
       document.getElementById('campsitePrice').value = data.price || '';
       document.getElementById('campsiteFacilities').value = data.facilities || '';
+      document.getElementById('campsiteLink').value = data.link || '';
       document.getElementById('campsitePhotoURL').value = data.photoURL || '';
       document.getElementById('campsiteSubmitBtn').textContent = 'Update';
       window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1206,6 +1290,79 @@
         console.error('Error deleting:', err);
       }
     };
+
+    // CSV Import for Campsites
+    document.getElementById('importCampsiteCsvBtn').addEventListener('click', async () => {
+      const fileInput = document.getElementById('campsiteCsvFileInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('Please select a CSV file first');
+        return;
+      }
+
+      const logEl = document.getElementById('campsiteImportLog');
+      logEl.style.display = 'block';
+      logEl.innerHTML = '<div style="color: #3b82f6;">🚀 Starting import...</div>';
+
+      try {
+        const text = await file.text();
+        const lines = text.split('\n').filter(line => line.trim());
+
+        // Skip header if present
+        const startIndex = lines[0].toLowerCase().includes('name') ? 1 : 0;
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let i = startIndex; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          try {
+            // Parse CSV line (handle quoted fields)
+            const fields = parseCSVLine(line);
+
+            if (fields.length < 3) {
+              logEl.innerHTML += `<div style="color: #ef4444;">❌ Line ${i+1}: Not enough fields</div>`;
+              errorCount++;
+              continue;
+            }
+
+            const campsiteData = {
+              name: fields[0] || '',
+              lat: parseFloat(fields[1]) || 0,
+              lng: parseFloat(fields[2]) || 0,
+              link: fields[3] || '',
+              photoURL: fields[4] || '',
+              status: fields[5] || 'open',
+              description: fields[6] || '',
+              price: fields[7] ? parseInt(fields[7]) : null,
+              facilities: fields[8] || '',
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await db.collection('campsites').add(campsiteData);
+            successCount++;
+            logEl.innerHTML += `<div style="color: #10b981;">✅ Imported: ${campsiteData.name}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+
+            // Small delay to avoid overwhelming Firebase
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+          } catch (err) {
+            errorCount++;
+            logEl.innerHTML += `<div style="color: #ef4444;">❌ Line ${i+1}: ${err.message}</div>`;
+          }
+        }
+
+        logEl.innerHTML += `<div style="color: #3b82f6; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">✨ Import complete! Success: ${successCount}, Errors: ${errorCount}</div>`;
+        fileInput.value = '';
+
+      } catch (err) {
+        logEl.innerHTML += `<div style="color: #ef4444;">❌ Error reading file: ${err.message}</div>`;
+      }
+    });
 
     // ========================================
     // GAS STATIONS

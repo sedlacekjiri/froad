@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Import Campsites to Firebase</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: #1a1a1a;
+      color: #00ff00;
+      padding: 40px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      color: #00ff00;
+      text-align: center;
+    }
+    .log {
+      background: #000;
+      padding: 20px;
+      border-radius: 8px;
+      border: 2px solid #00ff00;
+      margin-top: 20px;
+      height: 400px;
+      overflow-y: auto;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .success { color: #00ff00; }
+    .error { color: #ff0000; }
+    .info { color: #00aaff; }
+    button {
+      display: block;
+      width: 100%;
+      padding: 16px;
+      background: #00ff00;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      font-size: 18px;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 20px;
+    }
+    button:hover {
+      background: #00cc00;
+    }
+    button:disabled {
+      background: #666;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>🏕️ Import Campsites to Firebase</h1>
+  <button id="importBtn">START IMPORT</button>
+  <div class="log" id="log"></div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <script>
+    // Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDDMNnJgtm-gK9OrVev7qmBRpaA8CAoDiM",
+      authDomain: "froad-7d561.firebaseapp.com",
+      projectId: "froad-7d561",
+      storageBucket: "froad-7d561.firebasestorage.app",
+      messagingSenderId: "1086299585443",
+      appId: "1:1086299585443:web:10bcb67effd6a89c24f816"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // Original campsites data from explore.html
+    const campsites = [{
+      name: "Básar Campsite",
+      lat: 63.6771443,
+      lng: -19.4813471,
+      link: "https://www.campsire.com/campsites-highlands/basar-hut-and-campsite-thorsmork",
+      photoURL: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ade2efbd7011ec342300c6_688013eb5ecbffb361681c5e_basar%20thorsmrok6788.jpg",
+      status: "open",
+      description: "Campsite in Þórsmörk valley",
+      facilities: "Toilets, Running water"
+    },
+    {
+      name: "Langisjór Campsite",
+      lat: 64.111142,
+      lng: -18.443615,
+      link: "https://www.campsire.com/all-campsites-iceland/langisjor-campsite",
+      photoURL: "https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ded5f8107b56b72806d408_langisjor-campsite.jpg",
+      status: "open",
+      description: "Remote highland campsite by beautiful lake",
+      facilities: "Basic facilities"
+    },
+    {
+      name: "Blágil Campsite",
+      lat: 63.9666962,
+      lng: -18.324,
+      link: "https://www.campsire.com/campsites-highlands/blagil-hut-and-campsite",
+      photoURL: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/68b84f533641d318e181c81f_blagil-campsite.jpg",
+      status: "open",
+      description: "Highland campsite near Landmannalaugar",
+      facilities: "Toilets, Shelter"
+    },
+    {
+      name: "Húsadalur Volcano Huts",
+      lat: 63.69101,
+      lng: -19.54088,
+      link: "https://www.campsire.com/campsites-highlands/husadalur-volcano-huts-and-campsite-thorsmork",
+      photoURL: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/68c6f4da8a596f31bd9db5e5_husadalur.jpg",
+      status: "open",
+      description: "Campsite with huts in Þórsmörk",
+      facilities: "Huts, Toilets, Kitchen"
+    },
+    {
+      name: "Hveravellir Lodge and Campsite",
+      lat: 64.86664,
+      lng: -19.55347,
+      link: "https://www.campsire.com/campsites-highlands/hveravellir-lodge-and-campsite",
+      photoURL: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/68c6f2a1e724789b67c7cbd9_hveravellir.webp",
+      status: "open",
+      description: "Geothermal area campsite with hot spring",
+      facilities: "Hot spring, Toilets, Lodge"
+    },
+    {
+      name: "Landmannalaugar Campsite",
+      lat: 63.99067,
+      lng: -19.06068,
+      link: "https://www.campsire.com/campsites-highlands/landmannalaugar-camping",
+      photoURL: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/68b863be2831ae1c5f4d817f_landmannalaugar-campsite.jpg",
+      status: "open",
+      description: "Popular highland campsite with hot spring",
+      facilities: "Hot spring, Toilets, Showers"
+    },
+    {
+      name: "Kerlingarfjöll Highland Base",
+      lat: 64.68343,
+      lng: -19.30119,
+      link: "https://www.campsire.com/campsites-highlands/kerlingarfjoll-highland-base",
+      photoURL: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/68c6ee46d1521df41c3f50a3_kerlingarfjoll-campsite.jpg",
+      status: "open",
+      description: "Mountain resort with camping facilities",
+      facilities: "Showers, Restaurant, Store"
+    },
+    {
+      name: "Flateydalur Campsite",
+      lat: 66.114294,
+      lng: -17.885838,
+      link: "https://www.campsire.com/all-campsites-iceland/flateydalur-campsite",
+      photoURL: "https://cdn.prod.website-files.com/687ebfrd20183c0459d68784/68e51abb4df0de8c142f6290_flateydalur-hut.webp",
+      status: "open",
+      description: "Remote campsite in North Iceland",
+      facilities: "Hut, Basic facilities"
+    }];
+
+    const logEl = document.getElementById('log');
+    const importBtn = document.getElementById('importBtn');
+
+    function log(message, type = 'info') {
+      const time = new Date().toLocaleTimeString();
+      const className = type;
+      logEl.innerHTML += `<div class="${className}">[${time}] ${message}</div>`;
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+    async function importCampsites() {
+      importBtn.disabled = true;
+      importBtn.textContent = 'IMPORTING...';
+
+      log('🚀 Starting campsites import...', 'info');
+      log(`📊 Total campsites to import: ${campsites.length}`, 'info');
+      log('─'.repeat(60), 'info');
+
+      let successCount = 0;
+      let errorCount = 0;
+
+      for (const campsite of campsites) {
+        try {
+          await db.collection('campsites').add({
+            name: campsite.name,
+            lat: campsite.lat,
+            lng: campsite.lng,
+            link: campsite.link || '',
+            photoURL: campsite.photoURL || '',
+            status: campsite.status || 'open',
+            description: campsite.description || '',
+            price: campsite.price || null,
+            facilities: campsite.facilities || '',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          successCount++;
+          log(`✅ Imported: ${campsite.name}`, 'success');
+
+          // Small delay to avoid overwhelming Firebase
+          await new Promise(resolve => setTimeout(resolve, 200));
+        } catch (error) {
+          errorCount++;
+          log(`❌ Error importing ${campsite.name}: ${error.message}`, 'error');
+        }
+      }
+
+      log('─'.repeat(60), 'info');
+      log(`✨ Import complete!`, 'success');
+      log(`✅ Success: ${successCount}`, 'success');
+      if (errorCount > 0) {
+        log(`❌ Errors: ${errorCount}`, 'error');
+      }
+      log('─'.repeat(60), 'info');
+      log('🎉 You can now close this page and check admin panel!', 'success');
+
+      importBtn.textContent = 'IMPORT COMPLETE ✓';
+    }
+
+    importBtn.addEventListener('click', importCampsites);
+
+    log('📋 Ready to import campsites to Firebase', 'info');
+    log('⚠️  Make sure you have proper Firebase permissions', 'info');
+    log('🔘 Click the button above to start import', 'info');
+  </script>
+</body>
+</html>

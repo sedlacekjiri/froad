@@ -2462,7 +2462,11 @@ function locateOnce(){
     ];
 
     /* ---- Campsites ---- */
-    const campsites=[{
+    // Campsites will be loaded from Firestore
+    let campsites = [];
+
+    // Temporarily keep hardcoded data (will be replaced by Firestore)
+    const _oldCampsites=[{
       name: "Básar Campsite",
       coords: [63.6771443, -19.4813471],
       link: "https://www.campsire.com/campsites-highlands/basar-hut-and-campsite-thorsmork",
@@ -3069,45 +3073,81 @@ const campIcon = L.icon({
   popupAnchor: [0,-30]
 });
 
-campsites.forEach(camp=>{
-  // coords:[lat,lon] nebo lat/lng
-  const lat = camp.coords?.[0] ?? camp.lat;
-  const lng = camp.coords?.[1] ?? camp.lng;
-  if (typeof lat !== 'number' || typeof lng !== 'number') return;
+// Render campsites on the map
+function renderCampsites() {
+  console.log('🔄 Rendering campsites:', campsites.length);
 
-  // cover vždy nahoře (preferuj camp.photo, pak placeholder)
-  const cover = camp.photo || PLACEHOLDER_COVER;
+  // Clear existing campsite markers
+  if (window.campsitesLayer) {
+    window.campsitesLayer.clearLayers();
+  }
 
-  const html = `
-    <div class="poi-card">
-      <img class="poi-cover" src="${cover}" alt="${camp.name || 'Campsite'}" />
-      <div class="poi-body">
-        <h3 class="poi-title">${camp.name || 'Campsite'}</h3>
-        <p class="poi-desc">${camp.description || camp.desc || ''}</p>
-        <div class="poi-actions">
-          ${camp.link ? `
-            <a class="poi-btn" href="${camp.link}" target="_blank" rel="noopener">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
-                <path d="M7 13l6-6M9 5h6v6" stroke="#111" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
-              More info
-            </a>` : ``}
+  campsites.forEach(camp=>{
+    // coords:[lat,lon] nebo lat/lng
+    const lat = camp.coords?.[0] ?? camp.lat;
+    const lng = camp.coords?.[1] ?? camp.lng;
+    if (typeof lat !== 'number' || typeof lng !== 'number') return;
+
+    // cover vždy nahoře (preferuj camp.photo, camp.photoURL, pak placeholder)
+    const cover = camp.photo || camp.photoURL || PLACEHOLDER_COVER;
+
+    const html = `
+      <div class="poi-card">
+        <img class="poi-cover" src="${cover}" alt="${camp.name || 'Campsite'}" />
+        <div class="poi-body">
+          <h3 class="poi-title">${camp.name || 'Campsite'}</h3>
+          <p class="poi-desc">${camp.description || camp.desc || ''}</p>
+          <div class="poi-actions">
+            ${camp.link ? `
+              <a class="poi-btn" href="${camp.link}" target="_blank" rel="noopener">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+                  <path d="M7 13l6-6M9 5h6v6" stroke="#111" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                More info
+              </a>` : ``}
+          </div>
         </div>
       </div>
-    </div>
-  `;
+    `;
 
-  L.marker([lat, lng], { icon: campIcon, title: camp.name || 'Campsite' })
-    .addTo(window.campsitesLayer || map)  // máš-li toggle, nech to v campsitesLayer
-    .bindPopup(html, {
-      className: 'poi-popup',
-      maxWidth: 380,
-      minWidth: 260,
-      autoPan: true,
-      autoPanPadding: [20,20],
-      closeButton: true
+    L.marker([lat, lng], { icon: campIcon, title: camp.name || 'Campsite' })
+      .addTo(window.campsitesLayer || map)  // máš-li toggle, nech to v campsitesLayer
+      .bindPopup(html, {
+        className: 'poi-popup',
+        maxWidth: 380,
+        minWidth: 260,
+        autoPan: true,
+        autoPanPadding: [20,20],
+        closeButton: true
+      });
+  });
+
+  console.log('✅ Campsites rendered');
+}
+
+// Load campsites from Firestore
+function loadCampsitesFromFirestore() {
+  console.log('🔄 Loading campsites from Firestore...');
+
+  db.collection('campsites')
+    .orderBy('name')
+    .onSnapshot(snapshot => {
+      console.log('📡 Campsites snapshot received:', snapshot.size, 'documents');
+
+      campsites = [];
+      snapshot.forEach(doc => {
+        campsites.push(doc.data());
+      });
+
+      console.log('✅ Campsites array updated:', campsites.length, 'campsites');
+      renderCampsites();
+    }, err => {
+      console.error('❌ Error loading campsites from Firestore:', err);
     });
-});
+}
+
+// Initialize campsites listener
+loadCampsitesFromFirestore();
 
 // =====================================================
 // HUTS SECTION WITH FIREBASE INTEGRATION
