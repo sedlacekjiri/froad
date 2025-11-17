@@ -2744,8 +2744,8 @@ function resetPolylineStyle(polyline){
       roadLayers = [];
 
       froadData.forEach(rd=>{
-        // coords is now {lat, lng} objects, convert to [lat, lng] arrays for Leaflet
-        const coordsArray = rd.coords.map(c => [c.lat, c.lng]);
+        // coords is already in [lat, lng] format, ready for Leaflet
+        const coordsArray = rd.coords;
         const visibleLine = L.polyline(coordsArray, {
           color: baseRoadColor(rd),
           weight: 4,
@@ -2782,8 +2782,8 @@ function resetPolylineStyle(polyline){
     // ⬅️ klíčová podmínka: pro nevhodné cesty nevytvářej vůbec žádné labely
     if (r.data.allowed === false) return;
 
-    // coords is now {lat, lng} objects instead of [lat, lng] arrays
-    const line = turf.lineString(r.data.coords.map(c=>[c.lng, c.lat]));
+    // coords is in [lat, lng] format, convert to [lng, lat] for turf.js
+    const line = turf.lineString(r.data.coords.map(c=>[c[1], c[0]]));
     const len  = turf.length(line,{units:'kilometers'});
     const step = len/labelsPerRoad;
 
