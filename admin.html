@@ -1728,12 +1728,19 @@
           const fields = parseCSVLine(lines[i]);
           if (fields.length < 11) continue;
 
-          const coords = JSON.parse(fields[1] || '[]');
-          if (!Array.isArray(coords) || coords.length === 0) {
+          const coordsRaw = JSON.parse(fields[1] || '[]');
+          if (!Array.isArray(coordsRaw) || coordsRaw.length === 0) {
             console.error(`Line ${i+1}: Invalid coords`);
             errors++;
             continue;
           }
+
+          // Convert nested arrays [[lat, lng], ...] to objects [{lat, lng}, ...]
+          // Firebase Firestore does not support nested arrays
+          const coords = coordsRaw.map(coord => ({
+            lat: coord[0],
+            lng: coord[1]
+          }));
 
           let isOpen = undefined;
           if (fields[2] === 'true') isOpen = true;

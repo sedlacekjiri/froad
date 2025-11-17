@@ -2536,7 +2536,8 @@ function locateOnce(){
     // midpoint (lat, lon)
     function getRoadMidLatLon(rd){
       if(!rd.coords || !rd.coords.length) return [64.1466, -21.9426];
-      const line=turf.lineString(rd.coords.map(c=>[c[1],c[0]]));
+      // coords is now {lat, lng} objects instead of [lat, lng] arrays
+      const line=turf.lineString(rd.coords.map(c=>[c.lng, c.lat]));
       const lenKm=turf.length(line,{units:'kilometers'});
       const mid=turf.along(line, lenKm/2, {units:'kilometers'});
       const [lon,lat]=mid.geometry.coordinates; return [lat,lon];
@@ -2562,7 +2563,8 @@ function locateOnce(){
     function resolveCrossingCoord(rd,x){
       if(x.coord && x.coord.length===2) return x.coord; // [lat,lon]
       if(typeof x.alongKm==='number'){
-        const line=turf.lineString(rd.coords.map(c=>[c[1],c[0]]));
+        // coords is now {lat, lng} objects instead of [lat, lng] arrays
+        const line=turf.lineString(rd.coords.map(c=>[c.lng, c.lat]));
         const pt=turf.along(line, x.alongKm, {units:'kilometers'});
         return [pt.geometry.coordinates[1], pt.geometry.coordinates[0]];
       }
@@ -2742,12 +2744,14 @@ function resetPolylineStyle(polyline){
       roadLayers = [];
 
       froadData.forEach(rd=>{
-        const visibleLine = L.polyline(rd.coords, {
+        // coords is now {lat, lng} objects, convert to [lat, lng] arrays for Leaflet
+        const coordsArray = rd.coords.map(c => [c.lat, c.lng]);
+        const visibleLine = L.polyline(coordsArray, {
           color: baseRoadColor(rd),
           weight: 4,
           className: 'road-main-line'
         }).addTo(map);
-        const bufferLine=L.polyline(rd.coords,{ color:'#000', weight:20, opacity:0, className:'road-hitbox' }).addTo(map);
+        const bufferLine=L.polyline(coordsArray,{ color:'#000', weight:20, opacity:0, className:'road-hitbox' }).addTo(map);
 
         const onRoadClick=()=>{
           if (selectedLayer && selectedLayer !== visibleLine) resetPolylineStyle(selectedLayer);
@@ -2778,7 +2782,8 @@ function resetPolylineStyle(polyline){
     // ⬅️ klíčová podmínka: pro nevhodné cesty nevytvářej vůbec žádné labely
     if (r.data.allowed === false) return;
 
-    const line = turf.lineString(r.data.coords.map(c=>[c[1],c[0]]));
+    // coords is now {lat, lng} objects instead of [lat, lng] arrays
+    const line = turf.lineString(r.data.coords.map(c=>[c.lng, c.lat]));
     const len  = turf.length(line,{units:'kilometers'});
     const step = len/labelsPerRoad;
 
