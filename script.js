@@ -199,9 +199,7 @@ avatarInput.addEventListener("change", e => {
     vehiclePhotoPreview.src = ev.target.result;
     vehiclePhotoPreview.style.display = "block";
     const placeholder = document.getElementById("vehiclePhotoPlaceholder");
-    const deleteBtn = document.getElementById("deleteVehiclePhotoBtn");
     if (placeholder) placeholder.style.display = "none";
-    if (deleteBtn) deleteBtn.style.display = "flex";
   };
   reader.readAsDataURL(file);
 });
@@ -430,9 +428,7 @@ document.getElementById("chatGroups").style.display = "none";
     vehiclePhotoPreview.src = "";
     vehiclePhotoPreview.style.display = "none";
     const vehiclePhotoPlaceholder = document.getElementById("vehiclePhotoPlaceholder");
-    const deleteVehiclePhotoBtn = document.getElementById("deleteVehiclePhotoBtn");
     if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "flex";
-    if (deleteVehiclePhotoBtn) deleteVehiclePhotoBtn.style.display = "none";
     avatarInput.value = "";
     vehiclePhotoInput.value = "";
 
@@ -600,16 +596,13 @@ if (homeWelcome && userData.displayName) {
 
   // ✅ Zobraz vehicle photo nebo placeholder v profile editoru
   const vehiclePhotoPlaceholder = document.getElementById("vehiclePhotoPlaceholder");
-  const deleteVehiclePhotoBtn = document.getElementById("deleteVehiclePhotoBtn");
-  if (userData.vehiclePhotoURL && userData.vehiclePhotoURL.trim()) {
+  if (userData.vehiclePhotoURL) {
     vehiclePhotoPreview.src = userData.vehiclePhotoURL;
     vehiclePhotoPreview.style.display = "block";
     if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "none";
-    if (deleteVehiclePhotoBtn) deleteVehiclePhotoBtn.style.display = "flex";
   } else {
     vehiclePhotoPreview.style.display = "none";
     if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "flex";
-    if (deleteVehiclePhotoBtn) deleteVehiclePhotoBtn.style.display = "none";
   }
 
   // ✅ Store email verification status globally
@@ -778,9 +771,7 @@ setInterval(loadGroupAvatars, 20000);
   vehiclePhotoPreview.src = "";
   vehiclePhotoPreview.style.display = "none";
   const vehiclePhotoPlaceholder = document.getElementById("vehiclePhotoPlaceholder");
-  const deleteVehiclePhotoBtn = document.getElementById("deleteVehiclePhotoBtn");
   if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "flex";
-  if (deleteVehiclePhotoBtn) deleteVehiclePhotoBtn.style.display = "none";
   avatarInput.value = "";
   vehiclePhotoInput.value = "";
 
@@ -960,7 +951,7 @@ if (content && auth.currentUser && auth.currentUser.uid === uid) {
   // ✅ Zobraz vehicle photo nebo placeholder
   const vehicleImgPlaceholder = document.getElementById("userVehiclePhotoPlaceholder");
   if (vehicleImg) {
-    if (data.vehiclePhotoURL && data.vehiclePhotoURL.trim()) {
+    if (data.vehiclePhotoURL) {
       vehicleImg.src = data.vehiclePhotoURL;
       vehicleImg.style.display = "block";
       if (vehicleImgPlaceholder) vehicleImgPlaceholder.style.display = "none";
@@ -1114,8 +1105,8 @@ window.miniPopups[uid] = miniMarker;
         <div class="user-section">
           <h3>Vehicle photo</h3>
           <div id="userVehiclePhotoWrapper">
-            ${data.vehiclePhotoURL && data.vehiclePhotoURL.trim()
-              ? `<div id="userVehiclePhotoPlaceholder" style="background:#f4f4f4; border-radius:12px; height:160px; display:none; justify-content:center; align-items:center; color:#888;">No vehicle photo</div><img id="userVehiclePhoto" class="show" src="${data.vehiclePhotoURL}" alt="Vehicle photo" onerror="this.style.display='none'; document.getElementById('userVehiclePhotoPlaceholder').style.display='flex';" />`
+            ${data.vehiclePhotoURL
+              ? `<img id="userVehiclePhoto" class="show" src="${data.vehiclePhotoURL}" alt="Vehicle photo" />`
               : `<div style="background:#f4f4f4; border-radius:12px; height:160px; display:flex; justify-content:center; align-items:center; color:#888;">No vehicle photo</div>`
             }
           </div>
@@ -1169,7 +1160,7 @@ db.collection("users").onSnapshot(snapshot => {
       // ✅ Zobraz vehicle photo nebo placeholder
       const vehicleImg = document.getElementById("userVehiclePhoto");
       const vehicleImgPlaceholder = document.getElementById("userVehiclePhotoPlaceholder");
-      if (data.vehiclePhotoURL && data.vehiclePhotoURL.trim()) {
+      if (data.vehiclePhotoURL) {
         vehicleImg.src = data.vehiclePhotoURL;
         vehicleImg.style.display = "block";
         if (vehicleImgPlaceholder) vehicleImgPlaceholder.style.display = "none";
@@ -1186,58 +1177,46 @@ db.collection("users").onSnapshot(snapshot => {
       const user = auth.currentUser;
       if (!user) return;
       const userDocRef = db.collection("liveLocations").doc(user.uid);
+      // ✅ Nastav lokální flag ještě před geolokací
+liveWatchId = -1; // placeholder, značí že Live je aktivní, i když GPS ještě neběží
 
-      // ✅ Nastav Live flag hned (i před GPS)
-      liveWatchId = -1; // placeholder - značí že Live je aktivní
+await userDocRef.set({
+  displayName: user.displayName || "",
+  photoURL: user.photoURL || "",
+  isLive: true,
+  lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+}, { merge: true });
 
-      // Získej user data pro badges
-      const userDoc = await db.collection("users").doc(user.uid).get();
-      const userData = userDoc.exists ? userDoc.data() : {};
+// 🔁 Okamžitý refresh, aby bublina ukázala "Live" i po zoomu
+setupLiveLocations();
 
-      // ✅ Nastav isLive HNED (bez GPS souřadnic zatím)
-      await userDocRef.set({
-        displayName: user.displayName || "",
-        photoURL: user.photoURL || "",
-        bio: userData.bio || "",
-        vehicle: userData.vehicle || "",
-        vehiclePhotoURL: userData.vehiclePhotoURL || "",
-        instagram: userData.instagram || "",
-        verified: userData.verified || false,
-        ranger: userData.ranger || false,
-        isLive: true,
-        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-      }, { merge: true });
+// ✅ Teprve potom spusť sledování polohy
+liveWatchId = navigator.geolocation.watchPosition(async pos => {
+  if (!pos.coords) {
+    console.warn("No coords returned from geolocation.");
+    return;
+  }
 
-      // 🔁 Okamžitý refresh, aby bublina ukázala "Live" i po zoomu
-      setupLiveLocations();
+  const lat = pos.coords.latitude;
+  const lng = pos.coords.longitude;
 
-      // ✅ Teprve potom spusť sledování polohy
-      liveWatchId = navigator.geolocation.watchPosition(async pos => {
-        if (!pos.coords) {
-          console.warn("No coords returned from geolocation.");
-          return;
-        }
+  try {
+    await userDocRef.set({
+      lat,
+      lng,
+      lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+  } catch (err) {
+    console.error("Failed to update live location:", err);
+  }
 
-        const lat = pos.coords.latitude;
-        const lng = pos.coords.longitude;
-
-        try {
-          await userDocRef.set({
-            lat,
-            lng,
-            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-          }, { merge: true });
-        } catch (err) {
-          console.error("Failed to update live location:", err);
-        }
-
-      }, err => {
-        console.error("Geolocation error:", err);
-      }, {
-        enableHighAccuracy: true,
-        maximumAge: 30000,
-        timeout: 20000
-      });
+}, err => {
+  console.error("Geolocation error:", err);
+}, {
+  enableHighAccuracy: true,
+  maximumAge: 30000,
+  timeout: 20000
+});
     }
 
     async function stopLive() {
@@ -1404,16 +1383,64 @@ sendBtn.onclick = async () => {
     if (!user) return;
 
     if (liveWatchId === null) {
-      // === START SHARING ===
-      // startLive() čeká na GPS pozici a pak nastaví isLive + všechna data
-      await startLive();
+  // === START SHARING ===
+  await startLive();
+  btn.classList.add("active");
+  btn.innerHTML = `
+    <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed633027976d278ff80bba_live-focus.png"
+         alt="Live Icon" class="live-icon" />
+    Stop Sharing
+  `;
 
-      btn.classList.add("active");
-      btn.innerHTML = `
-        <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed633027976d278ff80bba_live-focus.png"
-             alt="Live Icon" class="live-icon" />
-        Stop Sharing
-      `;
+
+      // ✅ Okamžitý update ve Firebase
+      const userDoc = await db.collection("users").doc(user.uid).get();
+      const userData = userDoc.exists ? userDoc.data() : {};
+
+      await db.collection("liveLocations").doc(user.uid).set({
+        isLive: true,
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
+        displayName: user.displayName || "User",
+        photoURL: user.photoURL || "",
+        verified: userData.verified || false,
+        ranger: userData.ranger || false
+      }, { merge: true });
+
+      // ✅ Okamžitý vizuální marker s pulzujícím rámečkem
+      if (liveMarkers[user.uid]) {
+        const icon = L.icon({
+          iconUrl: user.photoURL || "https://www.gravatar.com/avatar?d=mp",
+          iconSize: [44, 44],
+          iconAnchor: [22, 44],
+          className: "user-icon live-outline"
+        });
+        liveMarkers[user.uid].setIcon(icon);
+      }
+
+      
+
+     // ✅ Okamžitě přepíšeme mini-popup na „Live“
+const firstName = (user.displayName || "User").split(" ")[0];
+
+// pokud už máš mini-popup uložený, aktualizuj jeho HTML
+if (window.miniPopups && window.miniPopups[user.uid]) {
+  const popupEl = window.miniPopups[user.uid].getElement();
+  if (popupEl) {
+    popupEl.innerHTML = `
+      <div class="mini-popup-inner">
+        <span class="mini-popup-name">
+          ${firstName}
+          ${user.verified ? '<img class="verified-icon" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ec104bbf6183f2f84c71b7_verified.png" alt="Verified" />' : ''}
+          ${user.ranger ? '<img class="ranger-icon" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68fba159091b4ac6d4781634_ranger%20(1).png" alt="Ranger" />' : ''}
+        </span>
+        <span class="mini-popup-status live">Live</span>
+      </div>
+    `;
+  }
+}
+
+// ✅ a do půl sekundy i update z Firestore
+setTimeout(() => setupLiveLocations(), 500);
 
     } else {
       // === STOP SHARING ===
@@ -1728,12 +1755,8 @@ saveProfileBtn.addEventListener("click", async () => {
     }
 
     // === ⚡ SAFE GUARD – žádné "file://" a žádné přepisování prázdnými hodnotami ===
-    // Pokud preview má src a je zobrazený, použij ho
-    if (vehiclePhotoPreview.src && vehiclePhotoPreview.src.startsWith("https://") && vehiclePhotoPreview.style.display !== "none") {
+    if (vehiclePhotoPreview.src && vehiclePhotoPreview.src.startsWith("https://")) {
       vehiclePhotoURL = vehiclePhotoPreview.src;
-    } else if (vehiclePhotoPreview.style.display === "none" && !vehicleFile) {
-      // Pokud je preview schovaný a nebyla nahrána nová fotka, použij prázdný string (delete)
-      vehiclePhotoURL = "";
     }
 
     // 🔍 Zjisti, jestli se něco skutečně změnilo
@@ -1942,58 +1965,6 @@ try {
 } catch (err) {
   console.error("Failed to update live marker photo:", err);
 }
-});
-
-
-// === DELETE VEHICLE PHOTO FUNCTION ===
-document.getElementById("deleteVehiclePhotoBtn").addEventListener("click", async () => {
-  const confirmDelete = confirm("Are you sure you want to delete this vehicle photo?");
-  if (!confirmDelete) return;
-
-  const user = auth.currentUser;
-  if (!user) return alert("Not logged in");
-
-  // 🔄 Aktualizace UI
-  const vehiclePhotoPreview = document.getElementById("vehiclePhotoPreview");
-  const vehiclePhotoPlaceholder = document.getElementById("vehiclePhotoPlaceholder");
-  const deleteVehiclePhotoBtn = document.getElementById("deleteVehiclePhotoBtn");
-
-  if (vehiclePhotoPreview) {
-    vehiclePhotoPreview.style.display = "none";
-    vehiclePhotoPreview.src = ""; // ⚡ Vymazat src, aby Save nezačal používat starou URL
-  }
-  if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "flex";
-  if (deleteVehiclePhotoBtn) deleteVehiclePhotoBtn.style.display = "none";
-
-  try {
-    // 🔄 Aktualizace ve Firestore
-    await db.collection("users").doc(user.uid).update({
-      vehiclePhotoURL: ""
-    });
-
-    // 🔄 Aktualizace i v liveLocations (aby se změna projevila v People sekci)
-    const liveDocRef = db.collection("liveLocations").doc(user.uid);
-    await liveDocRef.set(
-      {
-        vehiclePhotoURL: ""
-      },
-      { merge: true }
-    );
-
-    // 🔁 Aktualizace panelu pokud je otevřený
-    const panel = document.getElementById("userDetailPanel");
-    if (panel && panel.style.display !== "none" && panel.dataset.uid === user.uid) {
-      const vehicleImg = document.getElementById("userVehiclePhoto");
-      const vehicleImgPlaceholder = document.getElementById("userVehiclePhotoPlaceholder");
-      if (vehicleImg) vehicleImg.style.display = "none";
-      if (vehicleImgPlaceholder) vehicleImgPlaceholder.style.display = "flex";
-    }
-
-    alert("✅ Vehicle photo deleted.");
-  } catch (err) {
-    console.error("Error deleting vehicle photo:", err);
-    alert("❌ Failed to delete photo. Try again later.");
-  }
 });
 
 
