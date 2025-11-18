@@ -972,8 +972,17 @@ if (content && auth.currentUser && auth.currentUser.uid === uid) {
 }
 
 
-   // ✅ Bez souřadnic nic nevykresluj (a smaž případný starý marker)
+   // ✅ Bez souřadnic nic nevykresluj
   if (typeof lat !== "number" || typeof lng !== "number") {
+    // ⚡ VÝJIMKA: Pokud je uživatel Live, NESMAZAT jeho marker - čeká se na GPS
+    const isCurrentUser = auth.currentUser && auth.currentUser.uid === uid;
+    if (data.isLive && isCurrentUser && liveWatchId !== null) {
+      // Uživatel právě klikl Share Location - GPS souřadnice ještě nepřišly
+      // Necháme existující marker (pokud je) a počkáme na GPS
+      return;
+    }
+
+    // Pro ostatní (není Live nebo není current user) - smaž marker
     if (liveMarkers[uid]) {
       map.removeLayer(liveMarkers[uid]);
       delete liveMarkers[uid];
@@ -1187,7 +1196,31 @@ db.collection("users").onSnapshot(snapshot => {
       if (!user) return;
       const userDocRef = db.collection("liveLocations").doc(user.uid);
 
-      // ✅ Nejdřív získej GPS polohu, pak nastav isLive
+      // ✅ Nastav Live flag hned (i před GPS)
+      liveWatchId = -1; // placeholder - značí že Live je aktivní
+
+      // Získej user data pro badges
+      const userDoc = await db.collection("users").doc(user.uid).get();
+      const userData = userDoc.exists ? userDoc.data() : {};
+
+      // ✅ Nastav isLive HNED (bez GPS souřadnic zatím)
+      await userDocRef.set({
+        displayName: user.displayName || "",
+        photoURL: user.photoURL || "",
+        bio: userData.bio || "",
+        vehicle: userData.vehicle || "",
+        vehiclePhotoURL: userData.vehiclePhotoURL || "",
+        instagram: userData.instagram || "",
+        verified: userData.verified || false,
+        ranger: userData.ranger || false,
+        isLive: true,
+        lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+      }, { merge: true });
+
+      // 🔁 Okamžitý refresh - pokud existuje marker z minula, updatne se na Live
+      setTimeout(() => setupLiveLocations(), 100);
+
+      // Teď spusť GPS sledování
       let isFirstPosition = true;
 
       liveWatchId = navigator.geolocation.watchPosition(async pos => {
@@ -1200,33 +1233,19 @@ db.collection("users").onSnapshot(snapshot => {
         const lng = pos.coords.longitude;
 
         try {
-          // ✅ Na první pozici nastav isLive + všechna data najednou
           if (isFirstPosition) {
             isFirstPosition = false;
-
-            // Získej user data pro verified a ranger badges
-            const userDoc = await db.collection("users").doc(user.uid).get();
-            const userData = userDoc.exists ? userDoc.data() : {};
-
+            // ✅ První pozice - přidej GPS souřadnice
             await userDocRef.set({
               lat,
               lng,
-              displayName: user.displayName || "",
-              photoURL: user.photoURL || "",
-              bio: userData.bio || "",
-              vehicle: userData.vehicle || "",
-              vehiclePhotoURL: userData.vehiclePhotoURL || "",
-              instagram: userData.instagram || "",
-              verified: userData.verified || false,
-              ranger: userData.ranger || false,
-              isLive: true,
               lastSeen: firebase.firestore.FieldValue.serverTimestamp()
             }, { merge: true });
 
-            // 🔁 Refresh aby se marker okamžitě zobrazil
+            // 🔁 Refresh aby se marker zobrazil s GPS souřadnicemi
             setupLiveLocations();
           } else {
-            // ✅ Při dalších updatech jen GPS souřadnice
+            // ✅ Další updaty - jen GPS
             await userDocRef.set({
               lat,
               lng,
