@@ -233,11 +233,31 @@ const oobCode = urlParams.get('oobCode');
 if (mode === 'verifyEmail' && oobCode) {
   // Apply the verification code
   auth.applyActionCode(oobCode)
-    .then(() => {
+    .then(async () => {
       console.log("✅ Email verification successful!");
       const loginError = document.getElementById("loginError");
       loginError.textContent = "✅ Email confirmed! You can now log in.";
       loginError.style.color = "#22c55e"; // Green color
+
+      // ✅ If user is logged in, update their emailVerified status in Firestore immediately
+      const currentUser = auth.currentUser;
+      if (currentUser) {
+        try {
+          await currentUser.reload(); // Refresh user data from Firebase Auth
+          const freshUser = auth.currentUser;
+
+          // Update Firestore with new emailVerified status
+          await db.collection("users").doc(freshUser.uid).update({
+            emailVerified: freshUser.emailVerified || false,
+            lastEmailVerificationCheck: firebase.firestore.FieldValue.serverTimestamp()
+          });
+
+          console.log("✅ Email verification status synced to Firestore:", freshUser.emailVerified);
+        } catch (error) {
+          console.error("❌ Error syncing email verification to Firestore:", error);
+        }
+      }
+
       // Clear the URL parameters
       window.history.replaceState({}, document.title, window.location.pathname);
     })

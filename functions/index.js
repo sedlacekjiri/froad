@@ -82,38 +82,3 @@ exports.syncEmailVerificationOnCreate = functions.auth.user().onCreate(async (us
     throw error;
   }
 });
-
-/**
- * Cloud Function: Sync email verification status to Firestore on user updates
- *
- * Triggered by: User account updates in Firebase Auth (e.g., email verification)
- *
- * This function automatically updates the emailVerified field in Firestore
- * when a user verifies their email by clicking the confirmation link.
- */
-exports.syncEmailVerificationOnUpdate = functions.auth.user().onUpdate(async (change) => {
-  const user = change.after;
-  const previousUser = change.before;
-  const uid = user.uid;
-
-  // Only update if emailVerified status has changed
-  if (user.emailVerified !== previousUser.emailVerified) {
-    try {
-      await admin.firestore()
-        .collection('users')
-        .doc(uid)
-        .update({
-          emailVerified: user.emailVerified,
-          lastEmailVerificationCheck: admin.firestore.FieldValue.serverTimestamp()
-        });
-
-      console.log(`✅ Email verification synced on update for user ${uid}: ${previousUser.emailVerified} → ${user.emailVerified}`);
-      return null;
-    } catch (error) {
-      console.error(`❌ Error syncing email verification for ${uid}:`, error);
-      throw error;
-    }
-  }
-
-  return null;
-});
