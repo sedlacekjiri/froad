@@ -2041,6 +2041,12 @@ if (tab !== "chat" && chatHeader) {
   chatHeader.style.display = "none";
 }
 
+// ✅ Hide email verification banner when not in chat section
+const emailBanner = document.getElementById("emailVerificationBanner");
+if (tab !== "chat" && emailBanner) {
+  emailBanner.style.display = "none";
+}
+
 
     // Přepínání ikon (máš je nadefinované výše)
     document.querySelector('.home-btn .home-icon').src =
