@@ -3308,7 +3308,7 @@ function loadGasStationsFromFirestore() {
             <div class="poi-body">
               <h3 class="poi-title">${station.name}</h3>
               <p class="poi-desc">${station.description || ''}</p>
-              ${station.hours ? `<p class="poi-hours"><strong>Opening hours:</strong> ${station.hours}</p>` : ''}
+              ${station.hours ? `<p class="poi-hours"> ${station.hours}</p>` : ''}
               <div class="poi-actions">
                 ${station.link ? `
                   <a class="poi-btn" href="${station.link}" target="_blank" rel="noopener">
