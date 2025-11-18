@@ -1106,7 +1106,7 @@ window.miniPopups[uid] = miniMarker;
           <h3>Vehicle photo</h3>
           <div id="userVehiclePhotoWrapper">
             ${data.vehiclePhotoURL && data.vehiclePhotoURL.trim()
-              ? `<img id="userVehiclePhoto" class="show" src="${data.vehiclePhotoURL}" alt="Vehicle photo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\"background:#f4f4f4; border-radius:12px; height:160px; display:flex; justify-content:center; align-items:center; color:#888;\\">No vehicle photo</div>';" />`
+              ? `<div id="userVehiclePhotoPlaceholder" style="background:#f4f4f4; border-radius:12px; height:160px; display:none; justify-content:center; align-items:center; color:#888;">No vehicle photo</div><img id="userVehiclePhoto" class="show" src="${data.vehiclePhotoURL}" alt="Vehicle photo" onerror="this.style.display='none'; document.getElementById('userVehiclePhotoPlaceholder').style.display='flex';" />`
               : `<div style="background:#f4f4f4; border-radius:12px; height:160px; display:flex; justify-content:center; align-items:center; color:#888;">No vehicle photo</div>`
             }
           </div>
