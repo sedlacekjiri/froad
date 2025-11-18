@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <title>Reset Password</title>
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Desktop: Override login-left background with F210 image */
+    .login-left {
+      background: url('https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68a759e3487c4b759940a9aa_686bbcdcbbb93b0ce4d6c850_F210%20maelifell.jpg') center/cover no-repeat !important;
+    }
+
+    /* Mobile: Override loginScreen background with F210 image */
+    @media (max-width: 1024px) {
+      #loginScreen {
+        background: url('https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68a759e3487c4b759940a9aa_686bbcdcbbb93b0ce4d6c850_F210%20maelifell.jpg') center/cover no-repeat !important;
+      }
+    }
+  </style>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, verifyPasswordResetCode, confirmPasswordReset, sendPasswordResetEmail, applyActionCode } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDDMNnJgtm-gK9OrVev7qmBRpaA8CAoDiM",
+      authDomain: "froad-7d561.firebaseapp.com",
+      projectId: "froad-7d561",
+      storageBucket: "froad-7d561.firebasestorage.app",
+      messagingSenderId: "1086299585443",
+      appId: "1:1086299585443:web:10bcb67effd6a89c24f816"
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    const params = new URLSearchParams(window.location.search);
+    const oobCode = params.get("oobCode");
+    const mode = params.get("mode");
+
+    // Handle email form submission (forgot password)
+    async function handleEmailSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById("emailInput").value.trim();
+      const errorElement = document.getElementById("resetError");
+
+      if (!email) {
+        errorElement.style.color = "red";
+        errorElement.textContent = "Please enter your email.";
+        return;
+      }
+
+      try {
+        await sendPasswordResetEmail(auth, email);
+        errorElement.style.color = "green";
+        errorElement.textContent = "Password reset link has been sent to your email!";
+        // Optionally redirect after a delay
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 3000);
+      } catch (err) {
+        console.error("Password reset error:", err);
+        errorElement.style.color = "red";
+        errorElement.textContent = "Couldn't send reset link. Please check your email.";
+      }
+    }
+
+    // Handle password reset form submission
+    async function handleReset(e) {
+      e.preventDefault();
+
+      const newPassword = document.getElementById("newPassword").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+      const errorElement = document.getElementById("resetError");
+
+      // Validate passwords match
+      if (newPassword !== confirmPassword) {
+        errorElement.style.color = "red";
+        errorElement.textContent = "Passwords do not match!";
+        return;
+      }
+
+      // Client-side validation
+      if (newPassword.length < 6) {
+        errorElement.style.color = "red";
+        errorElement.textContent = "Password must be at least 6 characters long.";
+        return;
+      }
+
+      // Check for uppercase letter
+      if (!/[A-Z]/.test(newPassword)) {
+        errorElement.style.color = "red";
+        errorElement.textContent = "Password must contain at least one uppercase letter.";
+        return;
+      }
+
+      // Check for lowercase letter
+      if (!/[a-z]/.test(newPassword)) {
+        errorElement.style.color = "red";
+        errorElement.textContent = "Password must contain at least one lowercase letter.";
+        return;
+      }
+
+      // Check for number
+      if (!/[0-9]/.test(newPassword)) {
+        errorElement.style.color = "red";
+        errorElement.textContent = "Password must contain at least one number.";
+        return;
+      }
+
+      // Clear any previous errors
+      errorElement.textContent = "";
+
+      try {
+        await confirmPasswordReset(auth, oobCode, newPassword);
+        errorElement.style.color = "green";
+        errorElement.textContent = "Password reset successful!";
+        setTimeout(() => {
+          window.location.href = "index.html";
+        }, 1500);
+      } catch (err) {
+        console.error("Password reset error:", err);
+        errorElement.style.color = "red";
+
+        // User-friendly error messages
+        switch (err.code) {
+          case "auth/weak-password":
+            errorElement.textContent = "Password is too weak. Please meet all requirements.";
+            break;
+          case "auth/invalid-action-code":
+            errorElement.textContent = "This reset link is invalid or has expired. Please request a new one.";
+            break;
+          case "auth/expired-action-code":
+            errorElement.textContent = "This reset link has expired. Please request a new one.";
+            break;
+          case "auth/user-disabled":
+            errorElement.textContent = "This account has been disabled.";
+            break;
+          case "auth/user-not-found":
+            errorElement.textContent = "Account not found.";
+            break;
+          default:
+            errorElement.textContent = "Error resetting password. Please try again or request a new reset link.";
+        }
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      const emailForm = document.getElementById("emailForm");
+      const resetForm = document.getElementById("resetForm");
+      const authTitle = document.getElementById("authTitle");
+      const authDescription = document.getElementById("authDescription");
+      const errorElement = document.getElementById("resetError");
+
+      // Handle email verification
+      if (mode === "verifyEmail" && oobCode) {
+        console.log("Email verification mode detected");
+        emailForm.style.display = "none";
+        resetForm.style.display = "none";
+        authTitle.textContent = "Verifying your email...";
+        authDescription.style.display = "none";
+
+        try {
+          await applyActionCode(auth, oobCode);
+          authTitle.textContent = "Email verified!";
+          errorElement.style.color = "green";
+          errorElement.textContent = "Your email has been verified successfully. Redirecting to login...";
+          setTimeout(() => {
+            window.location.href = "index.html";
+          }, 2000);
+        } catch (err) {
+          console.error("Email verification error:", err);
+          authTitle.textContent = "Verification failed";
+          errorElement.style.color = "red";
+          errorElement.textContent = err.code === "auth/invalid-action-code"
+            ? "This verification link is invalid or has expired."
+            : "Error verifying email. Please try again.";
+        }
+      }
+      // Handle password reset
+      else if (mode === "resetPassword" && oobCode) {
+        console.log("Password reset mode detected");
+        emailForm.style.display = "none";
+        resetForm.style.display = "flex";
+        authTitle.textContent = "Reset your password";
+        authDescription.style.display = "none";
+
+        resetForm.addEventListener("submit", handleReset);
+      }
+      // No action code - show forgot password form
+      else {
+        emailForm.style.display = "flex";
+        resetForm.style.display = "none";
+        authTitle.textContent = "Forgot your password?";
+        authDescription.textContent = "Enter your email to get help logging in";
+        authDescription.style.display = "block";
+
+        emailForm.addEventListener("submit", handleEmailSubmit);
+      }
+    });
+  </script>
+</head>
+<body>
+  <div id="loginScreen">
+    <div class="login-left"></div>
+    <div class="login-right">
+      <div class="login-box">
+        <img id="logoImg" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ea50150761950e794dd2bb_logo-black.png" alt="Logo" />
+        <h2 id="authTitle">Forgot your password?</h2>
+        <p id="authDescription" style="font-size: 15px; color: #666; margin: -10px 0 10px 0; line-height: 1.5;">Enter your email to get help logging in</p>
+
+        <!-- Email form (for forgot password) -->
+        <form id="emailForm" style="display: flex; flex-direction: column; gap: 14px;">
+          <input type="email" id="emailInput" placeholder="Email address *" required />
+          <button type="submit" class="btn login-email-btn">Send Reset Link</button>
+        </form>
+
+        <!-- Password reset form (when coming from email link) -->
+        <form id="resetForm" style="display: none; flex-direction: column; gap: 14px;">
+          <input type="password" id="newPassword" placeholder="New Password *" required />
+          <input type="password" id="confirmPassword" placeholder="Confirm Password *" required />
+
+          <div style="font-size: 12px; color: #666; margin: -8px 0 0 0; padding: 10px 12px; background: #f9f9f9; border-radius: 6px; line-height: 1.7;">
+            <div style="font-weight: 600; margin-bottom: 6px; color: #444;">Password requirements:</div>
+            <div style="display: flex; align-items: start; gap: 6px; margin-bottom: 3px;">
+              <span style="color: #888;">•</span>
+              <span>At least 6 characters</span>
+            </div>
+            <div style="display: flex; align-items: start; gap: 6px; margin-bottom: 3px;">
+              <span style="color: #888;">•</span>
+              <span>Uppercase letter (A-Z)</span>
+            </div>
+            <div style="display: flex; align-items: start; gap: 6px; margin-bottom: 3px;">
+              <span style="color: #888;">•</span>
+              <span>Lowercase letter (a-z)</span>
+            </div>
+            <div style="display: flex; align-items: start; gap: 6px;">
+              <span style="color: #888;">•</span>
+              <span>Number (0-9)</span>
+            </div>
+          </div>
+
+          <button type="submit" class="btn login-email-btn">Reset Password</button>
+        </form>
+
+        <p id="resetError" style="color: red; font-size: 14px; margin: 0;"></p>
+
+        <p class="toggle-auth" style="margin-top: 10px;">
+          <a href="index.html">Back to login</a>
+        </p>
+
+        <p class="legal-text">
+          By continuing to use Froad, you agree to our
+          <a href="/terms" target="_blank">Terms of Service</a> and
+          <a href="/privacy" target="_blank">Privacy Policy</a>.
+        </p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

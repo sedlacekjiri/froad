@@ -1,0 +1,1544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>F-Roads CMS</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: #fff;
+      color: #000;
+    }
+
+    /* Auth Screen */
+    #authScreen {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #000;
+    }
+
+    .auth-box {
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      border: 2px solid #e5e7eb;
+      width: 100%;
+      max-width: 400px;
+    }
+
+    .auth-box h1 {
+      margin-bottom: 24px;
+      text-align: center;
+      font-size: 28px;
+      color: #000;
+    }
+
+    .auth-box input {
+      width: 100%;
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    .auth-box button {
+      width: 100%;
+      padding: 12px;
+      background: #000;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .auth-box button:hover {
+      background: #333;
+    }
+
+    .error-msg {
+      color: #dc2626;
+      font-size: 14px;
+      margin-top: 12px;
+      text-align: center;
+    }
+
+    /* Admin Panel */
+    #adminPanel {
+      display: none;
+    }
+
+    .header {
+      background: #000;
+      color: white;
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 3px solid #ff6b35;
+    }
+
+    .header h1 {
+      font-size: 24px;
+    }
+
+    .logout-btn {
+      padding: 8px 16px;
+      background: #ff6b35;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .logout-btn:hover {
+      background: #e55a2b;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 32px;
+      border-bottom: 2px solid #e5e7eb;
+      padding-bottom: 0;
+    }
+
+    .tab {
+      padding: 12px 24px;
+      background: transparent;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      font-size: 15px;
+      font-weight: 600;
+      color: #6b7280;
+      transition: all 0.2s;
+    }
+
+    .tab:hover {
+      color: #000;
+    }
+
+    .tab.active {
+      color: #000;
+      border-bottom-color: #ff6b35;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .section {
+      background: #f9fafb;
+      padding: 24px;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+      margin-bottom: 24px;
+    }
+
+    .section h2 {
+      font-size: 18px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 2px solid #e5e7eb;
+    }
+
+    /* Forms */
+    .form {
+      display: grid;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #374151;
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      padding: 10px 12px;
+      border: 1px solid #d1d5db;
+      border-radius: 4px;
+      font-size: 14px;
+      font-family: 'Poppins', sans-serif;
+      background: white;
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .btn-primary {
+      padding: 12px 24px;
+      background: #ff6b35;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      justify-self: start;
+    }
+
+    .btn-primary:hover {
+      background: #e55a2b;
+    }
+
+    /* List */
+    .items-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .item-card {
+      border: 1px solid #e5e7eb;
+      border-radius: 4px;
+      padding: 16px;
+      background: white;
+      transition: box-shadow 0.2s;
+    }
+
+    .item-card:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .item-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: start;
+      margin-bottom: 8px;
+    }
+
+    .item-title {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .item-meta {
+      font-size: 13px;
+      color: #6b7280;
+      margin-bottom: 8px;
+    }
+
+    .item-text {
+      color: #374151;
+      line-height: 1.6;
+      font-size: 14px;
+      margin-bottom: 12px;
+    }
+
+    .item-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn-edit, .btn-delete {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-edit {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    .btn-edit:hover {
+      background: #e5e7eb;
+    }
+
+    .btn-delete {
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .btn-delete:hover {
+      background: #fecaca;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    .badge-warning {
+      background: #fef3c7;
+      color: #92400e;
+    }
+
+    .badge-info {
+      background: #dbeafe;
+      color: #1e40af;
+    }
+
+    .badge-notice {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    .badge-open {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .badge-closed {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #6b7280;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #6b7280;
+    }
+
+    @media (max-width: 768px) {
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .header {
+        padding: 16px 20px;
+      }
+
+      .tabs {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Auth Screen -->
+  <div id="authScreen">
+    <div class="auth-box">
+      <h1>🔒 CMS Login</h1>
+      <input type="email" id="emailInput" placeholder="Email" />
+      <input type="password" id="passwordInput" placeholder="Password" />
+      <button id="loginBtn">Login</button>
+      <p class="error-msg" id="errorMsg"></p>
+    </div>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="adminPanel">
+    <div class="header">
+      <h1>F-Roads CMS</h1>
+      <button class="logout-btn" id="logoutBtn">Logout</button>
+    </div>
+
+    <div class="container">
+      <!-- Tabs -->
+      <div class="tabs">
+        <button class="tab active" data-tab="updates">Updates</button>
+        <button class="tab" data-tab="huts">Huts</button>
+        <button class="tab" data-tab="campsites">Campsites</button>
+        <button class="tab" data-tab="gas-stations">Gas Stations</button>
+        <button class="tab" data-tab="froads">F-Roads</button>
+      </div>
+
+      <!-- Updates Tab -->
+      <div class="tab-content active" id="tab-updates">
+        <div class="section">
+          <h2>Add/Edit Update</h2>
+          <form class="form" id="updateForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="updateType">Type</label>
+                <select id="updateType" required>
+                  <option value="warning">⚠️ Warning</option>
+                  <option value="info">ℹ️ Info</option>
+                  <option value="notice">📋 Notice</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="updateTime">Date & Time</label>
+                <input type="text" id="updateTime" placeholder="Select date and time" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="updateText">Message</label>
+              <textarea id="updateText" placeholder="Update message..." required></textarea>
+            </div>
+            <input type="hidden" id="updateId" />
+            <button type="submit" class="btn-primary" id="updateSubmitBtn">Add Update</button>
+          </form>
+        </div>
+
+        <div class="section">
+          <h2>All Updates</h2>
+          <div id="updatesList" class="items-list">
+            <div class="loading">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Huts Tab -->
+      <div class="tab-content" id="tab-huts">
+        <div class="section">
+          <h2>Add/Edit Hut</h2>
+          <form class="form" id="hutForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="hutName">Name</label>
+                <input type="text" id="hutName" placeholder="Hut name" required />
+              </div>
+              <div class="form-group">
+                <label for="hutStatus">Status</label>
+                <select id="hutStatus" required>
+                  <option value="open">Open</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="hutLat">Latitude</label>
+                <input type="number" step="any" id="hutLat" placeholder="64.12345678" required />
+              </div>
+              <div class="form-group">
+                <label for="hutLng">Longitude</label>
+                <input type="number" step="any" id="hutLng" placeholder="-21.12345678" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="hutDescription">Description</label>
+              <textarea id="hutDescription" placeholder="Hut description..."></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="hutPrice">Price (ISK/night)</label>
+                <input type="number" id="hutPrice" placeholder="5000" />
+              </div>
+              <div class="form-group">
+                <label for="hutContact">Contact</label>
+                <input type="text" id="hutContact" placeholder="Phone or email" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="hutLink">Info Link (URL)</label>
+              <input type="url" id="hutLink" placeholder="https://..." />
+            </div>
+            <div class="form-group">
+              <label for="hutPhotoURL">Photo URL</label>
+              <input type="url" id="hutPhotoURL" placeholder="https://..." />
+            </div>
+            <input type="hidden" id="hutId" />
+            <button type="submit" class="btn-primary" id="hutSubmitBtn">Add Hut</button>
+          </form>
+        </div>
+
+        <div class="section">
+          <h2>Import Huts from CSV</h2>
+          <div style="margin-bottom: 16px;">
+            <p style="font-size: 13px; color: #6b7280; margin-bottom: 12px;">
+              CSV format: name,lat,lng,link,photoURL,status,description,price,contact
+            </p>
+            <input type="file" id="csvFileInput" accept=".csv" style="margin-bottom: 12px;" />
+            <button class="btn-primary" id="importCsvBtn" style="margin-right: 8px;">Import CSV</button>
+          </div>
+          <div id="importLog" style="background: #f9fafb; padding: 12px; border-radius: 4px; border: 1px solid #e5e7eb; font-size: 13px; max-height: 200px; overflow-y: auto; display: none;"></div>
+        </div>
+
+        <div class="section">
+          <h2>All Huts</h2>
+          <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+            <input
+              type="text"
+              id="hutSearchInput"
+              placeholder="Search huts..."
+              style="flex: 1; min-width: 200px; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; font-family: 'Poppins', sans-serif;"
+            />
+            <select
+              id="hutSortSelect"
+              style="padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; font-family: 'Poppins', sans-serif; background: white;"
+            >
+              <option value="a-z">Sort: A-Z</option>
+              <option value="z-a">Sort: Z-A</option>
+            </select>
+          </div>
+          <div id="hutsList" class="items-list">
+            <div class="loading">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campsites Tab -->
+      <div class="tab-content" id="tab-campsites">
+        <div class="section">
+          <h2>Add/Edit Campsite</h2>
+          <form class="form" id="campsiteForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="campsiteName">Name</label>
+                <input type="text" id="campsiteName" placeholder="Campsite name" required />
+              </div>
+              <div class="form-group">
+                <label for="campsiteStatus">Status</label>
+                <select id="campsiteStatus" required>
+                  <option value="open">Open</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="campsiteLat">Latitude</label>
+                <input type="number" step="any" id="campsiteLat" placeholder="64.12345678" required />
+              </div>
+              <div class="form-group">
+                <label for="campsiteLng">Longitude</label>
+                <input type="number" step="any" id="campsiteLng" placeholder="-21.12345678" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="campsiteDescription">Description</label>
+              <textarea id="campsiteDescription" placeholder="Campsite description..."></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="campsitePrice">Price (ISK/night)</label>
+                <input type="number" id="campsitePrice" placeholder="1500" />
+              </div>
+              <div class="form-group">
+                <label for="campsiteFacilities">Facilities</label>
+                <input type="text" id="campsiteFacilities" placeholder="Shower, Toilet, Kitchen" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="campsiteLink">Info Link (URL)</label>
+                <input type="url" id="campsiteLink" placeholder="https://..." />
+              </div>
+              <div class="form-group">
+                <label for="campsitePhotoURL">Photo URL</label>
+                <input type="url" id="campsitePhotoURL" placeholder="https://..." />
+              </div>
+            </div>
+            <input type="hidden" id="campsiteId" />
+            <button type="submit" class="btn-primary" id="campsiteSubmitBtn">Add Campsite</button>
+          </form>
+        </div>
+
+        <div class="section">
+          <h2>Import Campsites from CSV</h2>
+          <div style="margin-bottom: 16px;">
+            <p style="font-size: 13px; color: #6b7280; margin-bottom: 12px;">
+              CSV format: name,lat,lng,link,photoURL,status,description,price,facilities
+            </p>
+            <input type="file" id="campsiteCsvFileInput" accept=".csv" style="margin-bottom: 12px;" />
+            <button class="btn-primary" id="importCampsiteCsvBtn" style="margin-right: 8px;">Import CSV</button>
+          </div>
+          <div id="campsiteImportLog" style="background: #f9fafb; padding: 12px; border-radius: 4px; border: 1px solid #e5e7eb; font-size: 13px; max-height: 200px; overflow-y: auto; display: none;"></div>
+        </div>
+
+        <div class="section">
+          <h2>All Campsites</h2>
+          <div style="display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;">
+            <input
+              type="text"
+              id="campsiteSearchInput"
+              placeholder="Search campsites..."
+              style="flex: 1; min-width: 200px; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; font-family: 'Poppins', sans-serif;"
+            />
+            <select
+              id="campsiteSortSelect"
+              style="padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 14px; font-family: 'Poppins', sans-serif; background: white;"
+            >
+              <option value="a-z">Sort: A-Z</option>
+              <option value="z-a">Sort: Z-A</option>
+            </select>
+          </div>
+          <div id="campsitesList" class="items-list">
+            <div class="loading">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Gas Stations Tab -->
+      <div class="tab-content" id="tab-gas-stations">
+        <div class="section">
+          <h2>Add/Edit Gas Station</h2>
+          <form class="form" id="gasForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="gasName">Name</label>
+                <input type="text" id="gasName" placeholder="Gas station name" required />
+              </div>
+              <div class="form-group">
+                <label for="gasStatus">Status</label>
+                <select id="gasStatus" required>
+                  <option value="open">Open</option>
+                  <option value="closed">Closed</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="gasLat">Latitude</label>
+                <input type="number" step="0.000001" id="gasLat" placeholder="64.1234" required />
+              </div>
+              <div class="form-group">
+                <label for="gasLng">Longitude</label>
+                <input type="number" step="0.000001" id="gasLng" placeholder="-21.1234" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="gasHours">Opening Hours</label>
+              <input type="text" id="gasHours" placeholder="24/7 or Mon-Fri 9-17" />
+            </div>
+            <div class="form-group">
+              <label for="gasPhotoURL">Photo URL</label>
+              <input type="url" id="gasPhotoURL" placeholder="https://..." />
+            </div>
+            <input type="hidden" id="gasId" />
+            <button type="submit" class="btn-primary" id="gasSubmitBtn">Add Gas Station</button>
+          </form>
+        </div>
+
+        <div class="section">
+          <h2>All Gas Stations</h2>
+          <div id="gasList" class="items-list">
+            <div class="loading">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- F-Roads Tab -->
+      <div class="tab-content" id="tab-froads">
+        <div class="section">
+          <h2>Add/Edit F-Road</h2>
+          <form class="form" id="froadForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="froadId">Road ID</label>
+                <input type="text" id="froadId" placeholder="F208" required />
+              </div>
+              <div class="form-group">
+                <label for="froadName">Name</label>
+                <input type="text" id="froadName" placeholder="Fjallabak Route" required />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="froadStatus">Status</label>
+                <select id="froadStatus" required>
+                  <option value="open">Open</option>
+                  <option value="closed">Closed</option>
+                  <option value="unknown">Unknown</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="froadDifficulty">Difficulty</label>
+                <select id="froadDifficulty" required>
+                  <option value="easy">Easy</option>
+                  <option value="moderate">Moderate</option>
+                  <option value="hard">Hard</option>
+                  <option value="extreme">Extreme</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="froadDescription">Description</label>
+              <textarea id="froadDescription" placeholder="Road description..."></textarea>
+            </div>
+            <div class="form-group">
+              <label for="froadPhotoURL">Photo URL</label>
+              <input type="url" id="froadPhotoURL" placeholder="https://..." />
+            </div>
+            <input type="hidden" id="froadDocId" />
+            <button type="submit" class="btn-primary" id="froadSubmitBtn">Add F-Road</button>
+          </form>
+        </div>
+
+        <div class="section">
+          <h2>All F-Roads</h2>
+          <div id="froadsList" class="items-list">
+            <div class="loading">Loading...</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Firebase -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+
+  <!-- Flatpickr -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+  <script>
+    // Firebase init
+    const config = {
+      apiKey: "AIzaSyDDMNnJgtm-gK9OrVev7qmBRpaA8CAoDiM",
+      authDomain: "froad-7d561.firebaseapp.com",
+      projectId: "froad-7d561",
+      storageBucket: "froad-7d561.firebasestorage.app",
+      messagingSenderId: "1086299585443",
+      appId: "1:1086299585443:web:10bcb67effd6a89c24f816"
+    };
+    firebase.initializeApp(config);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+
+    // DOM elements
+    const authScreen = document.getElementById('authScreen');
+    const adminPanel = document.getElementById('adminPanel');
+    const emailInput = document.getElementById('emailInput');
+    const passwordInput = document.getElementById('passwordInput');
+    const loginBtn = document.getElementById('loginBtn');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const errorMsg = document.getElementById('errorMsg');
+
+    // Initialize datetime picker
+    flatpickr("#updateTime", {
+      enableTime: true,
+      dateFormat: "H:i, d.m.Y",
+      time_24hr: true,
+      defaultDate: new Date()
+    });
+
+    // Tabs
+    document.querySelectorAll('.tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        const targetTab = tab.dataset.tab;
+
+        // Update active tab
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        // Update active content
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        document.getElementById(`tab-${targetTab}`).classList.add('active');
+      });
+    });
+
+    // Auth state
+    auth.onAuthStateChanged(async user => {
+      if (!user) {
+        authScreen.style.display = 'flex';
+        adminPanel.style.display = 'none';
+        return;
+      }
+
+      try {
+        const userDoc = await db.collection('users').doc(user.uid).get();
+        const userData = userDoc.data();
+
+        if (userData && userData.admin === true) {
+          authScreen.style.display = 'none';
+          adminPanel.style.display = 'block';
+
+          // Load all data
+          loadUpdates();
+          loadHuts();
+          loadCampsites();
+          loadGasStations();
+          loadFRoads();
+        } else {
+          errorMsg.textContent = 'Access denied. Admin privileges required.';
+          await auth.signOut();
+        }
+      } catch (err) {
+        console.error('Error checking admin status:', err);
+        errorMsg.textContent = 'Error checking permissions.';
+        await auth.signOut();
+      }
+    });
+
+    // Login
+    loginBtn.addEventListener('click', async () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value;
+
+      try {
+        await auth.signInWithEmailAndPassword(email, password);
+        errorMsg.textContent = '';
+      } catch (err) {
+        errorMsg.textContent = 'Invalid credentials.';
+      }
+    });
+
+    // Logout
+    logoutBtn.addEventListener('click', () => auth.signOut());
+
+    // ========================================
+    // UPDATES
+    // ========================================
+    function loadUpdates() {
+      db.collection('updates')
+        .orderBy('createdAt', 'desc')
+        .onSnapshot(snapshot => {
+          const list = document.getElementById('updatesList');
+          if (snapshot.empty) {
+            list.innerHTML = '<div class="empty-state">No updates yet.</div>';
+            return;
+          }
+
+          list.innerHTML = '';
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const card = document.createElement('div');
+            card.className = 'item-card';
+            card.innerHTML = `
+              <div class="item-header">
+                <span class="badge badge-${data.type}">${data.type}</span>
+                <span class="item-meta">${data.time}</span>
+              </div>
+              <div class="item-text">${data.text}</div>
+              <div class="item-actions">
+                <button class="btn-edit" onclick="editUpdate('${doc.id}', ${JSON.stringify(data).replace(/"/g, '&quot;')})">Edit</button>
+                <button class="btn-delete" onclick="deleteUpdate('${doc.id}')">Delete</button>
+              </div>
+            `;
+            list.appendChild(card);
+          });
+        });
+    }
+
+    document.getElementById('updateForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        type: document.getElementById('updateType').value,
+        time: document.getElementById('updateTime').value,
+        text: document.getElementById('updateText').value,
+      };
+
+      const updateId = document.getElementById('updateId').value;
+
+      try {
+        if (updateId) {
+          await db.collection('updates').doc(updateId).update(data);
+        } else {
+          await db.collection('updates').add({
+            ...data,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        document.getElementById('updateForm').reset();
+        document.getElementById('updateId').value = '';
+        document.getElementById('updateSubmitBtn').textContent = 'Add Update';
+        flatpickr("#updateTime").setDate(new Date());
+      } catch (err) {
+        console.error('Error saving update:', err);
+        alert('Error saving update');
+      }
+    });
+
+    window.editUpdate = (id, data) => {
+      document.getElementById('updateId').value = id;
+      document.getElementById('updateType').value = data.type;
+      document.getElementById('updateTime').value = data.time;
+      document.getElementById('updateText').value = data.text;
+      document.getElementById('updateSubmitBtn').textContent = 'Update';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.deleteUpdate = async (id) => {
+      if (!confirm('Delete this update?')) return;
+      try {
+        await db.collection('updates').doc(id).delete();
+      } catch (err) {
+        console.error('Error deleting:', err);
+      }
+    };
+
+    // ========================================
+    // HUTS
+    // ========================================
+    let allHuts = [];
+
+    function loadHuts() {
+      db.collection('huts')
+        .orderBy('name')
+        .onSnapshot(snapshot => {
+          allHuts = [];
+          snapshot.forEach(doc => {
+            allHuts.push({ id: doc.id, ...doc.data() });
+          });
+          displayHuts();
+        });
+    }
+
+    function displayHuts() {
+      const list = document.getElementById('hutsList');
+      const searchTerm = document.getElementById('hutSearchInput')?.value.toLowerCase() || '';
+      const sortOrder = document.getElementById('hutSortSelect')?.value || 'a-z';
+
+      if (allHuts.length === 0) {
+        list.innerHTML = '<div class="empty-state">No huts yet.</div>';
+        return;
+      }
+
+      // Filter huts based on search term
+      let filteredHuts = allHuts.filter(hut => {
+        const searchString = `${hut.name} ${hut.description || ''} ${hut.status}`.toLowerCase();
+        return searchString.includes(searchTerm);
+      });
+
+      // Sort huts
+      filteredHuts.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        if (sortOrder === 'a-z') {
+          return nameA.localeCompare(nameB);
+        } else {
+          return nameB.localeCompare(nameA);
+        }
+      });
+
+      // Display filtered and sorted huts
+      if (filteredHuts.length === 0) {
+        list.innerHTML = '<div class="empty-state">No huts found.</div>';
+        return;
+      }
+
+      list.innerHTML = '';
+      filteredHuts.forEach(hut => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.innerHTML = `
+          <div class="item-header">
+            <span class="item-title">${hut.name}</span>
+            <span class="badge badge-${hut.status}">${hut.status}</span>
+          </div>
+          <div class="item-meta">📍 ${hut.lat}, ${hut.lng} ${hut.price ? `• ${hut.price} ISK/night` : ''}</div>
+          <div class="item-text">${hut.description || 'No description'}</div>
+          <div class="item-actions">
+            <button class="btn-edit" onclick="editHut('${hut.id}', ${JSON.stringify(hut).replace(/"/g, '&quot;')})">Edit</button>
+            <button class="btn-delete" onclick="deleteHut('${hut.id}')">Delete</button>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    // Add event listeners for search and sort
+    document.addEventListener('DOMContentLoaded', () => {
+      const searchInput = document.getElementById('hutSearchInput');
+      const sortSelect = document.getElementById('hutSortSelect');
+
+      if (searchInput) {
+        searchInput.addEventListener('input', displayHuts);
+      }
+
+      if (sortSelect) {
+        sortSelect.addEventListener('change', displayHuts);
+      }
+    });
+
+    document.getElementById('hutForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        name: document.getElementById('hutName').value,
+        status: document.getElementById('hutStatus').value,
+        lat: parseFloat(document.getElementById('hutLat').value),
+        lng: parseFloat(document.getElementById('hutLng').value),
+        description: document.getElementById('hutDescription').value,
+        price: parseInt(document.getElementById('hutPrice').value) || null,
+        contact: document.getElementById('hutContact').value,
+        link: document.getElementById('hutLink').value,
+        photoURL: document.getElementById('hutPhotoURL').value,
+      };
+
+      const hutId = document.getElementById('hutId').value;
+
+      try {
+        if (hutId) {
+          await db.collection('huts').doc(hutId).update(data);
+        } else {
+          await db.collection('huts').add({
+            ...data,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        document.getElementById('hutForm').reset();
+        document.getElementById('hutId').value = '';
+        document.getElementById('hutSubmitBtn').textContent = 'Add Hut';
+      } catch (err) {
+        console.error('Error saving hut:', err);
+        alert('Error saving hut');
+      }
+    });
+
+    window.editHut = (id, data) => {
+      document.getElementById('hutId').value = id;
+      document.getElementById('hutName').value = data.name;
+      document.getElementById('hutStatus').value = data.status;
+      document.getElementById('hutLat').value = data.lat;
+      document.getElementById('hutLng').value = data.lng;
+      document.getElementById('hutDescription').value = data.description || '';
+      document.getElementById('hutPrice').value = data.price || '';
+      document.getElementById('hutContact').value = data.contact || '';
+      document.getElementById('hutLink').value = data.link || '';
+      document.getElementById('hutPhotoURL').value = data.photoURL || '';
+      document.getElementById('hutSubmitBtn').textContent = 'Update';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.deleteHut = async (id) => {
+      if (!confirm('Delete this hut?')) return;
+      try {
+        await db.collection('huts').doc(id).delete();
+      } catch (err) {
+        console.error('Error deleting:', err);
+      }
+    };
+
+    // CSV Import
+    document.getElementById('importCsvBtn').addEventListener('click', async () => {
+      const fileInput = document.getElementById('csvFileInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('Please select a CSV file first');
+        return;
+      }
+
+      const logEl = document.getElementById('importLog');
+      logEl.style.display = 'block';
+      logEl.innerHTML = '<div style="color: #3b82f6;">🚀 Starting import...</div>';
+
+      try {
+        const text = await file.text();
+        const lines = text.split('\n').filter(line => line.trim());
+
+        // Skip header if present
+        const startIndex = lines[0].toLowerCase().includes('name') ? 1 : 0;
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let i = startIndex; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          try {
+            // Parse CSV line (handle quoted fields)
+            const fields = parseCSVLine(line);
+
+            if (fields.length < 3) {
+              logEl.innerHTML += `<div style="color: #ef4444;">❌ Line ${i+1}: Not enough fields</div>`;
+              errorCount++;
+              continue;
+            }
+
+            const hutData = {
+              name: fields[0] || '',
+              lat: parseFloat(fields[1]) || 0,
+              lng: parseFloat(fields[2]) || 0,
+              link: fields[3] || '',
+              photoURL: fields[4] || '',
+              status: fields[5] || 'open',
+              description: fields[6] || '',
+              price: fields[7] ? parseInt(fields[7]) : null,
+              contact: fields[8] || '',
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await db.collection('huts').add(hutData);
+            successCount++;
+            logEl.innerHTML += `<div style="color: #10b981;">✅ Imported: ${hutData.name}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+
+            // Small delay to avoid overwhelming Firebase
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+          } catch (err) {
+            errorCount++;
+            logEl.innerHTML += `<div style="color: #ef4444;">❌ Line ${i+1}: ${err.message}</div>`;
+          }
+        }
+
+        logEl.innerHTML += `<div style="color: #3b82f6; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">✨ Import complete! Success: ${successCount}, Errors: ${errorCount}</div>`;
+        fileInput.value = '';
+
+      } catch (err) {
+        logEl.innerHTML += `<div style="color: #ef4444;">❌ Error reading file: ${err.message}</div>`;
+      }
+    });
+
+    // Simple CSV parser that handles quoted fields
+    function parseCSVLine(line) {
+      const fields = [];
+      let current = '';
+      let inQuotes = false;
+
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+
+        if (char === '"') {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          fields.push(current.trim());
+          current = '';
+        } else {
+          current += char;
+        }
+      }
+
+      fields.push(current.trim());
+      return fields;
+    }
+
+    // ========================================
+    // CAMPSITES
+    // ========================================
+    let allCampsites = [];
+
+    function loadCampsites() {
+      db.collection('campsites')
+        .orderBy('name')
+        .onSnapshot(snapshot => {
+          allCampsites = [];
+          snapshot.forEach(doc => {
+            allCampsites.push({ id: doc.id, ...doc.data() });
+          });
+          displayCampsites();
+        });
+    }
+
+    function displayCampsites() {
+      const list = document.getElementById('campsitesList');
+      const searchTerm = document.getElementById('campsiteSearchInput')?.value.toLowerCase() || '';
+      const sortOrder = document.getElementById('campsiteSortSelect')?.value || 'a-z';
+
+      if (allCampsites.length === 0) {
+        list.innerHTML = '<div class="empty-state">No campsites yet.</div>';
+        return;
+      }
+
+      // Filter campsites based on search term
+      let filteredCampsites = allCampsites.filter(campsite => {
+        const searchString = `${campsite.name} ${campsite.description || ''} ${campsite.facilities || ''} ${campsite.status}`.toLowerCase();
+        return searchString.includes(searchTerm);
+      });
+
+      // Sort campsites
+      filteredCampsites.sort((a, b) => {
+        const nameA = a.name.toLowerCase();
+        const nameB = b.name.toLowerCase();
+        if (sortOrder === 'a-z') {
+          return nameA.localeCompare(nameB);
+        } else {
+          return nameB.localeCompare(nameA);
+        }
+      });
+
+      // Display filtered and sorted campsites
+      if (filteredCampsites.length === 0) {
+        list.innerHTML = '<div class="empty-state">No campsites found.</div>';
+        return;
+      }
+
+      list.innerHTML = '';
+      filteredCampsites.forEach(campsite => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+        card.innerHTML = `
+          <div class="item-header">
+            <span class="item-title">${campsite.name}</span>
+            <span class="badge badge-${campsite.status}">${campsite.status}</span>
+          </div>
+          <div class="item-meta">📍 ${campsite.lat}, ${campsite.lng} ${campsite.price ? `• ${campsite.price} ISK/night` : ''}</div>
+          <div class="item-text">${campsite.description || 'No description'}</div>
+          ${campsite.facilities ? `<div class="item-meta">🏕️ ${campsite.facilities}</div>` : ''}
+          <div class="item-actions">
+            <button class="btn-edit" onclick="editCampsite('${campsite.id}', ${JSON.stringify(campsite).replace(/"/g, '&quot;')})">Edit</button>
+            <button class="btn-delete" onclick="deleteCampsite('${campsite.id}')">Delete</button>
+          </div>
+        `;
+        list.appendChild(card);
+      });
+    }
+
+    // Add event listeners for campsite search and sort
+    document.addEventListener('DOMContentLoaded', () => {
+      const campsiteSearchInput = document.getElementById('campsiteSearchInput');
+      const campsiteSortSelect = document.getElementById('campsiteSortSelect');
+
+      if (campsiteSearchInput) {
+        campsiteSearchInput.addEventListener('input', displayCampsites);
+      }
+
+      if (campsiteSortSelect) {
+        campsiteSortSelect.addEventListener('change', displayCampsites);
+      }
+    });
+
+    document.getElementById('campsiteForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        name: document.getElementById('campsiteName').value,
+        status: document.getElementById('campsiteStatus').value,
+        lat: parseFloat(document.getElementById('campsiteLat').value),
+        lng: parseFloat(document.getElementById('campsiteLng').value),
+        description: document.getElementById('campsiteDescription').value,
+        price: parseInt(document.getElementById('campsitePrice').value) || null,
+        facilities: document.getElementById('campsiteFacilities').value,
+        link: document.getElementById('campsiteLink').value,
+        photoURL: document.getElementById('campsitePhotoURL').value,
+      };
+
+      const campsiteId = document.getElementById('campsiteId').value;
+
+      try {
+        if (campsiteId) {
+          await db.collection('campsites').doc(campsiteId).update(data);
+        } else {
+          await db.collection('campsites').add({
+            ...data,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        document.getElementById('campsiteForm').reset();
+        document.getElementById('campsiteId').value = '';
+        document.getElementById('campsiteSubmitBtn').textContent = 'Add Campsite';
+      } catch (err) {
+        console.error('Error saving campsite:', err);
+        alert('Error saving campsite');
+      }
+    });
+
+    window.editCampsite = (id, data) => {
+      document.getElementById('campsiteId').value = id;
+      document.getElementById('campsiteName').value = data.name;
+      document.getElementById('campsiteStatus').value = data.status;
+      document.getElementById('campsiteLat').value = data.lat;
+      document.getElementById('campsiteLng').value = data.lng;
+      document.getElementById('campsiteDescription').value = data.description || '';
+      document.getElementById('campsitePrice').value = data.price || '';
+      document.getElementById('campsiteFacilities').value = data.facilities || '';
+      document.getElementById('campsiteLink').value = data.link || '';
+      document.getElementById('campsitePhotoURL').value = data.photoURL || '';
+      document.getElementById('campsiteSubmitBtn').textContent = 'Update';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.deleteCampsite = async (id) => {
+      if (!confirm('Delete this campsite?')) return;
+      try {
+        await db.collection('campsites').doc(id).delete();
+      } catch (err) {
+        console.error('Error deleting:', err);
+      }
+    };
+
+    // CSV Import for Campsites
+    document.getElementById('importCampsiteCsvBtn').addEventListener('click', async () => {
+      const fileInput = document.getElementById('campsiteCsvFileInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert('Please select a CSV file first');
+        return;
+      }
+
+      const logEl = document.getElementById('campsiteImportLog');
+      logEl.style.display = 'block';
+      logEl.innerHTML = '<div style="color: #3b82f6;">🚀 Starting import...</div>';
+
+      try {
+        const text = await file.text();
+        const lines = text.split('\n').filter(line => line.trim());
+
+        // Skip header if present
+        const startIndex = lines[0].toLowerCase().includes('name') ? 1 : 0;
+
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let i = startIndex; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (!line) continue;
+
+          try {
+            // Parse CSV line (handle quoted fields)
+            const fields = parseCSVLine(line);
+
+            if (fields.length < 3) {
+              logEl.innerHTML += `<div style="color: #ef4444;">❌ Line ${i+1}: Not enough fields</div>`;
+              errorCount++;
+              continue;
+            }
+
+            const campsiteData = {
+              name: fields[0] || '',
+              lat: parseFloat(fields[1]) || 0,
+              lng: parseFloat(fields[2]) || 0,
+              link: fields[3] || '',
+              photoURL: fields[4] || '',
+              status: fields[5] || 'open',
+              description: fields[6] || '',
+              price: fields[7] ? parseInt(fields[7]) : null,
+              facilities: fields[8] || '',
+              createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            };
+
+            await db.collection('campsites').add(campsiteData);
+            successCount++;
+            logEl.innerHTML += `<div style="color: #10b981;">✅ Imported: ${campsiteData.name}</div>`;
+            logEl.scrollTop = logEl.scrollHeight;
+
+            // Small delay to avoid overwhelming Firebase
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+          } catch (err) {
+            errorCount++;
+            logEl.innerHTML += `<div style="color: #ef4444;">❌ Line ${i+1}: ${err.message}</div>`;
+          }
+        }
+
+        logEl.innerHTML += `<div style="color: #3b82f6; margin-top: 8px; padding-top: 8px; border-top: 1px solid #e5e7eb;">✨ Import complete! Success: ${successCount}, Errors: ${errorCount}</div>`;
+        fileInput.value = '';
+
+      } catch (err) {
+        logEl.innerHTML += `<div style="color: #ef4444;">❌ Error reading file: ${err.message}</div>`;
+      }
+    });
+
+    // ========================================
+    // GAS STATIONS
+    // ========================================
+    function loadGasStations() {
+      db.collection('gasStations')
+        .orderBy('name')
+        .onSnapshot(snapshot => {
+          const list = document.getElementById('gasList');
+          if (snapshot.empty) {
+            list.innerHTML = '<div class="empty-state">No gas stations yet.</div>';
+            return;
+          }
+
+          list.innerHTML = '';
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const card = document.createElement('div');
+            card.className = 'item-card';
+            card.innerHTML = `
+              <div class="item-header">
+                <span class="item-title">${data.name}</span>
+                <span class="badge badge-${data.status}">${data.status}</span>
+              </div>
+              <div class="item-meta">📍 ${data.lat}, ${data.lng}</div>
+              ${data.hours ? `<div class="item-text">🕒 ${data.hours}</div>` : ''}
+              <div class="item-actions">
+                <button class="btn-edit" onclick="editGas('${doc.id}', ${JSON.stringify(data).replace(/"/g, '&quot;')})">Edit</button>
+                <button class="btn-delete" onclick="deleteGas('${doc.id}')">Delete</button>
+              </div>
+            `;
+            list.appendChild(card);
+          });
+        });
+    }
+
+    document.getElementById('gasForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        name: document.getElementById('gasName').value,
+        status: document.getElementById('gasStatus').value,
+        lat: parseFloat(document.getElementById('gasLat').value),
+        lng: parseFloat(document.getElementById('gasLng').value),
+        hours: document.getElementById('gasHours').value,
+        photoURL: document.getElementById('gasPhotoURL').value,
+      };
+
+      const gasId = document.getElementById('gasId').value;
+
+      try {
+        if (gasId) {
+          await db.collection('gasStations').doc(gasId).update(data);
+        } else {
+          await db.collection('gasStations').add({
+            ...data,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        document.getElementById('gasForm').reset();
+        document.getElementById('gasId').value = '';
+        document.getElementById('gasSubmitBtn').textContent = 'Add Gas Station';
+      } catch (err) {
+        console.error('Error saving gas station:', err);
+        alert('Error saving gas station');
+      }
+    });
+
+    window.editGas = (id, data) => {
+      document.getElementById('gasId').value = id;
+      document.getElementById('gasName').value = data.name;
+      document.getElementById('gasStatus').value = data.status;
+      document.getElementById('gasLat').value = data.lat;
+      document.getElementById('gasLng').value = data.lng;
+      document.getElementById('gasHours').value = data.hours || '';
+      document.getElementById('gasPhotoURL').value = data.photoURL || '';
+      document.getElementById('gasSubmitBtn').textContent = 'Update';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.deleteGas = async (id) => {
+      if (!confirm('Delete this gas station?')) return;
+      try {
+        await db.collection('gasStations').doc(id).delete();
+      } catch (err) {
+        console.error('Error deleting:', err);
+      }
+    };
+
+    // ========================================
+    // F-ROADS
+    // ========================================
+    function loadFRoads() {
+      db.collection('froads')
+        .orderBy('roadId')
+        .onSnapshot(snapshot => {
+          const list = document.getElementById('froadsList');
+          if (snapshot.empty) {
+            list.innerHTML = '<div class="empty-state">No F-roads yet.</div>';
+            return;
+          }
+
+          list.innerHTML = '';
+          snapshot.forEach(doc => {
+            const data = doc.data();
+            const card = document.createElement('div');
+            card.className = 'item-card';
+            card.innerHTML = `
+              <div class="item-header">
+                <span class="item-title">${data.roadId} - ${data.name}</span>
+                <span class="badge badge-${data.status}">${data.status}</span>
+              </div>
+              <div class="item-meta">Difficulty: ${data.difficulty}</div>
+              <div class="item-text">${data.description || 'No description'}</div>
+              <div class="item-actions">
+                <button class="btn-edit" onclick="editFRoad('${doc.id}', ${JSON.stringify(data).replace(/"/g, '&quot;')})">Edit</button>
+                <button class="btn-delete" onclick="deleteFRoad('${doc.id}')">Delete</button>
+              </div>
+            `;
+            list.appendChild(card);
+          });
+        });
+    }
+
+    document.getElementById('froadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const data = {
+        roadId: document.getElementById('froadId').value,
+        name: document.getElementById('froadName').value,
+        status: document.getElementById('froadStatus').value,
+        difficulty: document.getElementById('froadDifficulty').value,
+        description: document.getElementById('froadDescription').value,
+        photoURL: document.getElementById('froadPhotoURL').value,
+      };
+
+      const froadDocId = document.getElementById('froadDocId').value;
+
+      try {
+        if (froadDocId) {
+          await db.collection('froads').doc(froadDocId).update(data);
+        } else {
+          await db.collection('froads').add({
+            ...data,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+          });
+        }
+
+        document.getElementById('froadForm').reset();
+        document.getElementById('froadDocId').value = '';
+        document.getElementById('froadSubmitBtn').textContent = 'Add F-Road';
+      } catch (err) {
+        console.error('Error saving F-road:', err);
+        alert('Error saving F-road');
+      }
+    });
+
+    window.editFRoad = (id, data) => {
+      document.getElementById('froadDocId').value = id;
+      document.getElementById('froadId').value = data.roadId;
+      document.getElementById('froadName').value = data.name;
+      document.getElementById('froadStatus').value = data.status;
+      document.getElementById('froadDifficulty').value = data.difficulty;
+      document.getElementById('froadDescription').value = data.description || '';
+      document.getElementById('froadPhotoURL').value = data.photoURL || '';
+      document.getElementById('froadSubmitBtn').textContent = 'Update';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    window.deleteFRoad = async (id) => {
+      if (!confirm('Delete this F-road?')) return;
+      try {
+        await db.collection('froads').doc(id).delete();
+      } catch (err) {
+        console.error('Error deleting:', err);
+      }
+    };
+  </script>
+</body>
+</html>

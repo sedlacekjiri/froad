@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+  <title>Froad Community + Live Map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header>
+    <img class="logo-header" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ea50150761950e794dd2bb_logo-black.png" alt="Logo" />
+    <div class="header-right">
+      <span id="headerName" class="header-name"></span>
+      <img id="profileIcon" class="profile-icon fallback" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68e956576523671093377344_account.png" alt="Profile" />
+    </div>
+  </header>
+
+  <div id="mapContainer"><div id="map"></div></div>
+
+  <!-- User detail slide-up panel -->
+<div id="userDetailPanel">
+  <div id="userDetailContent">
+
+    <div class="user-section">
+      <h3>Bio</h3>
+      <p id="userBioText">Loading...</p>
+    </div>
+
+    <div class="user-section">
+      <h3>Vehicle</h3>
+      <p id="userVehicleText">Loading...</p>
+    </div>
+
+    <div class="user-section">
+      <h3>Vehicle photo</h3>
+      <div id="userVehiclePhotoWrapper">
+        <div id="userVehiclePhotoPlaceholder" style="background:#f4f4f4; border-radius:12px; height:160px; display:flex; justify-content:center; align-items:center; color:#888; font-size:14px;">
+          No vehicle photo
+        </div>
+        <img id="userVehiclePhoto" alt="Vehicle photo" style="display:none; width:100%; border-radius:12px; object-fit:cover;" />
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div id="globalLoader">
+  <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ea50150761950e794dd2bb_logo-black.png" alt="Logo" class="loader-logo"/>
+  <div class="loader-spinner"></div>
+</div>
+
+
+
+  <!-- Floating Share Location Button -->
+<button id="shareLocationBtn" class="share-location-btn">
+  <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed62ac5fa9fb8e0fe1bf96_live.png" alt="Live Icon" class="live-icon" />
+  Share Location
+</button>
+
+<!-- Visibility Toggle Button -->
+<button id="visibilityBtn" class="share-location-btn visibility-btn">
+  <img id="visibilityIcon"
+       src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f6a54a2914de7af9a65d54_blind.png"
+       alt="Visibility Toggle"
+       class="live-icon" />
+</button>
+
+<!-- Satellite Toggle Button -->
+<button id="customActionBtn" class="visibility-btn">
+  <img
+    id="customActionIcon"
+    src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f6ca8e8bd3492108cb48c8_layers.png"
+    alt="Toggle Satellite"
+  />
+</button>
+
+
+  <!-- Home Section -->
+  <div id="homeSection" style="display:none;">
+    <div class="home-content">
+      <h1 id="homeWelcome">Welcome</h1>
+      <p class="home-description">
+        Explore Iceland’s F-Roads and Dirt Tracks. Connect. Share. Discover.
+      </p>
+
+      <!-- Updates Section -->
+      <section class="updates-section">
+        <h2 class="section-title">Updates</h2>
+        <div id="updatesContainer" class="updates-container">
+          <!-- Updates will be loaded here by JavaScript -->
+        </div>
+      </section>
+
+      <!-- Road Status Summary -->
+      <section class="road-status-section">
+        <h2 class="section-title">Road Status Today</h2>
+        <div class="road-status-grid">
+          <div class="status-card status-open">
+            <div class="status-icon">✅</div>
+            <div class="status-value" id="roadsOpen">--</div>
+            <div class="status-label">OPEN</div>
+          </div>
+          <div class="status-card status-caution">
+            <div class="status-icon">⚠️</div>
+            <div class="status-value" id="roadsUnknown">--</div>
+            <div class="status-label">UNKNOWN</div>
+          </div>
+          <div class="status-card status-closed">
+            <div class="status-icon">❌</div>
+            <div class="status-value" id="roadsClosed">--</div>
+            <div class="status-label">CLOSED</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- FAQ -->
+      <section class="faq-section">
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <div class="faq-list">
+          <div class="faq-item">
+            <button class="faq-question">
+              <span>Do I need 4x4 for all F-roads?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Yes, all F-roads in Iceland require a 4x4 vehicle. Regular 2WD cars are not permitted on F-roads, and your rental insurance will not cover damages if you drive on F-roads without a 4x4.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question">
+              <span>When do F-roads typically open?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>F-roads typically open in June and close in September, but this varies depending on weather conditions. Some highland roads may open as late as July. Always check current road conditions before traveling.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question">
+              <span>How do I check if a road is safe?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Use our Explore map to see real-time road conditions. You can also check road.is for official road status and safetravel.is for weather alerts. Join our chat to get advice from other travelers currently on the roads.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question">
+              <span>What does river crossing difficulty mean?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Easy: Shallow, clear water, stable riverbed. Medium: Deeper water (30-50cm), some current. Hard: Deep water (50cm+), strong current, requires experience. Always assess conditions yourself before crossing.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-question">
+              <span>Is my location data private?</span>
+              <span class="faq-icon">+</span>
+            </button>
+            <div class="faq-answer">
+              <p>Your location is only shared when you actively choose to share it. You can toggle visibility at any time, and your location data is never sold to third parties. Other users only see your approximate location on the map.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contact & Version -->
+      <section class="contact-section" style="margin-bottom: 40px;">
+        <p style="text-align: center; color: #666; font-size: 14px; margin: 32px 0 8px 0; line-height: 1.6;">
+          Have questions or need help? Contact us at
+          <a href="mailto:hello@froad.is" style="color: #000; text-decoration: underline;">hello@froad.is</a>
+        </p>
+        <p style="text-align: center; color: #999; font-size: 12px; margin: 0;">
+          v.1.0
+        </p>
+      </section>
+
+    </div>
+  </div>
+
+  <div id="exploreMap" style="display:none;">
+    <iframe
+      id="froadsMap"
+      src="https://sedlacekjiri.github.io/froad/explore.html"
+      title="F-roads Map"
+      style="
+        position:absolute;
+        top:0; left:0;
+        width:100%; height:100%;
+        border:none;
+        overflow:hidden;
+        touch-action:none;
+      "
+      allow="geolocation"
+      scrolling="no">
+    </iframe>
+  </div>
+  
+<div id="chatHeader" class="chat-header" style="display:none;">
+  <button id="backToGroupsBtn" class="back-btn">←</button>
+  <span id="chatGroupTitle">General</span>
+</div>
+
+<!-- Email Verification Banner -->
+<div id="emailVerificationBanner" style="display:none;">
+  <div class="banner-content">
+    <div class="banner-icon">⚠️</div>
+    <div class="banner-text">
+      <strong>Please verify your email</strong>
+      <p>You need to verify your email address to send messages.</p>
+    </div>
+    <button id="resendVerificationBtn" class="resend-btn">Resend Email</button>
+  </div>
+</div>
+
+  <div id="chat"></div>
+
+<!-- 🧩 Chat Group Selection -->
+<div id="chatGroups" class="chat-groups">
+  <h3>The Basecamp Chat</h3>
+  <p class="subtitle">
+    Connect with fellow travelers — share stories, ask for help, and explore Iceland together in real time.
+  </p>
+
+  <div class="chat-groups-container">
+    <div class="chat-group" data-group="general">
+      <i data-lucide="message-circle"></i>
+      <span>General</span>
+      <div class="desc">Casual chat and off-topic talk with other F-road travelers.</div>
+      <div class="chat-avatars" id="avatars-general"></div>
+    </div>
+
+    <div class="chat-group" data-group="river">
+      <span>River Crossing</span>
+      <div class="desc">Discuss river levels, crossing safety, and share experiences.</div>
+      <div class="chat-avatars" id="avatars-river"></div>
+    </div>
+
+    <div class="chat-group" data-group="froads">
+      <span>F-Roads</span>
+      <div class="desc">Updates, adventures, and stories from Iceland's highlands.</div>
+      <div class="chat-avatars" id="avatars-froads"></div>
+    </div>
+
+    <div class="chat-group" data-group="weather">
+      <span>Weather Updates</span>
+      <div class="desc">Real-time weather, storms, and wind conditions across Iceland.</div>
+      <div class="chat-avatars" id="avatars-weather"></div>
+    </div>
+
+    <div class="chat-group" data-group="campsites">
+      <span>Campsites & Spots</span>
+      <div class="desc">Discover and share your favorite campsites and hidden places.</div>
+      <div class="chat-avatars" id="avatars-campsites"></div>
+    </div>
+
+    <div class="chat-group" data-group="cars">
+      <span>Cars & Gear</span>
+      <div class="desc">4x4 discussions, repairs, tires, and travel gear recommendations.</div>
+      <div class="chat-avatars" id="avatars-cars"></div>
+    </div>
+
+    <div class="chat-group" data-group="alerts">
+      <span>Road Alerts & Closures</span>
+      <div class="desc">F-road closures, conditions, and maintenance notifications.</div>
+      <div class="chat-avatars" id="avatars-alerts"></div>
+    </div>
+
+    <div class="chat-group" data-group="photos">
+      <span>Photo Share / Sightings</span>
+      <div class="desc">Share your photos, landscapes, and wildlife moments.</div>
+      <div class="chat-avatars" id="avatars-photos"></div>
+    </div>
+
+    <div class="chat-group" data-group="help">
+      <span>Help & Rescue</span>
+      <div class="desc">Emergency contacts and real-time assistance discussions.</div>
+      <div class="chat-avatars" id="avatars-help"></div>
+    </div>
+
+    <div class="chat-group" data-group="community">
+      <span>Community & Meetups</span>
+      <div class="desc">Connect with other travelers, share tips, and organize meetups.</div>
+      <div class="chat-avatars" id="avatars-community"></div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 🖼️ Modal pro zvětšení obrázku -->
+<div id="imageModal">
+  <span id="closeImageModal">&times;</span>
+  <img id="modalImg" src="" alt="Preview">
+</div>
+
+<div id="form" class="chat-input">
+  <label for="imageUpload" class="upload-icon">
+    <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ebd2a7ebb8279bda871914_image.png" alt="Upload" />
+  </label>
+  <input type="file" id="imageUpload" accept="image/*" hidden />
+
+  <input type="text" id="msgInput" placeholder="Write a message…" />
+  <button id="sendBtn">Send</button>
+</div>
+
+<!-- 🧾 Info bar (zobrazí se po výběru fotky) -->
+<div id="uploadInfo" class="upload-info">
+  <span id="uploadText"></span>
+  <span id="cancelUpload" class="cancel-upload">✕</span>
+</div>
+
+  <div id="profileEditor">
+  <button id="closeProfileBtn" class="close-profile-btn">
+  ✕
+</button>
+  <h3>Edit Profile</h3>
+
+  <div class="profile-avatar">
+  <div class="avatar-container">
+    <img id="currentAvatar" src="https://www.gravatar.com/avatar?d=mp" alt="Avatar" />
+    <button id="deleteAvatarBtn" class="avatar-delete-btn">
+      <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f7c2fc94b5677c444a0c31_trash.png" alt="Delete" />
+    </button>
+  </div>
+  <label for="avatarInput" class="upload-btn">+ Upload photo</label>
+  <input type="file" id="avatarInput" accept="image/*" hidden />
+</div>
+
+
+  <label for="displayNameInput">Name</label>
+  <input type="text" id="displayNameInput" placeholder="Your name" />
+
+  <label for="bioInput">Bio</label>
+  <textarea id="bioInput" maxlength="150" placeholder="Short bio (max 150 characters)"></textarea>
+
+  <label for="instagramInput">Instagram Handle</label>
+  <input type="text" id="instagramInput" placeholder="@username" />
+
+  <label for="vehicleSelect">Vehicle type</label>
+<input type="text" id="vehicleSelect" placeholder="Enter your vehicle name" />
+
+  <div id="vehiclePhotoPreviewWrapper" style="margin: 16px 0;">
+    <div id="vehiclePhotoPlaceholder" style="background:#f4f4f4; border-radius:12px; height:160px; display:flex; justify-content:center; align-items:center; color:#888; font-size:14px;">
+      No vehicle photo
+    </div>
+    <img id="vehiclePhotoPreview" alt="Vehicle photo preview" style="display:none; width:100%; border-radius:12px; max-height:200px; object-fit:cover;">
+  </div>
+
+<label for="vehiclePhoto" class="upload-vehicle-btn">+ Upload Vehicle Photo</label>
+<input type="file" id="vehiclePhoto" accept="image/*" hidden />
+
+  <button id="saveProfileBtn" class="btn btn-save">Save</button>
+  <button id="logoutBtn" class="btn btn-logout">Logout</button>
+</div>
+
+  <div id="accessDeniedModal" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:10000; justify-content:center; align-items:center;">
+    <div style="background:white; padding:32px; border-radius:12px; max-width:360px; text-align:center; box-shadow:0 4px 20px rgba(0,0,0,0.3);">
+      <h2 style="margin-top:0; font-size:22px;">Registration Successful!</h2>
+      <p style="color:#555; font-size:16px; line-height:1.4;">
+        Please check your email to verify your account.<br/><br/>
+        After email verification, your access is pending approval.<br/>
+        You'll receive another email once you're approved.
+      </p>
+      <button onclick="closeAccessModal()" style="margin-top:20px; padding:10px 20px; background:#000; color:#fff; border:none; border-radius:8px; cursor:pointer;">
+        OK
+      </button>
+    </div>
+  </div>
+
+  <div id="loginScreen">
+    <div class="login-left"></div>
+    <div class="login-right">
+      <div class="login-box">
+        <img id="logoImg" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ea50150761950e794dd2bb_logo-black.png" alt="Logo" />
+        <h2 id="authTitle">Log in</h2>
+        <form id="emailLoginForm" style="display: flex; flex-direction: column; gap: 14px;">
+          <input type="email" id="emailInput" placeholder="Email address *" required />
+          <input type="password" id="passwordInput" placeholder="Password *" required />
+          <a
+  href="reset.html"
+  id="forgotPasswordLink"
+  style="font-size:14px; color:#303030; text-decoration:underline; align-self:flex-start;"
+>
+  Forgot password?
+</a>
+
+          <button type="submit" class="btn login-email-btn">Log in</button>
+        </form>
+        <form id="signupForm" style="display: none; flex-direction: column; gap: 14px;">
+          <input type="text" id="signupFullName" placeholder="Full name *" required />
+          <input type="email" id="signupEmail" placeholder="Email address *" required />
+          <input type="password" id="signupPassword" placeholder="Password *" required />
+          <button type="submit" class="btn login-email-btn">Create account</button>
+        </form>
+
+        <p id="loginError" style="color: red; font-size: 14px; margin: 0;"></p>
+        <p class="toggle-auth" id="toSignup">Don't have an account? <a href="#">Sign up</a></p>
+        <p class="toggle-auth" id="toLogin" style="display: none;">Already have an account? <a href="#">Log in</a></p>
+
+        <p class="legal-text">
+          By continuing to use Froad, you agree to our
+          <a href="/terms" target="_blank">Terms of Service</a> and
+          <a href="/privacy" target="_blank">Privacy Policy</a>.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <footer id="appFooter">
+  <!-- Home ikona -->
+  <button class="footer-btn home-btn" data-tab="home">
+    <img class="home-icon"
+         src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/690214cdc412ca539d7fcdfe_home-button.png"
+         alt="Home" />
+    <span>Home</span>
+  </button>
+
+  <!-- Explore ikona -->
+  <button class="footer-btn explore-btn" data-tab="explore">
+    <img class="explore-icon"
+         src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed640a5b1f7f0d0f842643_map%20(3).png"
+         alt="Explore" />
+    <span>Explore</span>
+  </button>
+
+  <!--Community -->
+  <button class="footer-btn map-btn" data-tab="map">
+    <img class="map-icon"
+         src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68efa731bab109784845d316_people.png"
+         alt="People" />
+    <span>People</span>
+  </button>
+
+  <!-- Chat -->
+  <button class="footer-btn chat-btn" data-tab="chat">
+    <img class="chat-icon"
+         src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed60dbeff425a3e7d0d35e_paper-plane.png"
+         alt="Chat" />
+    <span>Chat</span>
+  </button>
+</footer>
+
+
+
+
+
+
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-auth.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-storage.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
