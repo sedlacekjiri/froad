@@ -199,7 +199,9 @@ avatarInput.addEventListener("change", e => {
     vehiclePhotoPreview.src = ev.target.result;
     vehiclePhotoPreview.style.display = "block";
     const placeholder = document.getElementById("vehiclePhotoPlaceholder");
+    const deleteBtn = document.getElementById("deleteVehiclePhotoBtn");
     if (placeholder) placeholder.style.display = "none";
+    if (deleteBtn) deleteBtn.style.display = "flex";
   };
   reader.readAsDataURL(file);
 });
@@ -428,7 +430,9 @@ document.getElementById("chatGroups").style.display = "none";
     vehiclePhotoPreview.src = "";
     vehiclePhotoPreview.style.display = "none";
     const vehiclePhotoPlaceholder = document.getElementById("vehiclePhotoPlaceholder");
+    const deleteVehiclePhotoBtn = document.getElementById("deleteVehiclePhotoBtn");
     if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "flex";
+    if (deleteVehiclePhotoBtn) deleteVehiclePhotoBtn.style.display = "none";
     avatarInput.value = "";
     vehiclePhotoInput.value = "";
 
@@ -596,13 +600,16 @@ if (homeWelcome && userData.displayName) {
 
   // ✅ Zobraz vehicle photo nebo placeholder v profile editoru
   const vehiclePhotoPlaceholder = document.getElementById("vehiclePhotoPlaceholder");
+  const deleteVehiclePhotoBtn = document.getElementById("deleteVehiclePhotoBtn");
   if (userData.vehiclePhotoURL && userData.vehiclePhotoURL.trim()) {
     vehiclePhotoPreview.src = userData.vehiclePhotoURL;
     vehiclePhotoPreview.style.display = "block";
     if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "none";
+    if (deleteVehiclePhotoBtn) deleteVehiclePhotoBtn.style.display = "flex";
   } else {
     vehiclePhotoPreview.style.display = "none";
     if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "flex";
+    if (deleteVehiclePhotoBtn) deleteVehiclePhotoBtn.style.display = "none";
   }
 
   // ✅ Store email verification status globally
@@ -771,7 +778,9 @@ setInterval(loadGroupAvatars, 20000);
   vehiclePhotoPreview.src = "";
   vehiclePhotoPreview.style.display = "none";
   const vehiclePhotoPlaceholder = document.getElementById("vehiclePhotoPlaceholder");
+  const deleteVehiclePhotoBtn = document.getElementById("deleteVehiclePhotoBtn");
   if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "flex";
+  if (deleteVehiclePhotoBtn) deleteVehiclePhotoBtn.style.display = "none";
   avatarInput.value = "";
   vehiclePhotoInput.value = "";
 
@@ -1965,6 +1974,55 @@ try {
 } catch (err) {
   console.error("Failed to update live marker photo:", err);
 }
+});
+
+
+// === DELETE VEHICLE PHOTO FUNCTION ===
+document.getElementById("deleteVehiclePhotoBtn").addEventListener("click", async () => {
+  const confirmDelete = confirm("Are you sure you want to delete this vehicle photo?");
+  if (!confirmDelete) return;
+
+  const user = auth.currentUser;
+  if (!user) return alert("Not logged in");
+
+  // 🔄 Aktualizace UI
+  const vehiclePhotoPreview = document.getElementById("vehiclePhotoPreview");
+  const vehiclePhotoPlaceholder = document.getElementById("vehiclePhotoPlaceholder");
+  const deleteVehiclePhotoBtn = document.getElementById("deleteVehiclePhotoBtn");
+
+  if (vehiclePhotoPreview) vehiclePhotoPreview.style.display = "none";
+  if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "flex";
+  if (deleteVehiclePhotoBtn) deleteVehiclePhotoBtn.style.display = "none";
+
+  try {
+    // 🔄 Aktualizace ve Firestore
+    await db.collection("users").doc(user.uid).update({
+      vehiclePhotoURL: ""
+    });
+
+    // 🔄 Aktualizace i v liveLocations (aby se změna projevila v People sekci)
+    const liveDocRef = db.collection("liveLocations").doc(user.uid);
+    await liveDocRef.set(
+      {
+        vehiclePhotoURL: ""
+      },
+      { merge: true }
+    );
+
+    // 🔁 Aktualizace panelu pokud je otevřený
+    const panel = document.getElementById("userDetailPanel");
+    if (panel && panel.style.display !== "none" && panel.dataset.uid === user.uid) {
+      const vehicleImg = document.getElementById("userVehiclePhoto");
+      const vehicleImgPlaceholder = document.getElementById("userVehiclePhotoPlaceholder");
+      if (vehicleImg) vehicleImg.style.display = "none";
+      if (vehicleImgPlaceholder) vehicleImgPlaceholder.style.display = "flex";
+    }
+
+    alert("✅ Vehicle photo deleted.");
+  } catch (err) {
+    console.error("Error deleting vehicle photo:", err);
+    alert("❌ Failed to delete photo. Try again later.");
+  }
 });
 
 
