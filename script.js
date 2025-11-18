@@ -225,14 +225,29 @@ avatarInput.addEventListener("change", e => {
 
     const authTitle = document.getElementById("authTitle");
 
-// ✅ Check for email verification success in URL
+// ✅ Handle email verification from Firebase link
 const urlParams = new URLSearchParams(window.location.search);
-if (urlParams.get('emailVerified') === 'true') {
-  const loginError = document.getElementById("loginError");
-  loginError.textContent = "✅ Email verified! You can now log in.";
-  loginError.style.color = "#22c55e"; // Green color
-  // Clear the URL parameter
-  window.history.replaceState({}, document.title, window.location.pathname);
+const mode = urlParams.get('mode');
+const oobCode = urlParams.get('oobCode');
+
+if (mode === 'verifyEmail' && oobCode) {
+  // Apply the verification code
+  auth.applyActionCode(oobCode)
+    .then(() => {
+      console.log("✅ Email verification successful!");
+      const loginError = document.getElementById("loginError");
+      loginError.textContent = "✅ Email confirmed! You can now log in.";
+      loginError.style.color = "#22c55e"; // Green color
+      // Clear the URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+    })
+    .catch((error) => {
+      console.error("❌ Email verification failed:", error);
+      const loginError = document.getElementById("loginError");
+      loginError.textContent = "Email verification link is invalid or expired.";
+      loginError.style.color = "#ef4444"; // Red color
+      window.history.replaceState({}, document.title, window.location.pathname);
+    });
 }
 
 // === Image upload for chat ===
@@ -324,8 +339,8 @@ signupForm.addEventListener("submit", async e => {
 
     // ✅ Odeslání confirmation emailu s redirect URL
     const actionCodeSettings = {
-      url: window.location.origin + '/index.html?emailVerified=true',
-      handleCodeInApp: false
+      url: window.location.origin + '/index.html',
+      handleCodeInApp: true
     };
     await user.sendEmailVerification(actionCodeSettings);
     console.log("✅ Confirmation email sent to:", email);
