@@ -1209,9 +1209,14 @@ header {
 
 /* === EMAIL VERIFICATION BANNER === */
 #emailVerificationBanner {
+  position: fixed;
+  top: 110px;
+  left: 0;
+  right: 0;
   background: #fff3cd;
   border-bottom: 2px solid #ffc107;
   padding: 16px;
+  z-index: 4500;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
