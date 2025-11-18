@@ -1524,6 +1524,7 @@ body.modal-open .leaflet-control-container{ display:block !important; }
   </div>
 
   <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-rotate@0.2.8/dist/leaflet-rotate-src.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
 
   <!-- Firebase -->
@@ -1549,7 +1550,12 @@ body.modal-open .leaflet-control-container{ display:block !important; }
   <script>
     
     const minZoom = 6;
-    const map = L.map('map').setView([63.9, -18.9], minZoom);
+    const map = L.map('map', {
+      touchRotate: true,
+      rotateControl: {
+        closeOnZeroBearing: false
+      }
+    }).setView([63.9, -18.9], minZoom);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution:'© OpenStreetMap contributors', maxZoom:19, minZoom
     }).addTo(map);
@@ -2684,6 +2690,9 @@ function locateOnce(){
       const sidePanel = document.getElementById('sidePanel');
       sidePanel.classList.add('open');
 
+      // Reset scroll to top when panel opens
+      sidePanel.scrollTop = 0;
+
       // Reset to half state on mobile when panel opens
       if (window.innerWidth <= 768) {
         sidePanel.classList.add('panel-half');
@@ -3177,9 +3186,9 @@ function loadHutsFromFirestore() {
 
   const hutIcon = L.icon({
     iconUrl: 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/691c7eddfb70e74cfeb04991_hut.png',
-    iconSize: [24, 24],
-    iconAnchor: [12, 24],
-    popupAnchor: [0, -24],
+    iconSize: [30, 30],
+    iconAnchor: [12, 30],
+    popupAnchor: [0, -30],
     className: 'crisp-icon'
   });
 
@@ -3273,8 +3282,8 @@ function loadGasStationsFromFirestore() {
 
   const gasStationIcon = L.icon({
     iconUrl: 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/691c808cf18e0c938f431be6_gas-station.png',
-    iconSize: [24, 24],
-    iconAnchor: [12, 24],
+    iconSize: [30, 30],
+    iconAnchor: [12, 30],
     popupAnchor: [0, -30],
     className: 'crisp-icon'
   });
@@ -3291,46 +3300,11 @@ function loadGasStationsFromFirestore() {
       snapshot.forEach(doc => {
         const station = doc.data();
 
-        const popupHTML = `
-          <div style="font-family:'Poppins',sans-serif; padding:0; margin:0; width:280px;">
-            ${station.photoURL ? `
-              <div style="position:relative; width:100%; height:160px; overflow:hidden; border-radius:8px 8px 0 0;">
-                <img src="${station.photoURL}"
-                     style="width:100%; height:100%; object-fit:cover;"
-                     alt="${station.name}">
-              </div>
-            ` : ''}
-            <div style="padding: 16px;">
-              <h3 style="margin:0 0 8px 0; font-size:16px; font-weight:600; color:#1a1a1a;">
-                ${station.name}
-              </h3>
-              ${station.description ? `
-                <p style="margin:0 0 12px 0; font-size:13px; color:#666; line-height:1.5;">
-                  ${station.description}
-                </p>
-              ` : ''}
-              ${station.link ? `
-                <a href="${station.link}"
-                   target="_blank"
-                   style="display:inline-block; padding:8px 16px; background:#007bff; color:#fff; text-decoration:none; border-radius:4px; font-size:13px; font-weight:500; transition:background 0.2s;"
-                   onmouseover="this.style.background='#0056b3'"
-                   onmouseout="this.style.background='#007bff'">
-                  Více info
-                </a>
-              ` : ''}
-            </div>
-          </div>
-        `;
-
         L.marker([station.lat, station.lng], {
           icon: gasStationIcon,
           title: station.name
         })
-        .addTo(window.gasStationsLayer)
-        .bindPopup(popupHTML, {
-          maxWidth: 280,
-          className: 'poi-popup'
-        });
+        .addTo(window.gasStationsLayer);
       });
 
       console.log('✅ Gas stations loaded successfully');
