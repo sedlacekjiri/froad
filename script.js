@@ -410,6 +410,15 @@ document.getElementById("chatGroups").style.display = "none";
     return;
   }
 
+  // ✅ Reload user data from Firebase Auth to get fresh emailVerified status
+  try {
+    await user.reload();
+    user = auth.currentUser; // Get the refreshed user object
+    console.log("✅ User data reloaded, emailVerified:", user.emailVerified);
+  } catch (error) {
+    console.error("❌ Error reloading user data:", error);
+  }
+
   // === Výchozí aktivní tab = HOME ===
 document.querySelectorAll('.footer-btn').forEach(b => b.classList.remove('active'));
 const homeBtn = document.querySelector('.footer-btn.home-btn');
