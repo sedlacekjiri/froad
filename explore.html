@@ -1228,14 +1228,6 @@ body.modal-open .leaflet-control-container{ display:block !important; }
   background: #ccc;
   cursor: not-allowed;
 }
-
-/* ===== Crisp Icon Rendering ===== */
-.crisp-icon img {
-  image-rendering: -webkit-optimize-contrast;
-  image-rendering: crisp-edges;
-  image-rendering: pixelated;
-  -ms-interpolation-mode: nearest-neighbor;
-}
   </style>
 </head>
 
@@ -2684,9 +2676,6 @@ function locateOnce(){
       const sidePanel = document.getElementById('sidePanel');
       sidePanel.classList.add('open');
 
-      // Reset scroll to top when panel opens
-      sidePanel.scrollTop = 0;
-
       // Reset to half state on mobile when panel opens
       if (window.innerWidth <= 768) {
         sidePanel.classList.add('panel-half');
@@ -3072,7 +3061,7 @@ roadLayers.push({ polyline:visibleLine, data:rd, hitbox:bufferLine, onRoadClick 
 
     /* ---- Campsite example ---- */
     /* ---- Campsites render (Poppins popup + cover) ---- */
-const CAMP_ICON_URL = 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/691c7edded63753574526db9_campsite.png';
+const CAMP_ICON_URL = 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/689d0b24443379bb01061e52_tent%20(10).png';
 const PLACEHOLDER_COVER = 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop';
 
 // pokud používáš toggle, zajisti vrstvu:
@@ -3080,10 +3069,9 @@ window.campsitesLayer = window.campsitesLayer || L.layerGroup().addTo(map);
 
 const campIcon = L.icon({
   iconUrl: CAMP_ICON_URL,
-  iconSize: [25,25],
-  iconAnchor: [12,25],
-  popupAnchor: [0,-25],
-  className: 'crisp-icon'
+  iconSize: [30,30],
+  iconAnchor: [12,30],
+  popupAnchor: [0,-30]
 });
 
 // Render campsites on the map
@@ -3179,11 +3167,10 @@ function loadHutsFromFirestore() {
   window.hutsLayer = window.hutsLayer || L.layerGroup().addTo(map);
 
   const hutIcon = L.icon({
-    iconUrl: 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/691c7eddfb70e74cfeb04991_hut.png',
-    iconSize: [25, 25],
-    iconAnchor: [12, 25],
-    popupAnchor: [0, -25],
-    className: 'crisp-icon'
+    iconUrl: 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/689d0a3c12784f92cf6a0fe9_hut.png',
+    iconSize: [24, 24],
+    iconAnchor: [12, 24],
+    popupAnchor: [0, -24]
   });
 
   db.collection('huts')
@@ -3254,104 +3241,6 @@ if (typeof map !== 'undefined') {
   document.addEventListener('DOMContentLoaded', () => {
     if (typeof map !== 'undefined') {
       loadHutsFromFirestore();
-    }
-  });
-}
-
-// =====================================================
-// GAS STATIONS SECTION WITH FIREBASE INTEGRATION
-// =====================================================
-
-// Load gas stations from Firestore in real-time
-function loadGasStationsFromFirestore() {
-  console.log('🔄 Setting up Firestore listener for gas stations...');
-
-  if (typeof map === 'undefined') {
-    console.error('❌ Map not defined yet, cannot load gas stations');
-    return;
-  }
-
-  // Create or get the gas stations layer
-  window.gasStationsLayer = window.gasStationsLayer || L.layerGroup().addTo(map);
-
-  const gasStationIcon = L.icon({
-    iconUrl: 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/691c808cf18e0c938f431be6_gas-station.png',
-    iconSize: [25, 25],
-    iconAnchor: [12, 25],
-    popupAnchor: [0, -25],
-    className: 'crisp-icon'
-  });
-
-  db.collection('gasStations')
-    .orderBy('name')
-    .onSnapshot(snapshot => {
-      console.log('📡 Gas stations snapshot received:', snapshot.size, 'documents');
-
-      // Clear existing markers
-      window.gasStationsLayer.clearLayers();
-
-      // Add each gas station to the map
-      snapshot.forEach(doc => {
-        const station = doc.data();
-
-        if (!station.lat || !station.lng) {
-          console.warn('⚠️ Gas station missing coordinates:', station.name);
-          return;
-        }
-
-        // Use photo if available (photoURL is saved from CMS)
-        const cover = station.photoURL || 'https://images.unsplash.com/photo-1545262810-77515befe149?q=80&w=1200&auto=format&fit=crop';
-
-        const html = `
-          <div class="poi-card">
-            <img class="poi-cover" src="${cover}" alt="${station.name}" />
-            <div class="poi-body">
-              <h3 class="poi-title">${station.name}</h3>
-              <p class="poi-desc">${station.description || ''}</p>
-              ${station.hours ? `<p class="poi-hours"> ${station.hours}</p>` : ''}
-              <div class="poi-actions">
-                ${station.link ? `
-                  <a class="poi-btn" href="${station.link}" target="_blank" rel="noopener">
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
-                      <path d="M7 13l6-6M9 5h6v6" stroke="#111" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                    More info
-                  </a>
-                ` : ''}
-              </div>
-            </div>
-          </div>
-        `;
-
-        L.marker([station.lat, station.lng], {
-          icon: gasStationIcon,
-          title: station.name
-        })
-        .addTo(window.gasStationsLayer)
-        .bindPopup(html, {
-          className: 'poi-popup',
-          maxWidth: 380,
-          minWidth: 260,
-          autoPan: true,
-          autoPanPadding: [20, 20],
-          closeButton: true
-        });
-      });
-
-      console.log('✅ Gas stations loaded successfully');
-    }, err => {
-      console.error('❌ Error loading gas stations from Firestore:', err);
-    });
-}
-
-// Initialize gas stations when map is ready
-if (typeof map !== 'undefined') {
-  loadGasStationsFromFirestore();
-} else {
-  // Wait for map to be ready
-  document.addEventListener('DOMContentLoaded', () => {
-    if (typeof map !== 'undefined') {
-      loadGasStationsFromFirestore();
     }
   });
 }
