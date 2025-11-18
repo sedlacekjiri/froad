@@ -21,7 +21,7 @@
   </style>
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, verifyPasswordResetCode, confirmPasswordReset, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getAuth, verifyPasswordResetCode, confirmPasswordReset, sendPasswordResetEmail, applyActionCode } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDDMNnJgtm-gK9OrVev7qmBRpaA8CAoDiM",
@@ -36,6 +36,7 @@
 
     const params = new URLSearchParams(window.location.search);
     const oobCode = params.get("oobCode");
+    const mode = params.get("mode");
 
     // Handle email form submission (forgot password)
     async function handleEmailSubmit(e) {
@@ -149,20 +150,45 @@
       const resetForm = document.getElementById("resetForm");
       const authTitle = document.getElementById("authTitle");
       const authDescription = document.getElementById("authDescription");
+      const errorElement = document.getElementById("resetError");
 
-      if (oobCode) {
-        // We have a reset code - show password reset form
-        console.log("oobCode found:", oobCode);
+      // Handle email verification
+      if (mode === "verifyEmail" && oobCode) {
+        console.log("Email verification mode detected");
+        emailForm.style.display = "none";
+        resetForm.style.display = "none";
+        authTitle.textContent = "Verifying your email...";
+        authDescription.style.display = "none";
 
-        // Show form immediately without pre-verification
+        try {
+          await applyActionCode(auth, oobCode);
+          authTitle.textContent = "Email verified!";
+          errorElement.style.color = "green";
+          errorElement.textContent = "Your email has been verified successfully. Redirecting to login...";
+          setTimeout(() => {
+            window.location.href = "index.html";
+          }, 2000);
+        } catch (err) {
+          console.error("Email verification error:", err);
+          authTitle.textContent = "Verification failed";
+          errorElement.style.color = "red";
+          errorElement.textContent = err.code === "auth/invalid-action-code"
+            ? "This verification link is invalid or has expired."
+            : "Error verifying email. Please try again.";
+        }
+      }
+      // Handle password reset
+      else if (mode === "resetPassword" && oobCode) {
+        console.log("Password reset mode detected");
         emailForm.style.display = "none";
         resetForm.style.display = "flex";
         authTitle.textContent = "Reset your password";
         authDescription.style.display = "none";
 
         resetForm.addEventListener("submit", handleReset);
-      } else {
-        // No reset code - show email form
+      }
+      // No action code - show forgot password form
+      else {
         emailForm.style.display = "flex";
         resetForm.style.display = "none";
         authTitle.textContent = "Forgot your password?";
