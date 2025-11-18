@@ -39,7 +39,7 @@
         <div id="userVehiclePhotoPlaceholder" style="background:#f4f4f4; border-radius:12px; height:160px; display:flex; justify-content:center; align-items:center; color:#888; font-size:14px;">
           No vehicle photo
         </div>
-        <img id="userVehiclePhoto" alt="Vehicle photo" style="display:none; width:100%; border-radius:12px; object-fit:cover;" onerror="this.style.display='none'; document.getElementById('userVehiclePhotoPlaceholder').style.display='flex';" />
+        <img id="userVehiclePhoto" alt="Vehicle photo" style="display:none; width:100%; border-radius:12px; object-fit:cover;" />
       </div>
     </div>
 
@@ -168,7 +168,7 @@
       </section>
 
       <!-- Contact & Version -->
-      <section class="contact-section" style="margin-bottom: 60px;">
+      <section class="contact-section" style="margin-bottom: 40px;">
         <p style="text-align: center; color: #666; font-size: 14px; margin: 32px 0 8px 0; line-height: 1.6;">
           Have questions or need help? Contact us at
           <a href="mailto:hello@froad.is" style="color: #000; text-decoration: underline;">hello@froad.is</a>
@@ -342,14 +342,11 @@
   <label for="vehicleSelect">Vehicle type</label>
 <input type="text" id="vehicleSelect" placeholder="Enter your vehicle name" />
 
-  <div id="vehiclePhotoPreviewWrapper" style="margin: 16px 0; position: relative;">
+  <div id="vehiclePhotoPreviewWrapper" style="margin: 16px 0;">
     <div id="vehiclePhotoPlaceholder" style="background:#f4f4f4; border-radius:12px; height:160px; display:flex; justify-content:center; align-items:center; color:#888; font-size:14px;">
       No vehicle photo
     </div>
-    <img id="vehiclePhotoPreview" alt="Vehicle photo preview" style="display:none; width:100%; border-radius:12px; max-height:200px; object-fit:cover;" onerror="this.style.display='none'; document.getElementById('vehiclePhotoPlaceholder').style.display='flex'; document.getElementById('deleteVehiclePhotoBtn').style.display='none';">
-    <button id="deleteVehiclePhotoBtn" class="vehicle-photo-delete-btn" style="display:none;">
-      <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f7c2fc94b5677c444a0c31_trash.png" alt="Delete" />
-    </button>
+    <img id="vehiclePhotoPreview" alt="Vehicle photo preview" style="display:none; width:100%; border-radius:12px; max-height:200px; object-fit:cover;">
   </div>
 
 <label for="vehiclePhoto" class="upload-vehicle-btn">+ Upload Vehicle Photo</label>
