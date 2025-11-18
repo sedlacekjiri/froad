@@ -1026,6 +1026,36 @@ header {
   pointer-events: none;
 }
 
+/* Delete button for vehicle photo */
+.vehicle-photo-delete-btn {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 50%;
+  background: #444444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25);
+  transition: background 0.2s ease, transform 0.2s ease;
+  z-index: 10;
+}
+
+.vehicle-photo-delete-btn:hover {
+  background: #222222;
+  transform: scale(1.05);
+}
+
+.vehicle-photo-delete-btn img {
+  width: 20px;
+  height: 20px;
+  pointer-events: none;
+}
+
 .upload-icon {
   display: flex;
   align-items: center;

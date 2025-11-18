@@ -342,11 +342,14 @@
   <label for="vehicleSelect">Vehicle type</label>
 <input type="text" id="vehicleSelect" placeholder="Enter your vehicle name" />
 
-  <div id="vehiclePhotoPreviewWrapper" style="margin: 16px 0;">
+  <div id="vehiclePhotoPreviewWrapper" style="margin: 16px 0; position: relative;">
     <div id="vehiclePhotoPlaceholder" style="background:#f4f4f4; border-radius:12px; height:160px; display:flex; justify-content:center; align-items:center; color:#888; font-size:14px;">
       No vehicle photo
     </div>
-    <img id="vehiclePhotoPreview" alt="Vehicle photo preview" style="display:none; width:100%; border-radius:12px; max-height:200px; object-fit:cover;" onerror="this.style.display='none'; document.getElementById('vehiclePhotoPlaceholder').style.display='flex';">
+    <img id="vehiclePhotoPreview" alt="Vehicle photo preview" style="display:none; width:100%; border-radius:12px; max-height:200px; object-fit:cover;" onerror="this.style.display='none'; document.getElementById('vehiclePhotoPlaceholder').style.display='flex'; document.getElementById('deleteVehiclePhotoBtn').style.display='none';">
+    <button id="deleteVehiclePhotoBtn" class="vehicle-photo-delete-btn" style="display:none;">
+      <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68f7c2fc94b5677c444a0c31_trash.png" alt="Delete" />
+    </button>
   </div>
 
 <label for="vehiclePhoto" class="upload-vehicle-btn">+ Upload Vehicle Photo</label>
