@@ -1207,6 +1207,73 @@ header {
   font-size: 16px;
 }
 
+/* === EMAIL VERIFICATION BANNER === */
+#emailVerificationBanner {
+  position: fixed;
+  top: 110px;
+  left: 0;
+  right: 0;
+  background: #fff3cd;
+  border-bottom: 2px solid #ffc107;
+  padding: 16px;
+  z-index: 4500;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.banner-icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.banner-text {
+  flex: 1;
+}
+
+.banner-text strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  color: #856404;
+  margin-bottom: 4px;
+}
+
+.banner-text p {
+  margin: 0;
+  font-size: 13px;
+  color: #856404;
+  line-height: 1.4;
+}
+
+.resend-btn {
+  background: #856404;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+  white-space: nowrap;
+}
+
+.resend-btn:hover {
+  background: #6c5003;
+}
+
+/* Adjust chat position when banner is visible */
+#chat.with-banner {
+  top: 190px;
+}
+
 .chat-group[data-group="general"] {
   border: 3px solid #ff8a00;
 }
