@@ -352,10 +352,15 @@ signupForm.addEventListener("submit", async e => {
 
   try {
     const cred = await auth.createUserWithEmailAndPassword(email, password);
-    const user = cred.user;
+    let user = cred.user;
 
     // Nastav displayName v Auth
     await user.updateProfile({ displayName: fullName });
+
+    // ✅ Reload user to ensure displayName is propagated
+    await user.reload();
+    user = auth.currentUser;
+    console.log("✅ DisplayName set in Auth:", user.displayName);
 
     // ✅ Odeslání confirmation emailu s redirect URL
     const actionCodeSettings = {
@@ -435,6 +440,7 @@ document.getElementById("chatGroups").style.display = "none";
     await user.reload();
     user = auth.currentUser; // Get the refreshed user object
     console.log("✅ User data reloaded, emailVerified:", user.emailVerified);
+    console.log("✅ User displayName from Auth:", user.displayName);
   } catch (error) {
     console.error("❌ Error reloading user data:", error);
   }
@@ -502,11 +508,22 @@ if (visibilityBtn) {
   // === LOAD / INIT USER DOC ===
   const userRef = db.collection("users").doc(user.uid);
 // 🔒 Vždy načti ze serveru, ne z cache (bezpečnostní fix)
-const userDoc = await userRef.get({ source: 'server' });
+let userDoc = await userRef.get({ source: 'server' });
+
+// ✅ Pokud dokument neexistuje, počkej chvíli (signup handler ho možná právě vytváří)
+if (!userDoc.exists) {
+  console.log("⏳ User doc doesn't exist, waiting 1 second for signup handler...");
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  userDoc = await userRef.get({ source: 'server' });
+}
 
 if (!userDoc.exists) {
+  // ✅ Dokument stále neexistuje - vytvoř nový s displayName z Auth (ne "User"!)
+  const displayNameToUse = user.displayName || user.email?.split('@')[0] || "User";
+  console.log("✅ Creating new user doc with displayName:", displayNameToUse);
+
   await userRef.set({
-    displayName: user.displayName || "User",
+    displayName: displayNameToUse,
     email: user.email || "",
     photoURL: "",
     bio: "",
@@ -523,23 +540,32 @@ if (!userDoc.exists) {
 } else {
   // 🧹 Reset cizích dat při novém přihlášení (bez access)
   const existingData = userDoc.data();
+  console.log("📋 Existing user data:", existingData);
+
   if (existingData && !existingData.access) {
-    // 🔒 BEZPEČNOSTNÍ FIX: Přepiš pole na výchozí hodnoty, ale zachovej displayName a email
+    // 🔒 BEZPEČNOSTNÍ FIX: Pro uživatele bez access zachovej displayName pokud existuje
+    // Pokud displayName v dokumentu neexistuje, vezmi ho z Auth nebo z emailu
+    const displayNameToKeep = existingData.displayName || user.displayName || user.email?.split('@')[0] || "User";
+    console.log("🔄 User without access. DisplayName to keep:", displayNameToKeep);
+    console.log("   - from Firestore:", existingData.displayName);
+    console.log("   - from Auth:", user.displayName);
+
+    // ✅ Pro nové uživatele (čerstvě zaregistrované) zachovej displayName, ale resetuj ostatní pole
     await userRef.set({
-      displayName: existingData.displayName || user.displayName || "User",
+      displayName: displayNameToKeep,
       email: existingData.email || user.email || "",
-      bio: "",
-      instagram: "",
-      vehicle: "",
-      vehiclePhotoURL: "",
-      photoURL: "",
+      bio: existingData.bio || "",  // ✅ Zachovej bio pokud existuje
+      instagram: existingData.instagram || "",  // ✅ Zachovej instagram
+      vehicle: existingData.vehicle || "",  // ✅ Zachovej vehicle
+      vehiclePhotoURL: existingData.vehiclePhotoURL || "",  // ✅ Zachovej vehicle photo
+      photoURL: existingData.photoURL || "",  // ✅ Zachovej avatar
       verified: false,
       ranger: false,
       access: false,
-      emailVerified: user.emailVerified || false, // ✅ Synchronizace z Firebase Auth
+      emailVerified: user.emailVerified || false,
       createdAt: existingData.createdAt || firebase.firestore.FieldValue.serverTimestamp()
     });
-    console.log("🧼 Reset profile data for user without access:", user.uid);
+    console.log("✅ Preserved user data for user without access:", user.uid);
   } else {
     // ✅ Aktualizuj emailVerified při každém přihlášení
     await userRef.update({
