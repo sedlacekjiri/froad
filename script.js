@@ -596,7 +596,7 @@ if (homeWelcome && userData.displayName) {
 
   // ✅ Zobraz vehicle photo nebo placeholder v profile editoru
   const vehiclePhotoPlaceholder = document.getElementById("vehiclePhotoPlaceholder");
-  if (userData.vehiclePhotoURL) {
+  if (userData.vehiclePhotoURL && userData.vehiclePhotoURL.trim()) {
     vehiclePhotoPreview.src = userData.vehiclePhotoURL;
     vehiclePhotoPreview.style.display = "block";
     if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "none";
@@ -951,7 +951,7 @@ if (content && auth.currentUser && auth.currentUser.uid === uid) {
   // ✅ Zobraz vehicle photo nebo placeholder
   const vehicleImgPlaceholder = document.getElementById("userVehiclePhotoPlaceholder");
   if (vehicleImg) {
-    if (data.vehiclePhotoURL) {
+    if (data.vehiclePhotoURL && data.vehiclePhotoURL.trim()) {
       vehicleImg.src = data.vehiclePhotoURL;
       vehicleImg.style.display = "block";
       if (vehicleImgPlaceholder) vehicleImgPlaceholder.style.display = "none";
@@ -1105,8 +1105,8 @@ window.miniPopups[uid] = miniMarker;
         <div class="user-section">
           <h3>Vehicle photo</h3>
           <div id="userVehiclePhotoWrapper">
-            ${data.vehiclePhotoURL
-              ? `<img id="userVehiclePhoto" class="show" src="${data.vehiclePhotoURL}" alt="Vehicle photo" />`
+            ${data.vehiclePhotoURL && data.vehiclePhotoURL.trim()
+              ? `<img id="userVehiclePhoto" class="show" src="${data.vehiclePhotoURL}" alt="Vehicle photo" onerror="this.style.display='none'; this.parentElement.innerHTML='<div style=\\"background:#f4f4f4; border-radius:12px; height:160px; display:flex; justify-content:center; align-items:center; color:#888;\\">No vehicle photo</div>';" />`
               : `<div style="background:#f4f4f4; border-radius:12px; height:160px; display:flex; justify-content:center; align-items:center; color:#888;">No vehicle photo</div>`
             }
           </div>
@@ -1160,7 +1160,7 @@ db.collection("users").onSnapshot(snapshot => {
       // ✅ Zobraz vehicle photo nebo placeholder
       const vehicleImg = document.getElementById("userVehiclePhoto");
       const vehicleImgPlaceholder = document.getElementById("userVehiclePhotoPlaceholder");
-      if (data.vehiclePhotoURL) {
+      if (data.vehiclePhotoURL && data.vehiclePhotoURL.trim()) {
         vehicleImg.src = data.vehiclePhotoURL;
         vehicleImg.style.display = "block";
         if (vehicleImgPlaceholder) vehicleImgPlaceholder.style.display = "none";
