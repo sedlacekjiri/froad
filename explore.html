@@ -3255,6 +3255,102 @@ if (typeof map !== 'undefined') {
   });
 }
 
+// =====================================================
+// GAS STATIONS SECTION WITH FIREBASE INTEGRATION
+// =====================================================
+
+// Load gas stations from Firestore in real-time
+function loadGasStationsFromFirestore() {
+  console.log('🔄 Setting up Firestore listener for gas stations...');
+
+  if (typeof map === 'undefined') {
+    console.error('❌ Map not defined yet, cannot load gas stations');
+    return;
+  }
+
+  // Create or get the gas stations layer
+  window.gasStationsLayer = window.gasStationsLayer || L.layerGroup().addTo(map);
+
+  const gasStationIcon = L.icon({
+    iconUrl: 'https://cdn.prod.website-files.com/687ebffd20183c0459d68784/691c808cf18e0c938f431be6_gas-station.png',
+    iconSize: [24, 24],
+    iconAnchor: [12, 24],
+    popupAnchor: [0, -30],
+    className: 'crisp-icon'
+  });
+
+  db.collection('gasStations')
+    .orderBy('name')
+    .onSnapshot(snapshot => {
+      console.log('📡 Gas stations snapshot received:', snapshot.size, 'documents');
+
+      // Clear existing markers
+      window.gasStationsLayer.clearLayers();
+
+      // Add each gas station to the map
+      snapshot.forEach(doc => {
+        const station = doc.data();
+
+        const popupHTML = `
+          <div style="font-family:'Poppins',sans-serif; padding:0; margin:0; width:280px;">
+            ${station.photo ? `
+              <div style="position:relative; width:100%; height:160px; overflow:hidden; border-radius:8px 8px 0 0;">
+                <img src="${station.photo}"
+                     style="width:100%; height:100%; object-fit:cover;"
+                     alt="${station.name}">
+              </div>
+            ` : ''}
+            <div style="padding: 16px;">
+              <h3 style="margin:0 0 8px 0; font-size:16px; font-weight:600; color:#1a1a1a;">
+                ${station.name}
+              </h3>
+              ${station.description ? `
+                <p style="margin:0 0 12px 0; font-size:13px; color:#666; line-height:1.5;">
+                  ${station.description}
+                </p>
+              ` : ''}
+              ${station.link ? `
+                <a href="${station.link}"
+                   target="_blank"
+                   style="display:inline-block; padding:8px 16px; background:#007bff; color:#fff; text-decoration:none; border-radius:4px; font-size:13px; font-weight:500; transition:background 0.2s;"
+                   onmouseover="this.style.background='#0056b3'"
+                   onmouseout="this.style.background='#007bff'">
+                  Více info
+                </a>
+              ` : ''}
+            </div>
+          </div>
+        `;
+
+        L.marker([station.lat, station.lng], {
+          icon: gasStationIcon,
+          title: station.name
+        })
+        .addTo(window.gasStationsLayer)
+        .bindPopup(popupHTML, {
+          maxWidth: 280,
+          className: 'poi-popup'
+        });
+      });
+
+      console.log('✅ Gas stations loaded successfully');
+    }, err => {
+      console.error('❌ Error loading gas stations from Firestore:', err);
+    });
+}
+
+// Initialize gas stations when map is ready
+if (typeof map !== 'undefined') {
+  loadGasStationsFromFirestore();
+} else {
+  // Wait for map to be ready
+  document.addEventListener('DOMContentLoaded', () => {
+    if (typeof map !== 'undefined') {
+      loadGasStationsFromFirestore();
+    }
+  });
+}
+
 
 
 
