@@ -3299,8 +3299,8 @@ function loadGasStationsFromFirestore() {
           return;
         }
 
-        // Use photo if available
-        const cover = station.photo || 'https://images.unsplash.com/photo-1545262810-77515befe149?q=80&w=1200&auto=format&fit=crop';
+        // Use photo if available (photoURL is saved from CMS)
+        const cover = station.photoURL || 'https://images.unsplash.com/photo-1545262810-77515befe149?q=80&w=1200&auto=format&fit=crop';
 
         const html = `
           <div class="poi-card">
@@ -3308,7 +3308,7 @@ function loadGasStationsFromFirestore() {
             <div class="poi-body">
               <h3 class="poi-title">${station.name}</h3>
               <p class="poi-desc">${station.description || ''}</p>
-              ${station.openingHours ? `<p class="poi-hours"><strong>Opening hours:</strong> ${station.openingHours}</p>` : ''}
+              ${station.hours ? `<p class="poi-hours"><strong>Opening hours:</strong> ${station.hours}</p>` : ''}
               <div class="poi-actions">
                 ${station.link ? `
                   <a class="poi-btn" href="${station.link}" target="_blank" rel="noopener">
