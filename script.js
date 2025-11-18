@@ -225,6 +225,15 @@ avatarInput.addEventListener("change", e => {
 
     const authTitle = document.getElementById("authTitle");
 
+// ✅ Check for email verification success in URL
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get('emailVerified') === 'true') {
+  const loginError = document.getElementById("loginError");
+  loginError.textContent = "✅ Email verified! You can now log in.";
+  loginError.style.color = "#22c55e"; // Green color
+  // Clear the URL parameter
+  window.history.replaceState({}, document.title, window.location.pathname);
+}
 
 // === Image upload for chat ===
 const imageInput = document.getElementById("imageUpload");
@@ -313,8 +322,12 @@ signupForm.addEventListener("submit", async e => {
     // Nastav displayName v Auth
     await user.updateProfile({ displayName: fullName });
 
-    // ✅ Odeslání confirmation emailu
-    await user.sendEmailVerification();
+    // ✅ Odeslání confirmation emailu s redirect URL
+    const actionCodeSettings = {
+      url: window.location.origin + '/index.html?emailVerified=true',
+      handleCodeInApp: false
+    };
+    await user.sendEmailVerification(actionCodeSettings);
     console.log("✅ Confirmation email sent to:", email);
 
     // Vytvoř výchozí profil ve Firestore
@@ -334,7 +347,6 @@ signupForm.addEventListener("submit", async e => {
     });
 
     errorEl.textContent = "";
-    alert("✅ Registration successful! Please check your email to confirm your account.");
     showAccessDeniedModal();
     await auth.signOut();
   } catch (err) {
