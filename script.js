@@ -1186,46 +1186,65 @@ db.collection("users").onSnapshot(snapshot => {
       const user = auth.currentUser;
       if (!user) return;
       const userDocRef = db.collection("liveLocations").doc(user.uid);
-      // ✅ Nastav lokální flag ještě před geolokací
-liveWatchId = -1; // placeholder, značí že Live je aktivní, i když GPS ještě neběží
 
-await userDocRef.set({
-  displayName: user.displayName || "",
-  photoURL: user.photoURL || "",
-  isLive: true,
-  lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-}, { merge: true });
+      // ✅ Nejdřív získej GPS polohu, pak nastav isLive
+      let isFirstPosition = true;
 
-// 🔁 Okamžitý refresh, aby bublina ukázala "Live" i po zoomu
-setupLiveLocations();
+      liveWatchId = navigator.geolocation.watchPosition(async pos => {
+        if (!pos.coords) {
+          console.warn("No coords returned from geolocation.");
+          return;
+        }
 
-// ✅ Teprve potom spusť sledování polohy
-liveWatchId = navigator.geolocation.watchPosition(async pos => {
-  if (!pos.coords) {
-    console.warn("No coords returned from geolocation.");
-    return;
-  }
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
 
-  const lat = pos.coords.latitude;
-  const lng = pos.coords.longitude;
+        try {
+          // ✅ Na první pozici nastav isLive + všechna data najednou
+          if (isFirstPosition) {
+            isFirstPosition = false;
 
-  try {
-    await userDocRef.set({
-      lat,
-      lng,
-      lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
-  } catch (err) {
-    console.error("Failed to update live location:", err);
-  }
+            // Získej user data pro verified a ranger badges
+            const userDoc = await db.collection("users").doc(user.uid).get();
+            const userData = userDoc.exists ? userDoc.data() : {};
 
-}, err => {
-  console.error("Geolocation error:", err);
-}, {
-  enableHighAccuracy: true,
-  maximumAge: 30000,
-  timeout: 20000
-});
+            await userDocRef.set({
+              lat,
+              lng,
+              displayName: user.displayName || "",
+              photoURL: user.photoURL || "",
+              bio: userData.bio || "",
+              vehicle: userData.vehicle || "",
+              vehiclePhotoURL: userData.vehiclePhotoURL || "",
+              instagram: userData.instagram || "",
+              verified: userData.verified || false,
+              ranger: userData.ranger || false,
+              isLive: true,
+              lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+
+            // 🔁 Refresh aby se marker okamžitě zobrazil
+            setupLiveLocations();
+          } else {
+            // ✅ Při dalších updatech jen GPS souřadnice
+            await userDocRef.set({
+              lat,
+              lng,
+              lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+          }
+        } catch (err) {
+          console.error("Failed to update live location:", err);
+        }
+
+      }, err => {
+        console.error("Geolocation error:", err);
+        alert("Unable to access your location. Please enable GPS and try again.");
+      }, {
+        enableHighAccuracy: true,
+        maximumAge: 30000,
+        timeout: 20000
+      });
     }
 
     async function stopLive() {
@@ -1392,64 +1411,16 @@ sendBtn.onclick = async () => {
     if (!user) return;
 
     if (liveWatchId === null) {
-  // === START SHARING ===
-  await startLive();
-  btn.classList.add("active");
-  btn.innerHTML = `
-    <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed633027976d278ff80bba_live-focus.png"
-         alt="Live Icon" class="live-icon" />
-    Stop Sharing
-  `;
+      // === START SHARING ===
+      // startLive() čeká na GPS pozici a pak nastaví isLive + všechna data
+      await startLive();
 
-
-      // ✅ Okamžitý update ve Firebase
-      const userDoc = await db.collection("users").doc(user.uid).get();
-      const userData = userDoc.exists ? userDoc.data() : {};
-
-      await db.collection("liveLocations").doc(user.uid).set({
-        isLive: true,
-        lastSeen: firebase.firestore.FieldValue.serverTimestamp(),
-        displayName: user.displayName || "User",
-        photoURL: user.photoURL || "",
-        verified: userData.verified || false,
-        ranger: userData.ranger || false
-      }, { merge: true });
-
-      // ✅ Okamžitý vizuální marker s pulzujícím rámečkem
-      if (liveMarkers[user.uid]) {
-        const icon = L.icon({
-          iconUrl: user.photoURL || "https://www.gravatar.com/avatar?d=mp",
-          iconSize: [44, 44],
-          iconAnchor: [22, 44],
-          className: "user-icon live-outline"
-        });
-        liveMarkers[user.uid].setIcon(icon);
-      }
-
-      
-
-     // ✅ Okamžitě přepíšeme mini-popup na „Live“
-const firstName = (user.displayName || "User").split(" ")[0];
-
-// pokud už máš mini-popup uložený, aktualizuj jeho HTML
-if (window.miniPopups && window.miniPopups[user.uid]) {
-  const popupEl = window.miniPopups[user.uid].getElement();
-  if (popupEl) {
-    popupEl.innerHTML = `
-      <div class="mini-popup-inner">
-        <span class="mini-popup-name">
-          ${firstName}
-          ${user.verified ? '<img class="verified-icon" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ec104bbf6183f2f84c71b7_verified.png" alt="Verified" />' : ''}
-          ${user.ranger ? '<img class="ranger-icon" src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68fba159091b4ac6d4781634_ranger%20(1).png" alt="Ranger" />' : ''}
-        </span>
-        <span class="mini-popup-status live">Live</span>
-      </div>
-    `;
-  }
-}
-
-// ✅ a do půl sekundy i update z Firestore
-setTimeout(() => setupLiveLocations(), 500);
+      btn.classList.add("active");
+      btn.innerHTML = `
+        <img src="https://cdn.prod.website-files.com/687ebffd20183c0459d68784/68ed633027976d278ff80bba_live-focus.png"
+             alt="Live Icon" class="live-icon" />
+        Stop Sharing
+      `;
 
     } else {
       // === STOP SHARING ===
@@ -1764,8 +1735,12 @@ saveProfileBtn.addEventListener("click", async () => {
     }
 
     // === ⚡ SAFE GUARD – žádné "file://" a žádné přepisování prázdnými hodnotami ===
-    if (vehiclePhotoPreview.src && vehiclePhotoPreview.src.startsWith("https://")) {
+    // Pokud preview má src a je zobrazený, použij ho
+    if (vehiclePhotoPreview.src && vehiclePhotoPreview.src.startsWith("https://") && vehiclePhotoPreview.style.display !== "none") {
       vehiclePhotoURL = vehiclePhotoPreview.src;
+    } else if (vehiclePhotoPreview.style.display === "none" && !vehicleFile) {
+      // Pokud je preview schovaný a nebyla nahrána nová fotka, použij prázdný string (delete)
+      vehiclePhotoURL = "";
     }
 
     // 🔍 Zjisti, jestli se něco skutečně změnilo
@@ -1990,7 +1965,10 @@ document.getElementById("deleteVehiclePhotoBtn").addEventListener("click", async
   const vehiclePhotoPlaceholder = document.getElementById("vehiclePhotoPlaceholder");
   const deleteVehiclePhotoBtn = document.getElementById("deleteVehiclePhotoBtn");
 
-  if (vehiclePhotoPreview) vehiclePhotoPreview.style.display = "none";
+  if (vehiclePhotoPreview) {
+    vehiclePhotoPreview.style.display = "none";
+    vehiclePhotoPreview.src = ""; // ⚡ Vymazat src, aby Save nezačal používat starou URL
+  }
   if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "flex";
   if (deleteVehiclePhotoBtn) deleteVehiclePhotoBtn.style.display = "none";
 
