@@ -57,12 +57,12 @@ exports.updateRoadRating = functions.firestore
 /**
  * Cloud Function: Sync email verification status to Firestore
  *
- * Triggered by: User account changes in Firebase Auth
+ * Triggered by: User account creation in Firebase Auth
  *
  * This function automatically updates the emailVerified field in Firestore
- * whenever a user verifies their email address.
+ * when a new user is created.
  */
-exports.syncEmailVerification = functions.auth.user().onCreate(async (user) => {
+exports.syncEmailVerificationOnCreate = functions.auth.user().onCreate(async (user) => {
   const uid = user.uid;
   const emailVerified = user.emailVerified || false;
 
@@ -75,7 +75,7 @@ exports.syncEmailVerification = functions.auth.user().onCreate(async (user) => {
         lastEmailVerificationCheck: admin.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
 
-    console.log(`✅ Email verification synced for user ${uid}: ${emailVerified}`);
+    console.log(`✅ Email verification synced on create for user ${uid}: ${emailVerified}`);
     return null;
   } catch (error) {
     console.error(`❌ Error syncing email verification for ${uid}:`, error);
