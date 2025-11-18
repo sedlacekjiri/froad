@@ -972,17 +972,8 @@ if (content && auth.currentUser && auth.currentUser.uid === uid) {
 }
 
 
-   // ✅ Bez souřadnic nic nevykresluj
+   // ✅ Bez souřadnic nic nevykresluj (a smaž případný starý marker)
   if (typeof lat !== "number" || typeof lng !== "number") {
-    // ⚡ VÝJIMKA: Pokud je uživatel Live, NESMAZAT jeho marker - čeká se na GPS
-    const isCurrentUser = auth.currentUser && auth.currentUser.uid === uid;
-    if (data.isLive && isCurrentUser && liveWatchId !== null) {
-      // Uživatel právě klikl Share Location - GPS souřadnice ještě nepřišly
-      // Necháme existující marker (pokud je) a počkáme na GPS
-      return;
-    }
-
-    // Pro ostatní (není Live nebo není current user) - smaž marker
     if (liveMarkers[uid]) {
       map.removeLayer(liveMarkers[uid]);
       delete liveMarkers[uid];
@@ -1217,12 +1208,10 @@ db.collection("users").onSnapshot(snapshot => {
         lastSeen: firebase.firestore.FieldValue.serverTimestamp()
       }, { merge: true });
 
-      // 🔁 Okamžitý refresh - pokud existuje marker z minula, updatne se na Live
-      setTimeout(() => setupLiveLocations(), 100);
+      // 🔁 Okamžitý refresh, aby bublina ukázala "Live" i po zoomu
+      setupLiveLocations();
 
-      // Teď spusť GPS sledování
-      let isFirstPosition = true;
-
+      // ✅ Teprve potom spusť sledování polohy
       liveWatchId = navigator.geolocation.watchPosition(async pos => {
         if (!pos.coords) {
           console.warn("No coords returned from geolocation.");
@@ -1233,32 +1222,17 @@ db.collection("users").onSnapshot(snapshot => {
         const lng = pos.coords.longitude;
 
         try {
-          if (isFirstPosition) {
-            isFirstPosition = false;
-            // ✅ První pozice - přidej GPS souřadnice
-            await userDocRef.set({
-              lat,
-              lng,
-              lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-
-            // 🔁 Refresh aby se marker zobrazil s GPS souřadnicemi
-            setupLiveLocations();
-          } else {
-            // ✅ Další updaty - jen GPS
-            await userDocRef.set({
-              lat,
-              lng,
-              lastSeen: firebase.firestore.FieldValue.serverTimestamp()
-            }, { merge: true });
-          }
+          await userDocRef.set({
+            lat,
+            lng,
+            lastSeen: firebase.firestore.FieldValue.serverTimestamp()
+          }, { merge: true });
         } catch (err) {
           console.error("Failed to update live location:", err);
         }
 
       }, err => {
         console.error("Geolocation error:", err);
-        alert("Unable to access your location. Please enable GPS and try again.");
       }, {
         enableHighAccuracy: true,
         maximumAge: 30000,
