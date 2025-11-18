@@ -579,6 +579,9 @@ if (homeWelcome && userData.displayName) {
     if (vehiclePhotoPlaceholder) vehiclePhotoPlaceholder.style.display = "flex";
   }
 
+  // ✅ Store email verification status globally
+  window.isEmailVerified = user.emailVerified || false;
+
   // ✅ Access kontrola
   if (!userData.access) {
     showAccessDeniedModal();
@@ -751,6 +754,35 @@ setInterval(loadGroupAvatars, 20000);
 
   auth.signOut();
 };
+
+// === Resend Verification Email Button ===
+const resendVerificationBtn = document.getElementById("resendVerificationBtn");
+if (resendVerificationBtn) {
+  resendVerificationBtn.addEventListener("click", async () => {
+    const user = auth.currentUser;
+    if (!user) {
+      alert("No user is currently logged in.");
+      return;
+    }
+
+    if (user.emailVerified) {
+      alert("Your email is already verified!");
+      return;
+    }
+
+    try {
+      await user.sendEmailVerification();
+      alert("Verification email sent! Please check your inbox.");
+    } catch (error) {
+      console.error("❌ Error sending verification email:", error);
+      if (error.code === "auth/too-many-requests") {
+        alert("Too many requests. Please try again later.");
+      } else {
+        alert("Failed to send verification email. Please try again later.");
+      }
+    }
+  });
+}
 
 
     function showAccessDeniedModal() {
@@ -1228,6 +1260,13 @@ sendBtn.onclick = async () => {
     console.warn("⚠️ No user logged in, cannot send message");
     return;
   }
+
+  // ✅ Check email verification status
+  if (!user.emailVerified) {
+    alert("Please verify your email address before sending messages. Check your inbox for the verification email.");
+    return;
+  }
+
   if (!txt && !file) {
     console.warn("⚠️ Empty message or file");
     return;
@@ -2052,11 +2091,31 @@ if (tab === "map") {
     chatGroupTitle.textContent = group.querySelector("span").textContent;
     backBtn.style.display = "inline-block";
 
+    // ✅ Show/hide email verification banner
+    const emailBanner = document.getElementById("emailVerificationBanner");
+    const chatContainer = document.getElementById("chat");
+    if (!window.isEmailVerified) {
+      if (emailBanner) emailBanner.style.display = "block";
+      if (chatContainer) chatContainer.classList.add("with-banner");
+      // Disable message input for unverified users
+      const msgInput = document.getElementById("msgInput");
+      const sendBtn = document.getElementById("sendBtn");
+      if (msgInput) msgInput.disabled = true;
+      if (sendBtn) sendBtn.disabled = true;
+    } else {
+      if (emailBanner) emailBanner.style.display = "none";
+      if (chatContainer) chatContainer.classList.remove("with-banner");
+      // Enable message input for verified users
+      const msgInput = document.getElementById("msgInput");
+      const sendBtn = document.getElementById("sendBtn");
+      if (msgInput) msgInput.disabled = false;
+      if (sendBtn) sendBtn.disabled = false;
+    }
+
     // 🧩 Načti zprávy
     await loadMessages(group.dataset.group);
 
     // 🔽 Automaticky skoč na konec (bez animace)
-    const chatContainer = document.getElementById("chat");
     if (chatContainer) {
       chatContainer.scrollTop = chatContainer.scrollHeight;
     }
@@ -2082,6 +2141,10 @@ if (tab === "map") {
   // 🧩 Skryj i header (← General)
   const chatHeader = document.getElementById("chatHeader");
   if (chatHeader) chatHeader.style.display = "none";
+
+  // ✅ Hide email verification banner when going back to chat groups
+  const emailBanner = document.getElementById("emailVerificationBanner");
+  if (emailBanner) emailBanner.style.display = "none";
 });
 
 
